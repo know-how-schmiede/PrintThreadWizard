@@ -1,4 +1,5 @@
 import os
+import math
 import adsk.core
 import adsk.fusion
 from ...lib import fusionAddInUtils as futil
@@ -94,6 +95,14 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     edge_input.addSelectionFilter('Edges')
     edge_input.setSelectionLimits(0, 2)
 
+    default_units = app.activeProduct.unitsManager.defaultLengthUnits
+    flank_angle_value = adsk.core.ValueInput.createByString('80 deg')
+    thread_depth_value = adsk.core.ValueInput.createByString(f'5 {default_units}')
+    pitch_value = adsk.core.ValueInput.createByString(f'10 {default_units}')
+    inputs.addValueInput('flank_angle', 'Flankenwinkel', 'deg', flank_angle_value)
+    inputs.addValueInput('thread_depth', 'Gewindetiefe', default_units, thread_depth_value)
+    inputs.addValueInput('pitch', 'Steigung', default_units, pitch_value)
+
     result_text = inputs.addTextBoxCommandInput(
         'result_text',
         'Ergebnis',
@@ -111,8 +120,22 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
 def command_execute(args: adsk.core.CommandEventArgs):
     futil.log(f'{CMD_NAME} Command Execute Event')
-    _update_result_text(args.command.commandInputs)
-    _create_cylinder_axis(args.command.commandInputs)
+    try:
+        inputs = args.command.commandInputs
+        _update_result_text(inputs)
+        face = _get_selected_cylinder_face(inputs)
+        if face is None:
+            _debug_log('Command execute stopped: no valid cylinder face selected.', adsk.core.LogLevels.ErrorLogLevel)
+            return
+
+        _create_cylinder_axis(face)
+        helix_result = _create_thread_helix(inputs, face)
+        if helix_result:
+            _debug_log(helix_result, adsk.core.LogLevels.ErrorLogLevel)
+            ui.messageBox(helix_result)
+    except Exception as error:
+        _debug_log(f'Command execute failed: {error}', adsk.core.LogLevels.ErrorLogLevel)
+        ui.messageBox(f'PrintThread Wizard Fehler: {error}')
 
 
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
@@ -125,7 +148,18 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
     futil.log(f'{CMD_NAME} Validate Input Event')
     _update_result_text(args.inputs)
-    args.areInputsValid = _get_selected_cylinder_face(args.inputs) is not None
+    flank_angle_input: adsk.core.ValueCommandInput = args.inputs.itemById('flank_angle')
+    thread_depth_input: adsk.core.ValueCommandInput = args.inputs.itemById('thread_depth')
+    pitch_input: adsk.core.ValueCommandInput = args.inputs.itemById('pitch')
+    args.areInputsValid = (
+        _get_selected_cylinder_face(args.inputs) is not None
+        and flank_angle_input is not None
+        and thread_depth_input is not None
+        and pitch_input is not None
+        and 0 < flank_angle_input.value < math.pi
+        and thread_depth_input.value > 0
+        and pitch_input.value > 0
+    )
 
 
 def command_destroy(args: adsk.core.CommandEventArgs):
@@ -172,11 +206,7 @@ def _get_selected_cylinder_info_text(inputs: adsk.core.CommandInputs):
     return f'Durchmesser der Zylinderfläche: {diameter_text}<br>Typ: {side_type}<br>Ausgewählte Fasen-Kanten: {edge_text}'
 
 
-def _create_cylinder_axis(inputs: adsk.core.CommandInputs):
-    face = _get_selected_cylinder_face(inputs)
-    if face is None:
-        return
-
+def _create_cylinder_axis(face: adsk.fusion.BRepFace):
     axis_points = _get_cylinder_axis_points(face)
     if axis_points is None:
         ui.messageBox('Die Zylinderachse konnte nicht ermittelt werden.')
@@ -193,6 +223,108 @@ def _create_cylinder_axis(inputs: adsk.core.CommandInputs):
     sketch.is3D = True
     line = sketch.sketchCurves.sketchLines.addByTwoPoints(axis_points[0], axis_points[1])
     line.isConstruction = True
+    _debug_log(
+        f'Axis sketch created: start={_format_point(axis_points[0])}, '
+        f'end={_format_point(axis_points[1])}, isValid={line.isValid}'
+    )
+
+
+def _create_thread_helix(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRepFace):
+    if face is None:
+        return 'Helix konnte nicht erstellt werden: Keine Zylinderfläche ausgewählt.'
+
+    pitch_input: adsk.core.ValueCommandInput = inputs.itemById('pitch')
+    thread_depth_input: adsk.core.ValueCommandInput = inputs.itemById('thread_depth')
+    if pitch_input is None or thread_depth_input is None:
+        return 'Helix konnte nicht erstellt werden: Steigung oder Gewindetiefe fehlt.'
+
+    pitch = pitch_input.value
+    thread_depth = thread_depth_input.value
+    _debug_log(f'Helix input: pitch={pitch:.4f}, threadDepth={thread_depth:.4f}')
+    if pitch <= 0 or thread_depth <= 0:
+        return 'Helix konnte nicht erstellt werden: Steigung und Gewindetiefe müssen größer als 0 sein.'
+
+    axis_points = _get_cylinder_axis_points(face)
+    if axis_points is None:
+        return 'Helix konnte nicht erstellt werden: Zylinderachse konnte nicht ermittelt werden.'
+
+    start_axis_point, end_axis_point = axis_points
+    axis_vector = start_axis_point.vectorTo(end_axis_point)
+    cylinder_length = start_axis_point.distanceTo(end_axis_point)
+    _debug_log(
+        f'Helix axis: start={_format_point(start_axis_point)}, end={_format_point(end_axis_point)}, '
+        f'length={cylinder_length:.4f}'
+    )
+    if cylinder_length <= 0 or not axis_vector.normalize():
+        return 'Helix konnte nicht erstellt werden: Zylinderlänge konnte nicht ermittelt werden.'
+
+    cylinder = face.geometry
+    radius = getattr(cylinder, 'radius', None)
+    _debug_log(f'Helix cylinder: radius={radius}')
+    if radius is None or radius <= 0:
+        return 'Helix konnte nicht erstellt werden: Zylinderradius konnte nicht ermittelt werden.'
+
+    radial_vector = _get_radial_vector(face, start_axis_point, axis_vector)
+    _debug_log(f'Helix radial vector: {_format_vector(radial_vector)}')
+    if radial_vector is None:
+        return 'Helix konnte nicht erstellt werden: Radiusrichtung konnte nicht ermittelt werden.'
+
+    tangent_vector = axis_vector.crossProduct(radial_vector)
+    if not tangent_vector.normalize():
+        return 'Helix konnte nicht erstellt werden: Tangentialrichtung konnte nicht ermittelt werden.'
+    _debug_log(f'Helix tangent vector: {_format_vector(tangent_vector)}')
+
+    overrun = 2 * thread_depth
+    helix_length = cylinder_length + 2 * overrun
+    turns = helix_length / pitch
+    point_count = max(24, int(math.ceil(turns * 48)) + 1)
+    points = adsk.core.ObjectCollection.create()
+    start_point = None
+    end_point = None
+    _debug_log(
+        f'Helix geometry: overrun={overrun:.4f}, helixLength={helix_length:.4f}, '
+        f'turns={turns:.4f}, pointCount={point_count}'
+    )
+
+    for index in range(point_count):
+        ratio = index / (point_count - 1)
+        angle = ratio * turns * 2 * math.pi
+        axis_distance = -overrun + ratio * helix_length
+
+        point = start_axis_point.copy()
+        axis_offset = axis_vector.copy()
+        axis_offset.scaleBy(axis_distance)
+        point.translateBy(axis_offset)
+
+        radial_offset = radial_vector.copy()
+        radial_offset.scaleBy(math.cos(angle) * radius)
+        point.translateBy(radial_offset)
+
+        tangent_offset = tangent_vector.copy()
+        tangent_offset.scaleBy(math.sin(angle) * radius)
+        point.translateBy(tangent_offset)
+        if index == 0:
+            start_point = point.copy()
+        if index == point_count - 1:
+            end_point = point.copy()
+        points.add(point)
+
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    if design is None:
+        return 'Helix konnte nicht erstellt werden: Aktives Fusion-Design konnte nicht gelesen werden.'
+
+    component = design.activeComponent if design.activeComponent else design.rootComponent
+    sketch = component.sketches.add(component.xYConstructionPlane)
+    sketch.name = f'PrintThread Wizard Helix {VERSION}'
+    sketch.is3D = True
+    helix_curve = sketch.sketchCurves.sketchFittedSplines.add(points)
+    _debug_log(
+        f'Helix sketch created: sketch={sketch.name}, curveType={helix_curve.objectType}, '
+        f'isValid={helix_curve.isValid}, startPoint={_format_point(start_point)}, '
+        f'endPoint={_format_point(end_point)}'
+    )
+    _refresh_viewport()
+    return None
 
 
 def _get_cylinder_axis_points(face: adsk.fusion.BRepFace):
@@ -322,6 +454,56 @@ def _get_cylinder_side_type(face: adsk.fusion.BRepFace):
         return 'Außenfläche'
 
     return 'Innenfläche'
+
+
+def _get_radial_vector(face: adsk.fusion.BRepFace, axis_origin: adsk.core.Point3D, axis: adsk.core.Vector3D):
+    point = getattr(face, 'pointOnFace', None)
+    if point is None:
+        return None
+
+    distance = axis_origin.vectorTo(point).dotProduct(axis)
+    axis_point = axis_origin.copy()
+    axis_offset = axis.copy()
+    axis_offset.scaleBy(distance)
+    axis_point.translateBy(axis_offset)
+
+    radial_vector = axis_point.vectorTo(point)
+    if not radial_vector.normalize():
+        return None
+
+    return radial_vector
+
+
+def _debug_log(message: str, level: adsk.core.LogLevels = adsk.core.LogLevels.InfoLogLevel):
+    futil.log(f'[PrintThread Wizard] {message}', level, force_console=True)
+
+
+def _format_point(point: adsk.core.Point3D):
+    if point is None:
+        return 'None'
+
+    return f'({point.x:.4f}, {point.y:.4f}, {point.z:.4f})'
+
+
+def _format_vector(vector: adsk.core.Vector3D):
+    if vector is None:
+        return 'None'
+
+    return f'({vector.x:.4f}, {vector.y:.4f}, {vector.z:.4f})'
+
+
+def _refresh_viewport():
+    try:
+        adsk.doEvents()
+    except:
+        pass
+
+    try:
+        viewport = app.activeViewport
+        if viewport:
+            viewport.refresh()
+    except:
+        pass
 
 
 def _get_selected_cylinder_face(inputs: adsk.core.CommandInputs):

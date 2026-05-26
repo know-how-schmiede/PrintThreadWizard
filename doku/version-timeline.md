@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.2.1 - 2026-05-26
+
+- Dialogparameter für Flankenwinkel, Gewindetiefe und Steigung beibehalten.
+- Beim Ausführen wird zusätzlich zur Zylinderachse eine 3D-Helix auf der ausgewählten Zylinderfläche erzeugt.
+- Die Helix nutzt die im Dialog angegebene Steigung.
+- Die Helix startet `2 * Gewindetiefe` vor der Grundebene und endet `2 * Gewindetiefe` hinter der Deckfläche.
+- Version in `version.py` und im Fusion-Manifest auf `0.2.1` erhöht.
+
 ## 0.2.0 - 2026-05-26
 
 - Neustart der Konstruktionslogik vorbereitet.
