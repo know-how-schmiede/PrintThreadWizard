@@ -100,7 +100,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     thread_depth_value = adsk.core.ValueInput.createByString(f'5 {default_units}')
     pitch_value = adsk.core.ValueInput.createByString(f'10 {default_units}')
     fillet_radius_value = adsk.core.ValueInput.createByString('0.4 mm')
-    inputs.addValueInput('flank_angle', 'Öffnungswinkel', 'deg', flank_angle_value)
+    inputs.addValueInput('flank_angle', 'Flankenwinkel', 'deg', flank_angle_value)
     inputs.addValueInput('thread_depth', 'Gewindetiefe', default_units, thread_depth_value)
     inputs.addValueInput('pitch', 'Steigung', default_units, pitch_value)
     inputs.addValueInput('fillet_radius', 'Verrundungsradius', default_units, fillet_radius_value)
@@ -355,8 +355,13 @@ def _create_thread_helix(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRep
         flank_angle,
         thread_depth
     )
-    if profile_result:
+    if isinstance(profile_result, str):
         return profile_result
+
+    profile_sketch = profile_result
+    sweep_result = _sweep_triangle_profile(component, profile_sketch, helix_curve, face, start_axis_point)
+    if sweep_result:
+        return sweep_result
 
     _refresh_viewport()
     return None
@@ -414,9 +419,50 @@ def _create_triangle_profile(
             f'profiles={profile_sketch.profiles.count}, baseLeft={_format_point(base_left)}, '
             f'apex={_format_point(apex)}, baseRight={_format_point(base_right)}'
         )
-        return None
+        return profile_sketch
     except Exception as error:
         return f'Profil konnte nicht erstellt werden: {error}'
+
+
+def _sweep_triangle_profile(
+    component: adsk.fusion.Component,
+    profile_sketch: adsk.fusion.Sketch,
+    helix_curve: adsk.fusion.SketchCurve,
+    cylinder_face: adsk.fusion.BRepFace,
+    start_axis_point: adsk.core.Point3D
+):
+    if profile_sketch.profiles.count < 1:
+        return 'Sweep konnte nicht erstellt werden: Das Dreieck bildet kein geschlossenes Profil.'
+
+    guide_face = _get_cylinder_end_face(cylinder_face, start_axis_point)
+    if guide_face is None:
+        return 'Sweep konnte nicht erstellt werden: Zylindergrundfläche konnte nicht ermittelt werden.'
+
+    try:
+        path_curves = adsk.core.ObjectCollection.create()
+        path_curves.add(helix_curve)
+        path = component.features.createPath(path_curves)
+
+        sweep_features = component.features.sweepFeatures
+        sweep_input = sweep_features.createInput(
+            profile_sketch.profiles.item(0),
+            path,
+            adsk.fusion.FeatureOperations.NewBodyFeatureOperation
+        )
+        sweep_input.isChainSelection = False
+        sweep_input.guideSurfaces = [guide_face]
+        sweep_feature = sweep_features.add(sweep_input)
+        if sweep_feature.bodies.count > 0:
+            sweep_feature.bodies.item(0).name = f'PrintThread Wizard Gewindekoerper {VERSION}'
+
+        _debug_log(
+            f'Sweep created: guideFaceValid={guide_face.isValid}, '
+            f'profileCount={profile_sketch.profiles.count}, isValid={sweep_feature.isValid}'
+        )
+        _refresh_viewport()
+        return None
+    except Exception as error:
+        return f'Sweep konnte nicht erstellt werden: {error}'
 
 
 def _create_edge_fillets(inputs: adsk.core.CommandInputs, edges):
@@ -472,6 +518,49 @@ def _component_from_edge(edge: adsk.fusion.BRepEdge):
         return None
 
     return design.activeComponent if design.activeComponent else design.rootComponent
+
+
+def _get_cylinder_end_face(cylinder_face: adsk.fusion.BRepFace, target_center: adsk.core.Point3D):
+    best_edge = None
+    best_distance = None
+
+    try:
+        edges = cylinder_face.edges
+        for index in range(edges.count):
+            edge = edges.item(index)
+            geometry = getattr(edge, 'geometry', None)
+            center = getattr(geometry, 'center', None)
+            if center is None:
+                continue
+
+            distance = center.distanceTo(target_center)
+            if best_distance is None or distance < best_distance:
+                best_distance = distance
+                best_edge = edge
+    except:
+        return None
+
+    if best_edge is None:
+        return None
+
+    try:
+        faces = best_edge.faces
+        for index in range(faces.count):
+            face = faces.item(index)
+            if face == cylinder_face:
+                continue
+
+            if getattr(face.geometry, 'normal', None) is not None or face.geometry.objectType.endswith('Plane'):
+                return face
+
+        for index in range(faces.count):
+            face = faces.item(index)
+            if face != cylinder_face:
+                return face
+    except:
+        return None
+
+    return None
 
 
 def _get_cylinder_axis_points(face: adsk.fusion.BRepFace):
