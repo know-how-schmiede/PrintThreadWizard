@@ -13,6 +13,7 @@ ui = app.userInterface
 CMD_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_cmdDialog'
 CMD_NAME = f'PrintThread Wizard {VERSION}'
 CMD_Description = 'Select a cylindrical face and show its basic thread input data.'
+COIL_EVENT_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_createNativeCoil'
 
 IS_PROMOTED = True
 
@@ -23,6 +24,7 @@ COMMAND_BESIDE_ID = ''
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
 
 local_handlers = []
+pending_coil_request = None
 
 
 def start():
@@ -31,6 +33,13 @@ def start():
         cmd_def = ui.commandDefinitions.addButtonDefinition(CMD_ID, CMD_NAME, CMD_Description, ICON_FOLDER)
 
     futil.add_handler(cmd_def.commandCreated, command_created)
+    try:
+        custom_event = app.registerCustomEvent(COIL_EVENT_ID)
+    except:
+        custom_event = app.customEvent(COIL_EVENT_ID)
+
+    if custom_event:
+        futil.add_handler(custom_event, coil_custom_event)
 
     workspace = ui.workspaces.itemById(WORKSPACE_ID)
     if workspace is None:
@@ -63,6 +72,11 @@ def stop():
 
     if command_definition:
         command_definition.deleteMe()
+
+    try:
+        app.unregisterCustomEvent(COIL_EVENT_ID)
+    except:
+        pass
 
 
 def command_created(args: adsk.core.CommandCreatedEventArgs):
@@ -132,10 +146,10 @@ def command_execute(args: adsk.core.CommandEventArgs):
         selected_edges = _get_selected_edges(inputs)
 
         _create_cylinder_axis(face)
-        helix_result = _create_thread_helix(inputs, face)
-        if helix_result:
-            _debug_log(helix_result, adsk.core.LogLevels.ErrorLogLevel)
-            ui.messageBox(helix_result)
+        coil_result = _schedule_native_coil_thread(inputs, face)
+        if coil_result:
+            _debug_log(coil_result, adsk.core.LogLevels.ErrorLogLevel)
+            ui.messageBox(coil_result)
             return
 
         fillet_result = _create_edge_fillets(inputs, selected_edges)
@@ -179,6 +193,11 @@ def command_destroy(args: adsk.core.CommandEventArgs):
 
     global local_handlers
     local_handlers = []
+    _fire_pending_coil_request()
+
+
+def coil_custom_event(args: adsk.core.CustomEventArgs):
+    _run_pending_coil_request()
 
 
 def _update_result_text(inputs: adsk.core.CommandInputs):
@@ -365,6 +384,273 @@ def _create_thread_helix(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRep
 
     _refresh_viewport()
     return None
+
+
+def _create_native_coil_thread(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRepFace):
+    pitch_input: adsk.core.ValueCommandInput = inputs.itemById('pitch')
+    thread_depth_input: adsk.core.ValueCommandInput = inputs.itemById('thread_depth')
+    if pitch_input is None or thread_depth_input is None:
+        return 'Coil konnte nicht erstellt werden: Steigung oder Gewindetiefe fehlt.'
+
+    pitch = pitch_input.value
+    thread_depth = thread_depth_input.value
+    if pitch <= 0 or thread_depth <= 0:
+        return 'Coil konnte nicht erstellt werden: Steigung und Gewindetiefe müssen größer als 0 sein.'
+
+    axis_points = _get_cylinder_axis_points(face)
+    if axis_points is None:
+        return 'Coil konnte nicht erstellt werden: Zylinderachse konnte nicht ermittelt werden.'
+
+    start_axis_point, end_axis_point = axis_points
+    axis_vector = start_axis_point.vectorTo(end_axis_point)
+    cylinder_length = start_axis_point.distanceTo(end_axis_point)
+    if cylinder_length <= 0 or not axis_vector.normalize():
+        return 'Coil konnte nicht erstellt werden: Zylinderlänge konnte nicht ermittelt werden.'
+
+    cylinder = face.geometry
+    radius = getattr(cylinder, 'radius', None)
+    if radius is None or radius <= 0:
+        return 'Coil konnte nicht erstellt werden: Zylinderradius konnte nicht ermittelt werden.'
+
+    overrun = 2 * thread_depth
+    coil_height = cylinder_length + 2 * overrun
+    coil_revolutions = coil_height / pitch
+    base_face = _get_cylinder_end_face(face, start_axis_point)
+    if base_face is None:
+        return 'Coil konnte nicht erstellt werden: Zylindergrundfläche konnte nicht ermittelt werden.'
+
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    if design is None:
+        return 'Coil konnte nicht erstellt werden: Aktives Fusion-Design konnte nicht gelesen werden.'
+
+    component = design.activeComponent if design.activeComponent else design.rootComponent
+    base_plane = _create_coil_start_plane(component, base_face, axis_vector, overrun)
+    if base_plane is None:
+        return 'Coil konnte nicht erstellt werden: Startebene konnte nicht erstellt werden.'
+
+    start_center = start_axis_point.copy()
+    start_offset = axis_vector.copy()
+    start_offset.scaleBy(-overrun)
+    start_center.translateBy(start_offset)
+
+    try:
+        sketch = component.sketches.add(base_plane)
+        sketch.name = f'PrintThread Wizard Coil Basis {VERSION}'
+        center = sketch.modelToSketchSpace(start_center)
+        circle = sketch.sketchCurves.sketchCircles.addByCenterRadius(center, radius)
+
+        selections = ui.activeSelections
+        selections.clear()
+        selections.add(circle)
+        app.executeTextCommand('Commands.Start Coil')
+        app.executeTextCommand('Commands.SetString infoSizeType infoRevolutionAndHeight')
+        app.executeTextCommand(f'Commands.SetDouble CoilRevolutions {coil_revolutions}')
+        app.executeTextCommand(f'Commands.SetDouble CoilHeight {coil_height}')
+        app.executeTextCommand('Commands.SetDouble CoilTaperAngle 0')
+        app.executeTextCommand('Commands.SetString infoSectionType infoTriangular')
+        app.executeTextCommand(_coil_section_position_command(face))
+        app.executeTextCommand(f'Commands.SetDouble SectionSize {thread_depth}')
+        app.executeTextCommand('Commands.SetString infoBooleanType infoNewBodyType')
+        app.executeTextCommand('NuCommands.CommitCmd')
+        selections.clear()
+
+        _debug_log(
+            f'Native coil created: radius={radius:.4f}, pitch={pitch:.4f}, '
+            f'height={coil_height:.4f}, revolutions={coil_revolutions:.4f}, '
+            f'sectionSize={thread_depth:.4f}, overrun={overrun:.4f}'
+        )
+        _refresh_viewport()
+        return None
+    except Exception as error:
+        return f'Coil konnte nicht erstellt werden: {error}'
+
+
+def _schedule_native_coil_thread(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRepFace):
+    global pending_coil_request
+
+    pitch_input: adsk.core.ValueCommandInput = inputs.itemById('pitch')
+    thread_depth_input: adsk.core.ValueCommandInput = inputs.itemById('thread_depth')
+    if pitch_input is None or thread_depth_input is None:
+        return 'Coil konnte nicht vorbereitet werden: Steigung oder Gewindetiefe fehlt.'
+
+    pitch = pitch_input.value
+    thread_depth = thread_depth_input.value
+    if pitch <= 0 or thread_depth <= 0:
+        return 'Coil konnte nicht vorbereitet werden: Steigung und Gewindetiefe müssen größer als 0 sein.'
+
+    axis_points = _get_cylinder_axis_points(face)
+    if axis_points is None:
+        return 'Coil konnte nicht vorbereitet werden: Zylinderachse konnte nicht ermittelt werden.'
+
+    start_axis_point, end_axis_point = axis_points
+    axis_vector = start_axis_point.vectorTo(end_axis_point)
+    cylinder_length = start_axis_point.distanceTo(end_axis_point)
+    if cylinder_length <= 0 or not axis_vector.normalize():
+        return 'Coil konnte nicht vorbereitet werden: Zylinderlänge konnte nicht ermittelt werden.'
+
+    cylinder = face.geometry
+    radius = getattr(cylinder, 'radius', None)
+    if radius is None or radius <= 0:
+        return 'Coil konnte nicht vorbereitet werden: Zylinderradius konnte nicht ermittelt werden.'
+
+    overrun = 2 * thread_depth
+    base_face = _get_cylinder_end_face(face, start_axis_point)
+    if base_face is None:
+        return 'Coil konnte nicht vorbereitet werden: Zylindergrundfläche konnte nicht ermittelt werden.'
+
+    component = base_face.body.parentComponent
+    start_center = start_axis_point.copy()
+    start_offset = axis_vector.copy()
+    start_offset.scaleBy(-overrun)
+    start_center.translateBy(start_offset)
+
+    pending_coil_request = {
+        'component': component,
+        'base_face': base_face,
+        'axis_vector': axis_vector.copy(),
+        'start_center': start_center,
+        'radius': radius,
+        'pitch': pitch,
+        'thread_depth': thread_depth,
+        'coil_height': cylinder_length + 2 * overrun,
+        'overrun': overrun,
+        'section_position_command': _coil_section_position_command(face),
+    }
+    _debug_log(
+        f'Native coil scheduled: radius={radius:.4f}, pitch={pitch:.4f}, '
+        f'height={(cylinder_length + 2 * overrun):.4f}, overrun={overrun:.4f}'
+    )
+    return None
+
+
+def _run_pending_coil_request():
+    global pending_coil_request
+
+    request = pending_coil_request
+    pending_coil_request = None
+    if request is None:
+        return
+
+    try:
+        _execute_native_coil_request(request)
+    except Exception as error:
+        _debug_log(f'Coil konnte nicht erstellt werden: {error}', adsk.core.LogLevels.ErrorLogLevel)
+        ui.messageBox(f'Coil konnte nicht erstellt werden: {error}')
+
+
+def _fire_pending_coil_request():
+    if pending_coil_request is None:
+        return
+
+    try:
+        app.fireCustomEvent(COIL_EVENT_ID, '')
+        _debug_log('Native coil custom event fired.')
+    except Exception as error:
+        _debug_log(f'Native coil custom event failed: {error}', adsk.core.LogLevels.ErrorLogLevel)
+        _run_pending_coil_request()
+
+
+def _execute_native_coil_request(request):
+    component = request['component']
+    base_plane = _create_coil_start_plane(
+        component,
+        request['base_face'],
+        request['axis_vector'],
+        request['overrun']
+    )
+    if base_plane is None:
+        raise RuntimeError('Startebene konnte nicht erstellt werden.')
+
+    sketch = component.sketches.add(base_plane)
+    sketch.name = f'PrintThread Wizard Coil Basis {VERSION}'
+    center = sketch.modelToSketchSpace(request['start_center'])
+    circle = sketch.sketchCurves.sketchCircles.addByCenterRadius(center, request['radius'])
+    coil_revolutions = request['coil_height'] / request['pitch']
+
+    selections = ui.activeSelections
+    selections.clear()
+    selections.add(circle)
+    adsk.doEvents()
+    _execute_text_command('Commands.Start Coil')
+    if not _wait_for_active_command('Coil'):
+        raise RuntimeError(f'Coil-Command wurde nicht aktiv. activeCommand={ui.activeCommand}')
+
+    _execute_text_command('Commands.SetString infoSizeType infoHeightAndPitch')
+    _execute_text_command(f'Commands.SetDouble CoilHeight {request["coil_height"]}')
+    _execute_text_command(f'Commands.SetDouble CoilPitch {request["pitch"]}')
+    _execute_text_command('Commands.SetDouble CoilTaperAngle 0')
+    _debug_log('Native coil section type left unchanged because Fusion rejects the known section TextCommand ids.')
+    if not _try_text_command(f'Commands.SetDouble SectionSize {request["thread_depth"]}'):
+        _debug_log('Native coil section size left at Fusion default.')
+    _execute_text_command('Commands.SetString infoBooleanType infoNewBodyType')
+    _execute_text_command('NuCommands.CommitCmd')
+    selections.clear()
+    _debug_log(
+        f'Native coil created deferred: radius={request["radius"]:.4f}, pitch={request["pitch"]:.4f}, '
+        f'height={request["coil_height"]:.4f}, revolutions={coil_revolutions:.4f}, '
+        f'sectionSize={request["thread_depth"]:.4f}'
+    )
+    _refresh_viewport()
+
+
+def _execute_text_command(command: str):
+    try:
+        result = app.executeTextCommand(command)
+    except Exception as error:
+        raise RuntimeError(f'TextCommand fehlgeschlagen: {command} -> {error}')
+
+    if result:
+        _debug_log(f'TextCommand result: {command} -> {result}')
+    return result
+
+
+def _try_text_command(command: str):
+    try:
+        _execute_text_command(command)
+        return True
+    except Exception as error:
+        _debug_log(f'TextCommand skipped: {command} -> {error}')
+        return False
+
+
+def _wait_for_active_command(command_id: str, max_cycles: int = 50):
+    for _ in range(max_cycles):
+        adsk.doEvents()
+        if ui.activeCommand == command_id:
+            return True
+
+    return False
+
+
+def _create_coil_start_plane(
+    component: adsk.fusion.Component,
+    base_face: adsk.fusion.BRepFace,
+    axis_vector: adsk.core.Vector3D,
+    overrun: float
+):
+    normal_dot = _face_normal_dot_axis(base_face, axis_vector)
+    if normal_dot is None:
+        return None
+
+    offset = -overrun * normal_dot
+    try:
+        plane_input = component.constructionPlanes.createInput()
+        plane_input.setByOffset(base_face, adsk.core.ValueInput.createByReal(offset))
+        plane = component.constructionPlanes.add(plane_input)
+        plane.name = f'PrintThread Wizard Coil Start {VERSION}'
+        return plane
+    except Exception as error:
+        _debug_log(f'Coil start plane failed: {error}', adsk.core.LogLevels.ErrorLogLevel)
+        return None
+
+
+def _coil_section_position_command(face: adsk.fusion.BRepFace):
+    cylinder = face.geometry
+    radial_vector = _get_radial_vector(face, cylinder.origin, cylinder.axis)
+    if radial_vector is not None and not _is_outer_cylinder_face(face, radial_vector):
+        return 'Commands.SetString infoSectionPosition infoInside'
+
+    return 'Commands.SetString infoSectionPosition infoOutside'
 
 
 def _create_triangle_profile(
@@ -743,6 +1029,26 @@ def _is_outer_cylinder_face(face: adsk.fusion.BRepFace, radial_vector: adsk.core
         return True
 
     return normal.dotProduct(radial) >= 0
+
+
+def _face_normal_dot_axis(face: adsk.fusion.BRepFace, axis: adsk.core.Vector3D):
+    point = getattr(face, 'pointOnFace', None)
+    if point is None:
+        return None
+
+    normal_result = face.evaluator.getNormalAtPoint(point)
+    if not normal_result or not normal_result[0]:
+        return None
+
+    normal = normal_result[1]
+    if not normal.normalize():
+        return None
+
+    axis_vector = axis.copy()
+    if not axis_vector.normalize():
+        return None
+
+    return normal.dotProduct(axis_vector)
 
 
 def _offset_point(point: adsk.core.Point3D, direction: adsk.core.Vector3D, distance: float):

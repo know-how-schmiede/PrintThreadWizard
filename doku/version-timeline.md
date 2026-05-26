@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.6.3 - 2026-05-26
+
+- Helix-/Gewindeerzeugung auf die native Fusion-Coil-Funktion umgestellt.
+- Der bisherige Sketch-Fitted-Spline-Pfad sowie der nachgelagerte Sweep werden nicht mehr verwendet, um den bekannten verzögerten Sweep-Rebuild-Fehler zu vermeiden.
+- Die Coil nutzt Steigung und Gewindetiefe aus dem Dialog und wird als neuer Körper erzeugt.
+- Die Coil startet weiterhin `2 * Gewindetiefe` vor der Grundfläche und reicht entsprechend über die Deckfläche hinaus.
+- Version in `version.py` und im Fusion-Manifest auf `0.6.3` erhöht.
+
 ## 0.2.2 - 2026-05-26
 
 - Am Anfang der erzeugten Helix wird eine Konstruktionsebene auf dem Pfad erstellt.
