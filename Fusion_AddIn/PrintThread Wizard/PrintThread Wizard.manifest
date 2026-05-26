@@ -5,7 +5,7 @@
 	"description":	{
 		"":	"PrintThread Wizard is a Fusion 360 add-in for creating 3D-printable thread geometry on selected cylindrical faces."
 	},
-	"version":	"0.2.1",
+	"version":	"0.2.2",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true,

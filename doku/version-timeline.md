@@ -1,5 +1,12 @@
 # Version Timeline
 
+## 0.2.2 - 2026-05-26
+
+- Am Anfang der erzeugten Helix wird eine Konstruktionsebene auf dem Pfad erstellt.
+- Auf der Profilebene wird ein geschlossenes Dreieck als späteres Sweep-Profil skizziert.
+- Das Dreiecksprofil nutzt Flankenwinkel und Gewindetiefe aus dem Dialog.
+- Version in `version.py` und im Fusion-Manifest auf `0.2.2` erhöht.
+
 ## 0.2.1 - 2026-05-26
 
 - Dialogparameter für Flankenwinkel, Gewindetiefe und Steigung beibehalten.

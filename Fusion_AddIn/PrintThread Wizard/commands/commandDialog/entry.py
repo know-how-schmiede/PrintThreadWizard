@@ -99,9 +99,11 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     flank_angle_value = adsk.core.ValueInput.createByString('80 deg')
     thread_depth_value = adsk.core.ValueInput.createByString(f'5 {default_units}')
     pitch_value = adsk.core.ValueInput.createByString(f'10 {default_units}')
-    inputs.addValueInput('flank_angle', 'Flankenwinkel', 'deg', flank_angle_value)
+    fillet_radius_value = adsk.core.ValueInput.createByString('0.4 mm')
+    inputs.addValueInput('flank_angle', 'Öffnungswinkel', 'deg', flank_angle_value)
     inputs.addValueInput('thread_depth', 'Gewindetiefe', default_units, thread_depth_value)
     inputs.addValueInput('pitch', 'Steigung', default_units, pitch_value)
+    inputs.addValueInput('fillet_radius', 'Verrundungsradius', default_units, fillet_radius_value)
 
     result_text = inputs.addTextBoxCommandInput(
         'result_text',
@@ -127,12 +129,19 @@ def command_execute(args: adsk.core.CommandEventArgs):
         if face is None:
             _debug_log('Command execute stopped: no valid cylinder face selected.', adsk.core.LogLevels.ErrorLogLevel)
             return
+        selected_edges = _get_selected_edges(inputs)
 
         _create_cylinder_axis(face)
         helix_result = _create_thread_helix(inputs, face)
         if helix_result:
             _debug_log(helix_result, adsk.core.LogLevels.ErrorLogLevel)
             ui.messageBox(helix_result)
+            return
+
+        fillet_result = _create_edge_fillets(inputs, selected_edges)
+        if fillet_result:
+            _debug_log(fillet_result, adsk.core.LogLevels.ErrorLogLevel)
+            ui.messageBox(fillet_result)
     except Exception as error:
         _debug_log(f'Command execute failed: {error}', adsk.core.LogLevels.ErrorLogLevel)
         ui.messageBox(f'PrintThread Wizard Fehler: {error}')
@@ -151,14 +160,17 @@ def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
     flank_angle_input: adsk.core.ValueCommandInput = args.inputs.itemById('flank_angle')
     thread_depth_input: adsk.core.ValueCommandInput = args.inputs.itemById('thread_depth')
     pitch_input: adsk.core.ValueCommandInput = args.inputs.itemById('pitch')
+    fillet_radius_input: adsk.core.ValueCommandInput = args.inputs.itemById('fillet_radius')
     args.areInputsValid = (
         _get_selected_cylinder_face(args.inputs) is not None
         and flank_angle_input is not None
         and thread_depth_input is not None
         and pitch_input is not None
+        and fillet_radius_input is not None
         and 0 < flank_angle_input.value < math.pi
         and thread_depth_input.value > 0
         and pitch_input.value > 0
+        and fillet_radius_input.value > 0
     )
 
 
@@ -235,14 +247,18 @@ def _create_thread_helix(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRep
 
     pitch_input: adsk.core.ValueCommandInput = inputs.itemById('pitch')
     thread_depth_input: adsk.core.ValueCommandInput = inputs.itemById('thread_depth')
-    if pitch_input is None or thread_depth_input is None:
-        return 'Helix konnte nicht erstellt werden: Steigung oder Gewindetiefe fehlt.'
+    flank_angle_input: adsk.core.ValueCommandInput = inputs.itemById('flank_angle')
+    if pitch_input is None or thread_depth_input is None or flank_angle_input is None:
+        return 'Helix konnte nicht erstellt werden: Steigung, Gewindetiefe oder Flankenwinkel fehlt.'
 
     pitch = pitch_input.value
     thread_depth = thread_depth_input.value
+    flank_angle = flank_angle_input.value
     _debug_log(f'Helix input: pitch={pitch:.4f}, threadDepth={thread_depth:.4f}')
     if pitch <= 0 or thread_depth <= 0:
         return 'Helix konnte nicht erstellt werden: Steigung und Gewindetiefe müssen größer als 0 sein.'
+    if flank_angle <= 0 or flank_angle >= math.pi:
+        return 'Helix konnte nicht erstellt werden: Flankenwinkel muss größer als 0 und kleiner als 180 Grad sein.'
 
     axis_points = _get_cylinder_axis_points(face)
     if axis_points is None:
@@ -273,6 +289,12 @@ def _create_thread_helix(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRep
     if not tangent_vector.normalize():
         return 'Helix konnte nicht erstellt werden: Tangentialrichtung konnte nicht ermittelt werden.'
     _debug_log(f'Helix tangent vector: {_format_vector(tangent_vector)}')
+    helix_start_tangent = axis_vector.copy()
+    helix_tangent_offset = tangent_vector.copy()
+    helix_tangent_offset.scaleBy(2 * math.pi * radius / pitch)
+    helix_start_tangent.add(helix_tangent_offset)
+    if not helix_start_tangent.normalize():
+        return 'Helix konnte nicht erstellt werden: Start-Tangente konnte nicht ermittelt werden.'
 
     overrun = 2 * thread_depth
     helix_length = cylinder_length + 2 * overrun
@@ -323,8 +345,133 @@ def _create_thread_helix(inputs: adsk.core.CommandInputs, face: adsk.fusion.BRep
         f'isValid={helix_curve.isValid}, startPoint={_format_point(start_point)}, '
         f'endPoint={_format_point(end_point)}'
     )
+    profile_result = _create_triangle_profile(
+        component,
+        face,
+        helix_curve,
+        start_point,
+        helix_start_tangent,
+        radial_vector,
+        flank_angle,
+        thread_depth
+    )
+    if profile_result:
+        return profile_result
+
     _refresh_viewport()
     return None
+
+
+def _create_triangle_profile(
+    component: adsk.fusion.Component,
+    face: adsk.fusion.BRepFace,
+    helix_curve: adsk.fusion.SketchCurve,
+    start_point: adsk.core.Point3D,
+    helix_tangent: adsk.core.Vector3D,
+    radial_vector: adsk.core.Vector3D,
+    flank_angle: float,
+    thread_depth: float
+):
+    if start_point is None:
+        return 'Profil konnte nicht erstellt werden: Helix-Startpunkt fehlt.'
+
+    depth_direction = radial_vector.copy()
+    if not _is_outer_cylinder_face(face, radial_vector):
+        depth_direction.scaleBy(-1)
+
+    if not depth_direction.normalize():
+        return 'Profil konnte nicht erstellt werden: Gewindetiefenrichtung fehlt.'
+
+    base_direction = helix_tangent.crossProduct(depth_direction)
+    if not base_direction.normalize():
+        return 'Profil konnte nicht erstellt werden: Profilbasisrichtung fehlt.'
+
+    half_base_width = thread_depth * math.tan(flank_angle / 2)
+    base_left = _offset_point(start_point, base_direction, half_base_width)
+    base_right = _offset_point(start_point, base_direction, -half_base_width)
+    apex = _offset_point(start_point, depth_direction, thread_depth)
+
+    try:
+        plane_input = component.constructionPlanes.createInput()
+        plane_input.setByDistanceOnPath(helix_curve, adsk.core.ValueInput.createByReal(0))
+        profile_plane = component.constructionPlanes.add(plane_input)
+        profile_plane.name = f'PrintThread Wizard Profilebene {VERSION}'
+
+        profile_sketch = component.sketches.add(profile_plane)
+        profile_sketch.name = f'PrintThread Wizard Profil {VERSION}'
+        sketch_points = [
+            profile_sketch.modelToSketchSpace(base_left),
+            profile_sketch.modelToSketchSpace(apex),
+            profile_sketch.modelToSketchSpace(base_right)
+        ]
+
+        lines = profile_sketch.sketchCurves.sketchLines
+        lines.addByTwoPoints(sketch_points[0], sketch_points[1])
+        lines.addByTwoPoints(sketch_points[1], sketch_points[2])
+        lines.addByTwoPoints(sketch_points[2], sketch_points[0])
+        _debug_log(
+            f'Triangle profile created: planeValid={profile_plane.isValid}, '
+            f'profiles={profile_sketch.profiles.count}, baseLeft={_format_point(base_left)}, '
+            f'apex={_format_point(apex)}, baseRight={_format_point(base_right)}'
+        )
+        return None
+    except Exception as error:
+        return f'Profil konnte nicht erstellt werden: {error}'
+
+
+def _create_edge_fillets(inputs: adsk.core.CommandInputs, edges):
+    if not edges:
+        _debug_log('Fillet skipped: no edges selected.')
+        return None
+
+    fillet_radius_input: adsk.core.ValueCommandInput = inputs.itemById('fillet_radius')
+    if fillet_radius_input is None or fillet_radius_input.value <= 0:
+        return 'Verrundung konnte nicht erstellt werden: Verrundungsradius fehlt oder ist ungültig.'
+
+    valid_edges = [edge for edge in edges if edge and edge.isValid]
+    if not valid_edges:
+        return 'Verrundung konnte nicht erstellt werden: Ausgewählte Kanten sind nicht mehr gültig.'
+
+    component = _component_from_edge(valid_edges[0])
+    if component is None:
+        return 'Verrundung konnte nicht erstellt werden: Komponente der Kante konnte nicht ermittelt werden.'
+
+    edge_collection = adsk.core.ObjectCollection.create()
+    for edge in valid_edges:
+        edge_collection.add(edge)
+
+    try:
+        fillet_features = component.features.filletFeatures
+        fillet_input = fillet_features.createInput()
+        fillet_input.addConstantRadiusEdgeSet(
+            edge_collection,
+            adsk.core.ValueInput.createByReal(fillet_radius_input.value),
+            True
+        )
+        fillet_feature = fillet_features.add(fillet_input)
+        _debug_log(
+            f'Fillet created: edges={len(valid_edges)}, radius={fillet_radius_input.value:.4f}, '
+            f'isValid={fillet_feature.isValid}'
+        )
+        _refresh_viewport()
+        return None
+    except Exception as error:
+        return f'Verrundung konnte nicht erstellt werden: {error}'
+
+
+def _component_from_edge(edge: adsk.fusion.BRepEdge):
+    try:
+        body = edge.body
+        if body:
+            return body.parentComponent
+    except:
+        pass
+
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    if design is None:
+        return None
+
+    return design.activeComponent if design.activeComponent else design.rootComponent
 
 
 def _get_cylinder_axis_points(face: adsk.fusion.BRepFace):
@@ -410,6 +557,21 @@ def _get_selected_edge_count(inputs: adsk.core.CommandInputs):
     return edge_input.selectionCount
 
 
+def _get_selected_edges(inputs: adsk.core.CommandInputs):
+    edge_input: adsk.core.SelectionCommandInput = inputs.itemById('chamfer_edges')
+    if edge_input is None:
+        return []
+
+    edges = []
+    for index in range(edge_input.selectionCount):
+        entity = edge_input.selection(index).entity
+        edge = adsk.fusion.BRepEdge.cast(entity)
+        if edge:
+            edges.append(edge)
+
+    return edges
+
+
 def _format_selected_edge_count(edge_count: int):
     if edge_count == 0:
         return 'keine'
@@ -472,6 +634,34 @@ def _get_radial_vector(face: adsk.fusion.BRepFace, axis_origin: adsk.core.Point3
         return None
 
     return radial_vector
+
+
+def _is_outer_cylinder_face(face: adsk.fusion.BRepFace, radial_vector: adsk.core.Vector3D):
+    point = getattr(face, 'pointOnFace', None)
+    if point is None:
+        return True
+
+    normal_result = face.evaluator.getNormalAtPoint(point)
+    if not normal_result or not normal_result[0]:
+        return True
+
+    normal = normal_result[1]
+    if not normal.normalize():
+        return True
+
+    radial = radial_vector.copy()
+    if not radial.normalize():
+        return True
+
+    return normal.dotProduct(radial) >= 0
+
+
+def _offset_point(point: adsk.core.Point3D, direction: adsk.core.Vector3D, distance: float):
+    result = point.copy()
+    offset = direction.copy()
+    offset.scaleBy(distance)
+    result.translateBy(offset)
+    return result
 
 
 def _debug_log(message: str, level: adsk.core.LogLevels = adsk.core.LogLevels.InfoLogLevel):
