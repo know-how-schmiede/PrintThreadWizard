@@ -129,3 +129,21 @@ PrintThreadWizard/
 │   └── thread_design.md
 ├── README.md
 └── LICENSE
+
+## Possible Future Ideas
+
+- Preset library for common thread sizes
+- Separate profiles for coarse and fine printable threads
+- Test-piece generator for clearance calibration
+- Export/import of custom thread presets
+- Support for left-hand threads
+- Thread preview before generation
+- Integration of printer/material-specific tolerance recommendations
+- Documentation with recommended slicer settings
+- Example models for testing
+
+## Disclaimer
+
+PrintThread Wizard is intended for creating practical 3D-printable threads for prototypes, hobby projects and functional printed parts.
+
+The generated threads are not intended to replace certified engineering threads or safety-critical mechanical connections.
