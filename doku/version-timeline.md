@@ -1,5 +1,28 @@
 # Version Timeline
 
+## 0.2.0 - 2026-05-26
+
+- Neustart der Konstruktionslogik vorbereitet.
+- Helix-, Profil-, Sweep-, Trim- und Timeline-Gruppen-Erzeugung aus dem Command entfernt.
+- Dialog auf die Basisfunktion zurückgesetzt: Version anzeigen, Zylinderfläche auswählen, Durchmesser sowie Außen-/Innenfläche anzeigen.
+- Version in `version.py` und im Fusion-Manifest auf `0.2.0` erhöht.
+
+## 0.1.6 - 2026-05-26
+
+- Sweep-Führungsfläche auf die ausgewählte Zylinderfläche umgestellt, damit der Sweep den kompletten Helixpfad zuverlässig verwendet.
+- Erfolgsmeldung von modaler MessageBox auf Textbefehle-Logging umgestellt, damit der Fusion-Mauszeiger nach dem Command wieder korrekt freigegeben wird.
+- UI-Reset nach Sweep und Command-Ende ergänzt.
+- Abschneidelogik für überstehende Gewindeenden auf einen temporären Schnittkörper und `Combine Intersect` umgestellt, damit der Sweepkörper auf die echte Zylinderhöhe begrenzt wird.
+- Trim-Logging erweitert, inklusive Schnittkörperdaten und Boolean-Ergebnis.
+- Version in `version.py` und im Fusion-Manifest auf `0.1.6` erhöht.
+
+## 0.1.5 - 2026-05-26
+
+- Optionsfeld `Ganze Fläche` ergänzt.
+- Wenn `Ganze Fläche` aktiv ist, wird die eingegebene Gewindelänge ignoriert und die Helix über die komplette Zylinderfläche erzeugt.
+- Die Helix startet um eine Steigung vor der Grund- bzw. Deckfläche und endet um eine Steigung hinter der gegenüberliegenden Fläche, damit der Sweepkörper später vollständig abgeschnitten werden kann.
+- Version in `version.py` und im Fusion-Manifest auf `0.1.5` erhöht.
+
 ## 0.1.4 - 2026-05-26
 
 - Profilebene robuster erzeugt und anschließend auf eine Ebene am Helixpfad umgestellt.
