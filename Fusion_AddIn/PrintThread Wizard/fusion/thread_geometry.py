@@ -4,7 +4,12 @@ import adsk.core
 import adsk.fusion
 
 from ..core.thread_parameters import ThreadParameters
-from .face_analysis import CylinderGeometry, analyze_external_cylinder
+from .chamfer import create_thread_end_chamfer
+from .face_analysis import (
+    CylinderGeometry,
+    analyze_external_cylinder,
+    find_updated_external_cylinder,
+)
 
 
 PROFILE_OVERLAP = 0.01  # 0,1 mm in Fusion-internen Zentimetern
@@ -19,10 +24,25 @@ def create_external_thread(parameters: ThreadParameters):
     if parameters.sharp_profile_depth >= cylinder.radius:
         raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
 
+    chamfer_feature = None
     helix_feature = None
     profile_plane = None
     profile_sketch = None
     try:
+        chamfer_feature = create_thread_end_chamfer(
+            cylinder.component,
+            cylinder.body,
+            parameters.chamfer_edges,
+            parameters.thread_depth,
+        )
+        if chamfer_feature:
+            updated_body = (
+                chamfer_feature.bodies.item(0)
+                if chamfer_feature.bodies.count
+                else cylinder.body
+            )
+            cylinder = find_updated_external_cylinder(cylinder, updated_body)
+
         helix_feature, helix_edge = _create_persistent_helix(cylinder, parameters.pitch)
         profile_plane = _create_profile_plane(cylinder.component, helix_edge)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
@@ -34,6 +54,7 @@ def create_external_thread(parameters: ThreadParameters):
         _delete_if_valid(profile_sketch)
         _delete_if_valid(profile_plane)
         _delete_if_valid(helix_feature)
+        _delete_if_valid(chamfer_feature)
         raise
 
 
@@ -136,7 +157,12 @@ def _create_cut_sweep(cylinder, profile, helix_edge):
     sweep_input = sweeps.createInput(
         profile, path, adsk.fusion.FeatureOperations.CutFeatureOperation
     )
-    sweep_input.orientation = adsk.fusion.SweepOrientationTypes.PerpendicularOrientationType
+    # Die Zylinderfläche definiert den radialen Bezug des Profils über die
+    # gesamte Helix. Ohne Führungsfläche kann Fusion den Profilrahmen entlang
+    # des räumlichen Pfads verdrehen, sodass der Schnitt den Körper nur noch
+    # abschnittsweise überlappt.
+    sweep_input.guideSurfaces = [cylinder.face]
+    sweep_input.isChainSelection = False
     sweep_input.participantBodies = [cylinder.body]
     sweep = sweeps.add(sweep_input)
     if sweep is None:

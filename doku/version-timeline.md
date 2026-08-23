@@ -1,5 +1,20 @@
 # Version Timeline
 
+## 0.7.3 - 2026-08-23
+
+- Optionale Fasen an den im Dialog ausgewählten Zylinderkanten ergänzt.
+- Gewindetiefe wird als gleichmäßiges Fasenmaß verwendet.
+- Zylinderfläche wird nach dem Anfasen neu ermittelt, damit Helix und Führungsfläche auf der aktualisierten Geometrie aufbauen.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.3` gesetzt.
+
+## 0.7.2 - 2026-08-23
+
+- Ausgewählte Zylinderfläche als Führungsfläche des Gewinde-Sweeps ergänzt.
+- Radiale Ausrichtung des Schneidprofils entlang der gesamten Helix stabilisiert.
+- Unregelmäßige Außenflächen durch abschnittsweise fehlende Schnittüberlappung behoben.
+- Der Sweep bleibt eine direkte Schnittoperation auf dem ausgewählten Körper; ein separater Kombinationskörper wird nicht erzeugt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.2` gesetzt.
+
 ## 0.7.1 - 2026-08-23
 
 - Dialog, Parameterlogik, Zylinderanalyse und Zeichenfunktionen in getrennte Module aufgeteilt.

@@ -70,6 +70,40 @@ def analyze_external_cylinder(selected_face) -> CylinderGeometry:
     )
 
 
+def find_updated_external_cylinder(
+    reference: CylinderGeometry, updated_body=None
+) -> CylinderGeometry:
+    """Findet dieselbe Außenfläche nach einem vorgelagerten Modell-Feature neu."""
+    body = updated_body or reference.body
+    faces = body.faces
+    best_match = None
+    best_length_delta = None
+    for index in range(faces.count):
+        face = faces.item(index)
+        cylinder = adsk.core.Cylinder.cast(face.geometry)
+        if cylinder is None:
+            continue
+        if abs(cylinder.radius - reference.radius) > 1e-6:
+            continue
+
+        axis = cylinder.axis.copy()
+        if not axis.normalize() or abs(axis.dotProduct(reference.axis)) < 0.999999:
+            continue
+        try:
+            candidate = analyze_external_cylinder(face)
+        except ValueError:
+            continue
+
+        length_delta = abs(candidate.length - reference.length)
+        if best_length_delta is None or length_delta < best_length_delta:
+            best_match = candidate
+            best_length_delta = length_delta
+
+    if best_match is None:
+        raise RuntimeError('Die Zylinderfläche konnte nach dem Anfasen nicht erneut gefunden werden.')
+    return best_match
+
+
 def _radial_direction(face, origin, axis):
     point = face.pointOnFace
     along_axis = origin.vectorTo(point).dotProduct(axis)
