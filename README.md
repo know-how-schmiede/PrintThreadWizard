@@ -85,7 +85,7 @@ PrintThread Wizard is intended for:
 
 ## Development Status
 
-The project is currently under active development. Version 0.7.9 can generate
+The project is currently under active development. Version 0.7.10 can generate
 external and internal thread geometry on selected cylindrical faces in Fusion
 360. The implementation uses:
 

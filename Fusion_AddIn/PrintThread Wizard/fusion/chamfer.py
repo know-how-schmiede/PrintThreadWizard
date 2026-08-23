@@ -81,7 +81,10 @@ def create_revolved_chamfers(
             inward = cylinder.axis.copy()
             if not chamfer_end.is_start:
                 inward.scaleBy(-1)
-            cut_overlap = 0.0 if cylinder.is_external else CHAMFER_CUT_OVERLAP
+            # Der Fasenkörper reicht bei Innen- und Außengewinden geringfügig
+            # über den Gewindegrund hinaus. So entstehen an der tangentialen
+            # Berührung mit dem letzten Gewindegang keine Restflächen.
+            cut_overlap = CHAMFER_CUT_OVERLAP
             axial_distance = distance * math.tan(flank_angle / 2) + cut_overlap
             corner = _translated_point(
                 chamfer_end.center, cylinder.radial, chamfer_end.radius

@@ -1,9 +1,20 @@
 # Version Timeline
 
+## 0.7.10 - 2026-08-23
+
+- Dropdown `Toleranz` mit radialem Gesamtspiel von 0,0 bis 0,5 mm ergänzt; Standardwert ist 0,2 mm.
+- Gewählte Toleranz hälftig auf das zusammengehörige Gewindepaar verteilt: Außenzylinder wird radial verkleinert und Innenbohrung radial vergrößert.
+- Gesamte Gewindegeometrie einschließlich Flanken, Spitzen und zylindrischer Flächen auf dem tolerierten Radius aufgebaut; Profiltiefe bleibt unverändert.
+- Wirksamen Kerndurchmesser einschließlich Toleranz im Ergebnisfeld angezeigt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.10` gesetzt.
+
 ## 0.7.9 - 2026-08-23
 
 - Fasenwinkel aus dem halben Flankenwinkel abgeleitet; bei 60° Flankenwinkel wird damit eine 30°-Fase erzeugt.
 - Radiale Fasenbreite weiterhin aus der Gewindetiefe berechnet und die axiale Länge passend zum Winkel bestimmt.
+- Helix des Außengewindes wie beim Innengewinde um je eine volle Windung über beide Deckflächen hinaus verlängert.
+- Verlängerte zylindrische Sweep-Führungsfläche nun für Innen- und Außengewinde verwendet.
+- Rotierte Außengewinde-Fase spiegelbildlich zur Innengewinde-Fase mit 0,1 mm Schneidüberdeckung ausgeführt.
 - Alle von einem Plugin-Aufruf erzeugten Features in der Konstruktionshistorie als eingeklappte Gruppe `PrintThread Wizard – Gewinde` zusammengefasst.
 - Version in `version.py` und im Fusion-Manifest auf `0.7.9` gesetzt.
 

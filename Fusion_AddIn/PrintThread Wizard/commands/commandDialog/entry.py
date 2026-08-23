@@ -4,7 +4,7 @@ import adsk.core
 import adsk.fusion
 
 from ... import config
-from ...core.iso_metric import ISO_FLANK_ANGLE, minor_diameter, radial_thread_depth
+from ...core.iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
@@ -30,6 +30,15 @@ updating_calculated_inputs = False
 
 ISO_MODE_NAME = 'ISO metrisch automatisch'
 FREE_MODE_NAME = 'Freie Geometrie'
+TOLERANCE_OPTIONS = (
+    ('0,0 mm', 0.0),
+    ('0,1 mm', 0.01),
+    ('0,2 mm', 0.02),
+    ('0,3 mm', 0.03),
+    ('0,4 mm', 0.04),
+    ('0,5 mm', 0.05),
+)
+DEFAULT_TOLERANCE_NAME = '0,2 mm'
 
 
 def start():
@@ -107,10 +116,15 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         'fillet_radius', 'Verrundungsradius', default_units,
         adsk.core.ValueInput.createByString('0.4 mm')
     )
+    tolerance_input = inputs.addDropDownCommandInput(
+        'tolerance', 'Toleranz', adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+    for name, _ in TOLERANCE_OPTIONS:
+        tolerance_input.listItems.add(name, name == DEFAULT_TOLERANCE_NAME)
 
     result_text = inputs.addTextBoxCommandInput(
         'result_text', 'Ergebnis',
-        'Neustart der Entwicklung – noch keine Funktion hinterlegt.', 3, True
+        'Neustart der Entwicklung – noch keine Funktion hinterlegt.', 5, True
     )
     result_text.isFullWidth = True
 
@@ -138,7 +152,15 @@ def command_execute(args: adsk.core.CommandEventArgs):
 
 
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
-    if args.input.id in ('target_face', 'pitch', 'calculation_mode'):
+    if args.input.id in (
+        'target_face',
+        'pitch',
+        'calculation_mode',
+        'flank_angle',
+        'thread_depth',
+        'fillet_radius',
+        'tolerance',
+    ):
         _apply_calculation_mode(args.inputs)
         _update_result_text(args.inputs)
 
@@ -172,7 +194,18 @@ def _read_parameters(inputs):
         thread_depth=inputs.itemById('thread_depth').value,
         pitch=inputs.itemById('pitch').value,
         fillet_radius=inputs.itemById('fillet_radius').value,
+        tolerance=_selected_tolerance(inputs),
     )
+
+
+def _selected_tolerance(inputs):
+    tolerance_input = inputs.itemById('tolerance')
+    selected_name = (
+        tolerance_input.selectedItem.name
+        if tolerance_input and tolerance_input.selectedItem
+        else DEFAULT_TOLERANCE_NAME
+    )
+    return dict(TOLERANCE_OPTIONS)[selected_name]
 
 
 def _is_iso_mode(inputs):
@@ -215,7 +248,13 @@ def _validation_errors(parameters):
     if parameters.face is not None:
         try:
             cylinder = analyze_cylinder(parameters.face)
-            if parameters.sharp_profile_depth >= cylinder.radius:
+            effective_radius = (
+                cylinder.radius
+                + parameters.tolerance_radius_offset(cylinder.is_external)
+            )
+            if effective_radius <= 0:
+                errors.append('Die Toleranz ist für diesen Zylinderdurchmesser zu groß.')
+            if parameters.sharp_profile_depth >= effective_radius:
                 errors.append('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
         except ValueError as error:
             errors.append(str(error))
@@ -238,28 +277,37 @@ def _set_result_text(inputs, errors):
 
     cylinder = analyze_cylinder(_read_parameters(inputs).face)
     units = app.activeProduct.unitsManager
-    diameter = units.formatInternalValue(
+    nominal_diameter = units.formatInternalValue(
         cylinder.radius * 2, units.defaultLengthUnits, True
     )
     parameters = _read_parameters(inputs)
-    core_value = (
-        minor_diameter(cylinder.radius * 2, parameters.pitch, cylinder.is_external)
-        if _is_iso_mode(inputs)
-        else cylinder.radius * 2 - 2 * parameters.thread_depth
+    effective_radius = (
+        cylinder.radius + parameters.tolerance_radius_offset(cylinder.is_external)
     )
+    diameter = units.formatInternalValue(
+        effective_radius * 2, units.defaultLengthUnits, True
+    )
+    core_value = effective_radius * 2 - 2 * parameters.thread_depth
     core_diameter = units.formatInternalValue(
         core_value, units.defaultLengthUnits, True
     )
     mode_text = 'ISO metrisch' if _is_iso_mode(inputs) else 'Freie Geometrie'
+    selected_tolerance = next(
+        name for name, value in TOLERANCE_OPTIONS if value == parameters.tolerance
+    )
     if cylinder.is_external:
         result.text = (
-            f'Außengewinde auf Nenndurchmesser {diameter}\n'
+            f'Außengewinde auf Nenndurchmesser {nominal_diameter}\n'
+            f'Tolerierter Durchmesser: {diameter}\n'
             f'Kerndurchmesser: {core_diameter}\n'
+            f'Toleranz: {selected_tolerance}\n'
             f'Modus: {mode_text}'
         )
     else:
         result.text = (
-            f'Innengewinde auf Nenndurchmesser {diameter}\n'
+            f'Innengewinde auf Nenndurchmesser {nominal_diameter}\n'
+            f'Tolerierter Durchmesser: {diameter}\n'
             f'Kerndurchmesser: {core_diameter}\n'
+            f'Toleranz: {selected_tolerance}\n'
             f'Modus: {mode_text}'
         )

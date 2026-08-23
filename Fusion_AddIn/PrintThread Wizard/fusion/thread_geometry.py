@@ -26,6 +26,18 @@ def create_thread(parameters: ThreadParameters):
     timeline_start = timeline.count
     chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
     trim_reference = _trim_reference_from_selected_circles(cylinder, chamfer_ends)
+    tolerance_feature = None
+    radial_offset = parameters.tolerance_radius_offset(cylinder.is_external)
+    cylinder, tolerance_feature = _apply_radial_tolerance(
+        cylinder, trim_reference, radial_offset
+    )
+    trim_reference = replace(
+        trim_reference, body=cylinder.body, radius=cylinder.radius
+    )
+    chamfer_ends = tuple(
+        replace(chamfer_end, radius=chamfer_end.radius + radial_offset)
+        for chamfer_end in chamfer_ends
+    )
     if parameters.sharp_profile_depth >= cylinder.radius:
         raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
 
@@ -33,8 +45,7 @@ def create_thread(parameters: ThreadParameters):
     profile_plane = None
     profile_sketch = None
     try:
-        if not cylinder.is_external:
-            cylinder = _extend_internal_helix(cylinder, trim_reference, parameters.pitch)
+        cylinder = _extend_helix(cylinder, trim_reference, parameters.pitch)
 
         helix_feature, helix_edge, guide_face = _create_persistent_helix(
             cylinder, parameters.pitch
@@ -72,7 +83,71 @@ def create_thread(parameters: ThreadParameters):
         _delete_if_valid(profile_sketch)
         _delete_if_valid(profile_plane)
         _delete_if_valid(helix_feature)
+        _delete_if_valid(tolerance_feature)
         raise
+
+
+def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
+    if abs(radial_offset) <= 1e-12:
+        return cylinder, None
+
+    adjusted_radius = cylinder.radius + radial_offset
+    if adjusted_radius <= 0:
+        raise ValueError('Die Toleranz ist für diesen Zylinderdurchmesser zu groß.')
+
+    temp_manager = adsk.fusion.TemporaryBRepManager.get()
+    if cylinder.is_external:
+        tool_body = temp_manager.createCylinderOrCone(
+            trim_reference.axis_start,
+            cylinder.radius + PROFILE_OVERLAP,
+            trim_reference.axis_end,
+            cylinder.radius + PROFILE_OVERLAP,
+        )
+        inner_body = temp_manager.createCylinderOrCone(
+            trim_reference.axis_start,
+            adjusted_radius,
+            trim_reference.axis_end,
+            adjusted_radius,
+        )
+        if tool_body is None or inner_body is None or not temp_manager.booleanOperation(
+            tool_body, inner_body, adsk.fusion.BooleanTypes.DifferenceBooleanType
+        ):
+            raise RuntimeError('Der Toleranzring für das Außengewinde fehlt.')
+    else:
+        tool_body = temp_manager.createCylinderOrCone(
+            trim_reference.axis_start,
+            adjusted_radius,
+            trim_reference.axis_end,
+            adjusted_radius,
+        )
+        if tool_body is None:
+            raise RuntimeError('Der Toleranzzylinder für das Innengewinde fehlt.')
+
+    base_feature = cylinder.component.features.baseFeatures.add()
+    base_feature.name = 'PrintThread Wizard – Toleranzwerkzeug'
+    base_feature.startEdit()
+    try:
+        cylinder.component.bRepBodies.add(tool_body, base_feature)
+    finally:
+        base_feature.finishEdit()
+    if base_feature.bodies.count == 0:
+        _delete_if_valid(base_feature)
+        raise RuntimeError('Das Toleranzwerkzeug konnte nicht übernommen werden.')
+
+    tools = adsk.core.ObjectCollection.create()
+    tools.add(base_feature.bodies.item(0))
+    combines = cylinder.component.features.combineFeatures
+    combine_input = combines.createInput(cylinder.body, tools)
+    combine_input.operation = adsk.fusion.FeatureOperations.CutFeatureOperation
+    combine_input.isKeepToolBodies = False
+    tolerance_cut = combines.add(combine_input)
+    if tolerance_cut is None or tolerance_cut.bodies.count == 0:
+        _delete_if_valid(base_feature)
+        raise RuntimeError('Die Toleranz konnte nicht auf die Zylinderfläche angewendet werden.')
+    tolerance_cut.name = 'PrintThread Wizard – Zylindertoleranz'
+    return replace(
+        cylinder, body=tolerance_cut.bodies.item(0), radius=adjusted_radius
+    ), tolerance_cut
 
 
 def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
@@ -88,48 +163,45 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
     if temporary_wire is None or temporary_wire.edges.count == 0:
         raise RuntimeError('Die exakte Helix konnte nicht erzeugt werden.')
 
+    guide_solid = temp_manager.createCylinderOrCone(
+        cylinder.axis_start,
+        cylinder.radius,
+        cylinder.axis_end,
+        cylinder.radius,
+    )
+    if guide_solid is None:
+        raise RuntimeError('Der verlängerte Führungszylinder konnte nicht erzeugt werden.')
     temporary_guide = None
-    if not cylinder.is_external:
-        guide_solid = temp_manager.createCylinderOrCone(
-            cylinder.axis_start,
-            cylinder.radius,
-            cylinder.axis_end,
-            cylinder.radius,
-        )
-        if guide_solid is None:
-            raise RuntimeError('Der verlängerte Führungszylinder konnte nicht erzeugt werden.')
-        for index in range(guide_solid.faces.count):
-            face = guide_solid.faces.item(index)
-            if adsk.core.Cylinder.cast(face.geometry):
-                temporary_guide = temp_manager.copy(face)
-                break
-        if temporary_guide is None:
-            raise RuntimeError('Die verlängerte zylindrische Führungsfläche fehlt.')
+    for index in range(guide_solid.faces.count):
+        face = guide_solid.faces.item(index)
+        if adsk.core.Cylinder.cast(face.geometry):
+            temporary_guide = temp_manager.copy(face)
+            break
+    if temporary_guide is None:
+        raise RuntimeError('Die verlängerte zylindrische Führungsfläche fehlt.')
 
     base_feature = cylinder.component.features.baseFeatures.add()
     base_feature.name = 'PrintThread Wizard – Helix'
     base_feature.startEdit()
     try:
         cylinder.component.bRepBodies.add(temporary_wire, base_feature)
-        if temporary_guide:
-            cylinder.component.bRepBodies.add(temporary_guide, base_feature)
+        cylinder.component.bRepBodies.add(temporary_guide, base_feature)
     finally:
         base_feature.finishEdit()
 
     helix_edge = None
-    guide_face = cylinder.face
+    guide_face = None
     for body_index in range(base_feature.bodies.count):
         body = base_feature.bodies.item(body_index)
         if body.faces.count == 0 and body.edges.count:
             body.name = 'PrintThread Wizard – Helixpfad'
             helix_edge = body.edges.item(0)
-        if not cylinder.is_external:
-            for face_index in range(body.faces.count):
-                face = body.faces.item(face_index)
-                if adsk.core.Cylinder.cast(face.geometry):
-                    body.name = 'PrintThread Wizard – Sweep-Führung'
-                    guide_face = face
-                    break
+        for face_index in range(body.faces.count):
+            face = body.faces.item(face_index)
+            if adsk.core.Cylinder.cast(face.geometry):
+                body.name = 'PrintThread Wizard – Sweep-Führung'
+                guide_face = face
+                break
         body.isLightBulbOn = False
         body.isVisible = False
 
@@ -194,7 +266,7 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
     return sketch.profiles.item(0)
 
 
-def _extend_internal_helix(cylinder, trim_reference, pitch):
+def _extend_helix(cylinder, trim_reference, pitch):
     overrun = pitch * HELIX_OVERRUN_TURNS
     return replace(
         cylinder,
