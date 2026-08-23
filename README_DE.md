@@ -1,0 +1,131 @@
+# PrintThread Wizard
+
+Deutsch | [English](README.md)
+
+PrintThread Wizard ist ein Add-in für Autodesk Fusion, das modellierte Außen-
+und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
+für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
+Gewindepaare erforderliche Spiel angepasst werden.
+
+Aktuelle Entwicklungsversion: **0.7.10**
+
+## Aktueller Funktionsumfang
+
+- Automatische Erkennung von Außenzylindern und Innenbohrungen
+- Modellierte Rechtsgewinde mit exakter B-Rep-Helix und Sweep
+- Automatischer ISO-Metrisch-Modus mit 60° Flankenwinkel und berechneter
+  radialer Gewindetiefe
+- Freier Geometriemodus zur manuellen Eingabe von Flankenwinkel und
+  Gewindetiefe
+- Einstellbare Steigung und Verrundung am Gewindegrund
+- Auswählbares radiales Gesamtspiel von 0,0 bis 0,5 mm; Standard: 0,2 mm
+- Optionale Fasen an einer oder zwei ausgewählten kreisförmigen Endkanten
+- Aus dem halben Flankenwinkel abgeleiteter Fasenwinkel
+- Über beide Deckflächen hinausreichende Helix für vollständige
+  Gewindeanfänge und -enden
+- Zusammenfassung aller erzeugten Konstruktionsschritte in der eingeklappten
+  Fusion-Timeline-Gruppe `PrintThread Wizard – Gewinde`
+
+## Funktionsweise der Toleranz
+
+Die ausgewählte Toleranz bezeichnet das radiale Gesamtspiel eines passenden
+Gewindepaars. Wenn für Innen- und Außengewinde derselbe Wert verwendet wird,
+wird das Spiel gleichmäßig auf beide Bauteile verteilt:
+
+- Der Radius des Außengewindes wird um die halbe Toleranz verkleinert.
+- Der Radius des Innengewindes wird um die halbe Toleranz vergrößert.
+- Die Gewindeprofiltiefe bleibt unverändert.
+- Flanken, Spitzen, Zylinderflächen und Fasen werden auf dem angepassten Radius
+  erzeugt.
+
+Bei 0,2 mm Toleranz wird beispielsweise der Außenradius um 0,1 mm verkleinert
+und der Innenradius um 0,1 mm vergrößert. Der passende Wert hängt unter anderem
+von Drucker, Material, Schichthöhe, Extrusionskalibrierung und Bauteilausrichtung
+ab.
+
+## Installation
+
+1. Repository herunterladen oder klonen.
+2. In Fusion **Dienstprogramme > Zusatzmodule > Skripte und Zusatzmodule**
+   öffnen.
+3. Auf der Registerkarte **Zusatzmodule** den Ordner
+   `Fusion_AddIn/PrintThread Wizard` hinzufügen.
+4. **PrintThread Wizard** starten und bei Bedarf den automatischen Start
+   aktivieren.
+
+Der Befehl wird im Arbeitsbereich **Konstruktion** unter
+**Volumenkörper > Erstellen** eingefügt.
+
+## Bedienung
+
+1. Einen zylindrischen Zapfen für ein Außengewinde oder eine zylindrische
+   Bohrung für ein Innengewinde vorbereiten. Der ausgewählte Durchmesser wird
+   als Gewinde-Nenndurchmesser verwendet, beispielsweise 50 mm für eine
+   M50-ähnliche Geometrie.
+2. **PrintThread Wizard** starten.
+3. Die Zylinderfläche auswählen.
+4. Optional eine oder beide kreisförmigen Endkanten für die Fasen auswählen.
+5. **ISO metrisch automatisch** oder **Freie Geometrie** auswählen.
+6. Die Steigung sowie im freien Modus Flankenwinkel und Gewindetiefe eingeben.
+7. Toleranz auswählen und Verrundungsradius festlegen.
+8. Die berechneten Werte im Ergebnisfeld prüfen und den Befehl bestätigen.
+
+Für ein zusammengehöriges Gewindepaar müssen Nenndurchmesser, Steigung,
+Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
+
+## Dialogparameter
+
+| Parameter | Beschreibung |
+| --- | --- |
+| Zylinderfläche | Zielfläche; Innen-/Außengewinde wird automatisch erkannt |
+| Fasen-Kanten | Optionale Auswahl von bis zu zwei kreisförmigen Endkanten |
+| Berechnung | ISO metrisch automatisch oder freie Geometrie |
+| Flankenwinkel | Eingeschlossener Profilwinkel; im ISO-Modus fest 60° |
+| Gewindetiefe | Radiale Profiltiefe; im ISO-Modus automatisch berechnet |
+| Steigung | Axialer Weg pro Umdrehung |
+| Verrundungsradius | Rundet den scharfen Gewindegrund ab |
+| Toleranz | Radiales Gesamtspiel des zusammengehörigen Gewindepaars |
+
+Das Ergebnisfeld zeigt Gewindeart, Nenndurchmesser, tolerierten Durchmesser,
+Kerndurchmesser, Toleranz und Berechnungsmodus.
+
+## Bekannte Einschränkungen
+
+- Das Add-in befindet sich in Entwicklung; die erzeugte Geometrie muss vor der
+  produktiven Verwendung geprüft werden.
+- Derzeit werden nur Zylinderflächen und Rechtsgewinde unterstützt.
+- Die Steigung wird manuell eingegeben; eine Tabelle genormter
+  Gewindegrößen und Steigungen ist noch nicht enthalten.
+- Toleranzwerte sind Ausgangswerte und müssen für Drucker und Material
+  kalibriert werden.
+- Die erzeugten Gewinde sind nicht für zertifizierte oder sicherheitskritische
+  Verbindungen vorgesehen.
+
+## Repository-Struktur
+
+```text
+Fusion_AddIn/PrintThread Wizard/
+├── PrintThread Wizard.py
+├── PrintThread Wizard.manifest
+├── config.py
+├── version.py
+├── commands/
+│   └── commandDialog/
+├── core/
+│   ├── iso_metric.py
+│   └── thread_parameters.py
+└── fusion/
+    ├── chamfer.py
+    ├── face_analysis.py
+    └── thread_geometry.py
+```
+
+Der Entwicklungsverlauf ist unter
+[doku/version-timeline.md](doku/version-timeline.md) dokumentiert.
+
+## Lizenz und Haftungsausschluss
+
+Siehe [LICENSE](LICENSE). PrintThread Wizard ist für Prototypen, Hobbyprojekte,
+Vorrichtungen und andere nicht sicherheitskritische Anwendungen gedacht.
+Passung, Festigkeit und Eignung gedruckter Bauteile müssen für den jeweiligen
+Einsatzzweck geprüft werden.

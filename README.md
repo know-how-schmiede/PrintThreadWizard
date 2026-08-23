@@ -1,113 +1,100 @@
-# PrintThreadWizard
-**PrintThread Wizard** is a Fusion 360 add-in for creating 3D-printable threads directly on selected cylindrical faces.  The goal of this project is not to generate standard-compliant engineering threads, but to create practical, robust and easy-to-print thread geometry for FDM/FFF 3D printing.
+# PrintThread Wizard
 
-The add-in is designed to help makers, engineers, students and 3D-printing enthusiasts quickly add functional threads to bolts, holes and cylindrical features inside Autodesk Fusion 360.
+[Deutsch](README_DE.md) | English
 
----
+PrintThread Wizard is an Autodesk Fusion add-in for generating modeled external
+and internal threads on selected cylindrical faces. Its geometry is intended
+for functional FDM/FFF parts and can be adjusted for the clearance required by
+3D-printed mating components.
 
-## Project Goal
+Current development version: **0.7.10**
 
-PrintThread Wizard creates thread geometry that is optimized for 3D printing.
+## Current features
 
-Instead of focusing on strict ISO, metric or industrial thread standards, the add-in focuses on:
+- Automatic detection of external cylinders and internal bores
+- Modeled right-hand thread geometry using an exact B-Rep helix and sweep
+- ISO metric calculation mode with a 60° flank angle and automatically
+  calculated radial thread depth
+- Free geometry mode for manually setting flank angle and thread depth
+- Adjustable pitch and root fillet radius
+- Selectable total radial clearance from 0.0 to 0.5 mm; default: 0.2 mm
+- Optional chamfers on one or two selected circular end edges
+- Chamfer angle derived from half the flank angle
+- Helix overrun beyond both end faces for complete thread starts and ends
+- All generated construction steps collected in a collapsed Fusion timeline
+  group named `PrintThread Wizard – Gewinde`
 
-- Reliable printability
-- Support-free geometry
-- Adjustable thread clearance
-- Robust thread profiles
-- Easy parameter selection
-- Usable results for printed prototypes, fixtures and maker projects
+## How clearance works
 
-The add-in should make it simple to select a cylindrical face, choose a thread preset from a list, adjust a few print-related parameters and generate the thread directly in the Fusion 360 model.
+The selected tolerance represents the total radial clearance of a mating
+thread pair. It is split equally between both parts when the same setting is
+used for the external and internal thread:
 
----
+- The external thread radius is reduced by half the selected tolerance.
+- The internal thread radius is increased by half the selected tolerance.
+- The thread profile depth remains unchanged.
+- Flanks, crests, cylindrical surfaces, and chamfers are generated relative to
+  the adjusted radius.
 
-## Planned Features
+For example, a tolerance of 0.2 mm reduces the external radius by 0.1 mm and
+increases the internal radius by 0.1 mm. The best setting depends on printer,
+material, layer height, extrusion calibration, and part orientation.
 
-- Select cylindrical faces in Fusion 360
-  - External thread on a bolt
-  - Internal thread inside a hole
+## Installation
 
-- Thread selection using a list-based wizard interface
+1. Download or clone this repository.
+2. Open Fusion and select **Utilities > Add-Ins > Scripts and Add-Ins**.
+3. Open the **Add-Ins** tab and add the directory
+   `Fusion_AddIn/PrintThread Wizard`.
+4. Run **PrintThread Wizard** and optionally enable automatic startup.
 
-- 3D-print-friendly thread profiles
-  - Non-standard but practical geometry
-  - Reduced overhangs
-  - Support-free printing where possible
+The command is added to the **Design** workspace in the **Solid > Create**
+panel.
 
-- Adjustable parameters
-  - Thread diameter
-  - Pitch
-  - Thread depth
-  - Clearance
-  - Thread length
-  - Direction
-  - Internal / external thread mode
+## Usage
 
-- Presets for common 3D-printing use cases
+1. Prepare a cylindrical boss for an external thread or a cylindrical bore for
+   an internal thread. The selected diameter is treated as the nominal thread
+   diameter, for example 50 mm for M50-like geometry.
+2. Start **PrintThread Wizard**.
+3. Select the cylindrical face.
+4. Optionally select one or both circular end edges for chamfering.
+5. Choose **ISO metric automatic** or **Free geometry**.
+6. Enter the pitch and, in free mode, the flank angle and thread depth.
+7. Select the required tolerance and set the root fillet radius.
+8. Check the calculated values in the result field and confirm the command.
 
-- Geometry generation using the Fusion 360 Python API
+For a matching pair, use the same nominal diameter, pitch, flank geometry, and
+tolerance for both parts.
 
-- Workflow and interface inspired by the Insert Wizard add-in
+## Dialog parameters
 
----
+| Parameter | Description |
+| --- | --- |
+| Cylindrical face | Target face; internal/external type is detected automatically |
+| Chamfer edges | Optional selection of up to two circular end edges |
+| Calculation | ISO metric automatic or free geometry |
+| Flank angle | Thread included angle; fixed at 60° in ISO mode |
+| Thread depth | Radial profile depth; calculated in ISO mode |
+| Pitch | Axial distance per revolution |
+| Root fillet radius | Rounds the sharp thread root |
+| Tolerance | Total radial clearance of the mating thread pair |
 
-## Why Not Standard Threads?
+The result field shows the detected thread type, nominal diameter, adjusted
+diameter, core diameter, tolerance, and calculation mode.
 
-Standard thread profiles are often designed for machining, injection molding or metal parts.
+## Known limitations
 
-For FDM 3D printing, these profiles are not always ideal because they may require:
+- This is development software; validate generated geometry before production.
+- Only cylindrical faces and right-hand threads are currently supported.
+- Pitch is entered manually; the add-in does not yet provide a standard thread
+  size/pitch catalogue.
+- Clearance values are starting points and require calibration for the actual
+  printer and material.
+- The generated geometry is not intended for certified or safety-critical
+  threaded connections.
 
-- Very fine details
-- Sharp peaks and valleys
-- Tight tolerances
-- Unsupported overhangs
-- Post-processing or thread tapping
-
-PrintThread Wizard focuses on printable and functional threads instead. The generated threads may not follow official standards, but they should be easier to print and more reliable for typical 3D-printed parts.
-
----
-
-## Target Use Cases
-
-PrintThread Wizard is intended for:
-
-- 3D-printed enclosures
-- Screw caps and lids
-- Prototype parts
-- RC model components
-- Workshop fixtures
-- Educational models
-- Maker projects
-- Functional printed assemblies
-
----
-
-## Development Status
-
-The project is currently under active development. Version 0.7.10 can generate
-external and internal thread geometry on selected cylindrical faces in Fusion
-360. The implementation uses:
-
-- Python
-- Autodesk Fusion 360 API
-- Visual Studio Code
-- OpenAI Codex-assisted development
-
-The current focus is on:
-
-- Project structure
-- User workflow
-- Add-in architecture
-- Thread profile concept
-- Parameter model
-- GitHub documentation
-
----
-
-## Repository Structure
-
-The add-in source is located below `Fusion_AddIn/PrintThread Wizard`:
+## Repository structure
 
 ```text
 Fusion_AddIn/PrintThread Wizard/
@@ -126,20 +113,11 @@ Fusion_AddIn/PrintThread Wizard/
     └── thread_geometry.py
 ```
 
-## Possible Future Ideas
+The development history is documented in
+[doku/version-timeline.md](doku/version-timeline.md).
 
-- Preset library for common thread sizes
-- Separate profiles for coarse and fine printable threads
-- Test-piece generator for clearance calibration
-- Export/import of custom thread presets
-- Support for left-hand threads
-- Thread preview before generation
-- Integration of printer/material-specific tolerance recommendations
-- Documentation with recommended slicer settings
-- Example models for testing
+## License and disclaimer
 
-## Disclaimer
-
-PrintThread Wizard is intended for creating practical 3D-printable threads for prototypes, hobby projects and functional printed parts.
-
-The generated threads are not intended to replace certified engineering threads or safety-critical mechanical connections.
+See [LICENSE](LICENSE). PrintThread Wizard is intended for prototypes, hobby
+projects, fixtures, and other non-safety-critical applications. Always verify
+fit, strength, and suitability of printed parts for their intended use.

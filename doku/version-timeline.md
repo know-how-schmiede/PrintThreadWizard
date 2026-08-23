@@ -6,6 +6,8 @@
 - Gewählte Toleranz hälftig auf das zusammengehörige Gewindepaar verteilt: Außenzylinder wird radial verkleinert und Innenbohrung radial vergrößert.
 - Gesamte Gewindegeometrie einschließlich Flanken, Spitzen und zylindrischer Flächen auf dem tolerierten Radius aufgebaut; Profiltiefe bleibt unverändert.
 - Wirksamen Kerndurchmesser einschließlich Toleranz im Ergebnisfeld angezeigt.
+- Englische README auf den tatsächlichen Funktionsumfang, Installation, Bedienung, Toleranzmodell und Einschränkungen aktualisiert.
+- Vollständige deutsche Dokumentation als `README_DE.md` ergänzt und beide Sprachfassungen miteinander verlinkt.
 - Version in `version.py` und im Fusion-Manifest auf `0.7.10` gesetzt.
 
 ## 0.7.9 - 2026-08-23
