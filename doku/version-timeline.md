@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.7.1 - 2026-08-23
+
+- Dialog, Parameterlogik, Zylinderanalyse und Zeichenfunktionen in getrennte Module aufgeteilt.
+- Der ausgewählte Zylinderdurchmesser wird als fertiger Nenndurchmesser des Außengewindes verwendet.
+- Exakte B-Rep-Helix, verrundetes Schneidprofil und Sweep-Cut für frei parametrierbare Außengewinde ergänzt.
+- Eingabeprüfung für Außenflächen und geometrisch unzulässige Profilwerte ergänzt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.1` gesetzt.
+
 ## 0.7 - 2026-08-23
 
 - Neustart der Entwicklung auf einer sauberen Plugin-Basis.

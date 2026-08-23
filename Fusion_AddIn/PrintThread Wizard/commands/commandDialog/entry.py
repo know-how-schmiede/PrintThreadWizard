@@ -1,8 +1,12 @@
 import os
 
 import adsk.core
+import adsk.fusion
 
 from ... import config
+from ...core.thread_parameters import ThreadParameters
+from ...fusion.face_analysis import analyze_external_cylinder
+from ...fusion.thread_geometry import create_external_thread
 from ...lib import fusionAddInUtils as futil
 from ...version import VERSION
 
@@ -100,19 +104,91 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     result_text.isFullWidth = True
 
     futil.add_handler(args.command.execute, command_execute, local_handlers=local_handlers)
+    futil.add_handler(args.command.inputChanged, command_input_changed, local_handlers=local_handlers)
     futil.add_handler(args.command.validateInputs, command_validate_input, local_handlers=local_handlers)
     futil.add_handler(args.command.destroy, command_destroy, local_handlers=local_handlers)
 
 
 def command_execute(args: adsk.core.CommandEventArgs):
-    """Version 0.7 führt bewusst noch keine Modelloperation aus."""
-    futil.log(f'{CMD_NAME}: Dialog bestätigt; noch keine Operation implementiert.')
+    try:
+        parameters = _read_parameters(args.command.commandInputs)
+        errors = _validation_errors(parameters)
+        if errors:
+            raise ValueError('\n'.join(errors))
+
+        create_external_thread(parameters)
+        futil.log(f'{CMD_NAME}: Außengewinde erfolgreich erzeugt.')
+    except Exception as error:
+        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
+        ui.messageBox(f'PrintThread Wizard:\n{error}')
+
+
+def command_input_changed(args: adsk.core.InputChangedEventArgs):
+    if args.input.id == 'target_face':
+        _update_result_text(args.inputs)
 
 
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
-    args.areInputsValid = True
+    parameters = _read_parameters(args.inputs)
+    errors = _validation_errors(parameters)
+    args.areInputsValid = not errors
+    _set_result_text(args.inputs, errors)
 
 
 def command_destroy(args: adsk.core.CommandEventArgs):
     global local_handlers
     local_handlers = []
+
+
+def _read_parameters(inputs):
+    face_input = inputs.itemById('target_face')
+    face = face_input.selection(0).entity if face_input and face_input.selectionCount else None
+
+    edge_input = inputs.itemById('chamfer_edges')
+    edges = tuple(
+        edge_input.selection(index).entity for index in range(edge_input.selectionCount)
+    ) if edge_input else ()
+
+    return ThreadParameters(
+        face=face,
+        chamfer_edges=edges,
+        flank_angle=inputs.itemById('flank_angle').value,
+        thread_depth=inputs.itemById('thread_depth').value,
+        pitch=inputs.itemById('pitch').value,
+        fillet_radius=inputs.itemById('fillet_radius').value,
+    )
+
+
+def _validation_errors(parameters):
+    errors = parameters.validation_errors()
+    if parameters.face is not None:
+        try:
+            analyze_external_cylinder(parameters.face)
+        except ValueError as error:
+            errors.append(str(error))
+    return errors
+
+
+def _update_result_text(inputs):
+    parameters = _read_parameters(inputs)
+    errors = _validation_errors(parameters)
+    _set_result_text(inputs, errors)
+
+
+def _set_result_text(inputs, errors):
+    result = inputs.itemById('result_text')
+    if result is None:
+        return
+    if errors:
+        result.text = '<br>'.join(errors)
+        return
+
+    cylinder = analyze_external_cylinder(_read_parameters(inputs).face)
+    units = app.activeProduct.unitsManager
+    diameter = units.formatInternalValue(
+        cylinder.radius * 2, units.defaultLengthUnits, True
+    )
+    result.text = (
+        f'Außengewinde auf Nenndurchmesser {diameter}<br>'
+        'Das Gewinde wird radial nach innen geschnitten.'
+    )
