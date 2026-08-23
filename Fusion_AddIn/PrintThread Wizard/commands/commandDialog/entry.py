@@ -4,6 +4,7 @@ import adsk.core
 import adsk.fusion
 
 from ... import config
+from ...core.iso_metric import ISO_FLANK_ANGLE, minor_diameter, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
@@ -25,6 +26,10 @@ IS_PROMOTED = True
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
 
 local_handlers = []
+updating_calculated_inputs = False
+
+ISO_MODE_NAME = 'ISO metrisch automatisch'
+FREE_MODE_NAME = 'Freie Geometrie'
 
 
 def start():
@@ -81,8 +86,14 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     edge_input.setSelectionLimits(0, 2)
 
     default_units = app.activeProduct.unitsManager.defaultLengthUnits
+    mode_input = inputs.addDropDownCommandInput(
+        'calculation_mode', 'Berechnung', adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+    mode_input.listItems.add(ISO_MODE_NAME, True)
+    mode_input.listItems.add(FREE_MODE_NAME, False)
+
     inputs.addValueInput(
-        'flank_angle', 'Flankenwinkel', 'deg', adsk.core.ValueInput.createByString('80 deg')
+        'flank_angle', 'Flankenwinkel', 'deg', adsk.core.ValueInput.createByString('60 deg')
     )
     inputs.addValueInput(
         'thread_depth', 'Gewindetiefe', default_units,
@@ -103,6 +114,8 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     result_text.isFullWidth = True
 
+    _apply_calculation_mode(inputs)
+
     futil.add_handler(args.command.execute, command_execute, local_handlers=local_handlers)
     futil.add_handler(args.command.inputChanged, command_input_changed, local_handlers=local_handlers)
     futil.add_handler(args.command.validateInputs, command_validate_input, local_handlers=local_handlers)
@@ -111,6 +124,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
 def command_execute(args: adsk.core.CommandEventArgs):
     try:
+        _apply_calculation_mode(args.command.commandInputs)
         parameters = _read_parameters(args.command.commandInputs)
         errors = _validation_errors(parameters)
         if errors:
@@ -124,11 +138,13 @@ def command_execute(args: adsk.core.CommandEventArgs):
 
 
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
-    if args.input.id == 'target_face':
+    if args.input.id in ('target_face', 'pitch', 'calculation_mode'):
+        _apply_calculation_mode(args.inputs)
         _update_result_text(args.inputs)
 
 
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
+    _apply_calculation_mode(args.inputs)
     parameters = _read_parameters(args.inputs)
     errors = _validation_errors(parameters)
     args.areInputsValid = not errors
@@ -159,11 +175,48 @@ def _read_parameters(inputs):
     )
 
 
+def _is_iso_mode(inputs):
+    mode_input = inputs.itemById('calculation_mode')
+    return bool(mode_input and mode_input.selectedItem.name == ISO_MODE_NAME)
+
+
+def _apply_calculation_mode(inputs):
+    global updating_calculated_inputs
+    if updating_calculated_inputs:
+        return
+
+    angle_input = inputs.itemById('flank_angle')
+    depth_input = inputs.itemById('thread_depth')
+    pitch_input = inputs.itemById('pitch')
+    is_iso = _is_iso_mode(inputs)
+    angle_input.isEnabled = not is_iso
+    depth_input.isEnabled = not is_iso
+    if not is_iso or pitch_input.value <= 0:
+        return
+
+    is_external = True
+    face_input = inputs.itemById('target_face')
+    if face_input and face_input.selectionCount:
+        try:
+            is_external = analyze_cylinder(face_input.selection(0).entity).is_external
+        except ValueError:
+            pass
+
+    updating_calculated_inputs = True
+    try:
+        angle_input.value = ISO_FLANK_ANGLE
+        depth_input.value = radial_thread_depth(pitch_input.value, is_external)
+    finally:
+        updating_calculated_inputs = False
+
+
 def _validation_errors(parameters):
     errors = parameters.validation_errors()
     if parameters.face is not None:
         try:
-            analyze_cylinder(parameters.face)
+            cylinder = analyze_cylinder(parameters.face)
+            if parameters.sharp_profile_depth >= cylinder.radius:
+                errors.append('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
         except ValueError as error:
             errors.append(str(error))
     return errors
@@ -188,13 +241,25 @@ def _set_result_text(inputs, errors):
     diameter = units.formatInternalValue(
         cylinder.radius * 2, units.defaultLengthUnits, True
     )
+    parameters = _read_parameters(inputs)
+    core_value = (
+        minor_diameter(cylinder.radius * 2, parameters.pitch, cylinder.is_external)
+        if _is_iso_mode(inputs)
+        else cylinder.radius * 2 - 2 * parameters.thread_depth
+    )
+    core_diameter = units.formatInternalValue(
+        core_value, units.defaultLengthUnits, True
+    )
+    mode_text = 'ISO metrisch' if _is_iso_mode(inputs) else 'Freie Geometrie'
     if cylinder.is_external:
         result.text = (
             f'Außengewinde auf Nenndurchmesser {diameter}<br>'
-            'Das Gewinde wird radial nach innen geschnitten.'
+            f'Kerndurchmesser: {core_diameter}<br>'
+            f'Modus: {mode_text}'
         )
     else:
         result.text = (
             f'Innengewinde auf Nenndurchmesser {diameter}<br>'
-            'Das Gewindeprofil wird radial nach innen aufgebaut.'
+            f'Kerndurchmesser: {core_diameter}<br>'
+            f'Modus: {mode_text}'
         )

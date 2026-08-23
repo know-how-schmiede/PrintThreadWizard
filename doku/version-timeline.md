@@ -1,5 +1,20 @@
 # Version Timeline
 
+## 0.7.6 - 2026-08-23
+
+- Axiale Ausdehnung des schräg zur Helix stehenden Innengewindeprofils wird berechnet.
+- Start und Ende der Innengewinde-Helix werden um die jeweilige Profilhälfte nach innen versetzt.
+- Überstehendes Join-Material außerhalb der Deckflächen verhindert.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.6` gesetzt.
+
+## 0.7.5 - 2026-08-23
+
+- ISO-Automatikmodus als Standard sowie freie Geometrie als Alternative ergänzt.
+- Im ISO-Modus werden Flankenwinkel und Gewindetiefe automatisch aus Steigung und erkannter Gewindeart berechnet.
+- Der ausgewählte Zylinder- beziehungsweise Bohrungsdurchmesser wird als Nenndurchmesser verwendet.
+- Berechneten Kerndurchmesser im Dialog ergänzt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.5` gesetzt.
+
 ## 0.7.4 - 2026-08-23
 
 - Automatische Unterscheidung zwischen Außen- und Innenflächen ergänzt.

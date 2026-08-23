@@ -1,4 +1,5 @@
 import math
+from dataclasses import replace
 
 import adsk.core
 import adsk.fusion
@@ -13,6 +14,7 @@ from .face_analysis import (
 
 
 PROFILE_OVERLAP = 0.01  # 0,1 mm in Fusion-internen Zentimetern
+END_CLEARANCE = 1e-5
 
 
 def create_thread(parameters: ThreadParameters):
@@ -43,6 +45,7 @@ def create_thread(parameters: ThreadParameters):
             )
             cylinder = find_updated_cylinder(cylinder, updated_body)
 
+        cylinder = _limit_internal_thread_to_end_faces(cylinder, parameters)
         helix_feature, helix_edge = _create_persistent_helix(cylinder, parameters.pitch)
         profile_plane = _create_profile_plane(cylinder.component, helix_edge)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
@@ -109,13 +112,7 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
         cylinder.radius - parameters.sharp_profile_depth,
     )
 
-    tangent = cylinder.axis.crossProduct(cylinder.radial)
-    tangent.scaleBy(2 * math.pi * cylinder.radius / parameters.pitch)
-    tangent.add(cylinder.axis)
-    tangent.normalize()
-    base_direction = tangent.crossProduct(cylinder.radial)
-    if not base_direction.normalize():
-        raise RuntimeError('Die Richtung des Gewindeprofils konnte nicht ermittelt werden.')
+    base_direction = _profile_base_direction(cylinder, parameters.pitch)
 
     effective_depth = parameters.sharp_profile_depth + PROFILE_OVERLAP
     half_width = effective_depth * math.tan(parameters.flank_angle / 2)
@@ -144,6 +141,42 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
     if sketch.profiles.count != 1:
         raise RuntimeError('Das Schneidprofil ist nicht eindeutig geschlossen.')
     return sketch.profiles.item(0)
+
+
+def _limit_internal_thread_to_end_faces(
+    cylinder: CylinderGeometry, parameters: ThreadParameters
+) -> CylinderGeometry:
+    """Verkürzt den Join-Pfad um die axiale Ausdehnung des Profils."""
+    if cylinder.is_external:
+        return cylinder
+
+    base_direction = _profile_base_direction(cylinder, parameters.pitch)
+    effective_depth = parameters.sharp_profile_depth + PROFILE_OVERLAP
+    half_width = effective_depth * math.tan(parameters.flank_angle / 2)
+    axial_margin = abs(base_direction.dotProduct(cylinder.axis)) * half_width
+    axial_margin += END_CLEARANCE
+    if 2 * axial_margin >= cylinder.length:
+        raise ValueError('Die Zylinderfläche ist für das Innengewindeprofil zu kurz.')
+
+    return replace(
+        cylinder,
+        axis_start=_translated_point(cylinder.axis_start, cylinder.axis, axial_margin),
+        axis_end=_translated_point(cylinder.axis_end, cylinder.axis, -axial_margin),
+        length=cylinder.length - 2 * axial_margin,
+    )
+
+
+def _profile_base_direction(cylinder: CylinderGeometry, pitch: float):
+    tangent = cylinder.axis.crossProduct(cylinder.radial)
+    tangent.scaleBy(2 * math.pi * cylinder.radius / pitch)
+    tangent.add(cylinder.axis)
+    if not tangent.normalize():
+        raise RuntimeError('Die Tangente der Helix konnte nicht ermittelt werden.')
+
+    base_direction = tangent.crossProduct(cylinder.radial)
+    if not base_direction.normalize():
+        raise RuntimeError('Die Richtung des Gewindeprofils konnte nicht ermittelt werden.')
+    return base_direction
 
 
 def _create_thread_sweep(cylinder, profile, helix_edge):
