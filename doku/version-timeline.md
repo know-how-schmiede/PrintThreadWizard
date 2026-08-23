@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.7 - 2026-08-23
+
+- Neustart der Entwicklung auf einer sauberen Plugin-Basis.
+- Sämtliche bisherige Geometrie-, Coil-, Helix-, Sweep- und Fillet-Logik entfernt.
+- Vorhandenen Dialog als Ausgangspunkt beibehalten; das Bestätigen führt bewusst noch keine Aktion aus.
+- Nicht verwendete Palette-Beispielmodule aus dem Fusion-Template entfernt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7` gesetzt.
+
 ## 0.6.3 - 2026-05-26
 
 - Helix-/Gewindeerzeugung auf die native Fusion-Coil-Funktion umgestellt.
