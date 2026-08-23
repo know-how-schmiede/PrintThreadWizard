@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.7.4 - 2026-08-23
+
+- Automatische Unterscheidung zwischen Außen- und Innenflächen ergänzt.
+- Innengewinde werden auf dem ausgewählten Nenn-/Fertigdurchmesser radial nach innen aufgebaut und mit dem Grundkörper verbunden.
+- Fasen, exakte Helix, Zylinderführung, Flankenwinkel, Gewindetiefe und Profilverrundung werden für beide Gewindearten gemeinsam verwendet.
+- Dialogausgabe zeigt die erkannte Gewindeart und Modellierungsrichtung an.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.4` gesetzt.
+
 ## 0.7.3 - 2026-08-23
 
 - Optionale Fasen an den im Dialog ausgewählten Zylinderkanten ergänzt.

@@ -7,20 +7,20 @@ from ..core.thread_parameters import ThreadParameters
 from .chamfer import create_thread_end_chamfer
 from .face_analysis import (
     CylinderGeometry,
-    analyze_external_cylinder,
-    find_updated_external_cylinder,
+    analyze_cylinder,
+    find_updated_cylinder,
 )
 
 
 PROFILE_OVERLAP = 0.01  # 0,1 mm in Fusion-internen Zentimetern
 
 
-def create_external_thread(parameters: ThreadParameters):
+def create_thread(parameters: ThreadParameters):
     errors = parameters.validation_errors()
     if errors:
         raise ValueError('\n'.join(errors))
 
-    cylinder = analyze_external_cylinder(parameters.face)
+    cylinder = analyze_cylinder(parameters.face)
     if parameters.sharp_profile_depth >= cylinder.radius:
         raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
 
@@ -41,13 +41,13 @@ def create_external_thread(parameters: ThreadParameters):
                 if chamfer_feature.bodies.count
                 else cylinder.body
             )
-            cylinder = find_updated_external_cylinder(cylinder, updated_body)
+            cylinder = find_updated_cylinder(cylinder, updated_body)
 
         helix_feature, helix_edge = _create_persistent_helix(cylinder, parameters.pitch)
         profile_plane = _create_profile_plane(cylinder.component, helix_edge)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
         profile_sketch = profile.parentSketch
-        sweep = _create_cut_sweep(cylinder, profile, helix_edge)
+        sweep = _create_thread_sweep(cylinder, profile, helix_edge)
         _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch)
         return sweep
     except Exception:
@@ -146,7 +146,7 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
     return sketch.profiles.item(0)
 
 
-def _create_cut_sweep(cylinder, profile, helix_edge):
+def _create_thread_sweep(cylinder, profile, helix_edge):
     path = adsk.fusion.Path.create(
         helix_edge, adsk.fusion.ChainedCurveOptions.noChainedCurves
     )
@@ -154,8 +154,13 @@ def _create_cut_sweep(cylinder, profile, helix_edge):
         raise RuntimeError('Aus der Helix konnte kein Sweep-Pfad erzeugt werden.')
 
     sweeps = cylinder.component.features.sweepFeatures
+    operation = (
+        adsk.fusion.FeatureOperations.CutFeatureOperation
+        if cylinder.is_external
+        else adsk.fusion.FeatureOperations.JoinFeatureOperation
+    )
     sweep_input = sweeps.createInput(
-        profile, path, adsk.fusion.FeatureOperations.CutFeatureOperation
+        profile, path, operation
     )
     # Die Zylinderfläche definiert den radialen Bezug des Profils über die
     # gesamte Helix. Ohne Führungsfläche kann Fusion den Profilrahmen entlang
@@ -167,8 +172,14 @@ def _create_cut_sweep(cylinder, profile, helix_edge):
     sweep = sweeps.add(sweep_input)
     if sweep is None:
         raise RuntimeError('Der Gewinde-Sweep konnte nicht erzeugt werden.')
-    sweep.name = 'PrintThread Wizard – Außengewinde'
+    thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
+    sweep.name = f'PrintThread Wizard – {thread_type}'
     return sweep
+
+
+def create_external_thread(parameters: ThreadParameters):
+    """Kompatibilitätsalias; die Flächenart wird inzwischen automatisch erkannt."""
+    return create_thread(parameters)
 
 
 def _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch):

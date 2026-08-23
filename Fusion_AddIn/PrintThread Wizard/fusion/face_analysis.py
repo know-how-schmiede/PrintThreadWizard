@@ -15,9 +15,10 @@ class CylinderGeometry:
     radial: adsk.core.Vector3D
     radius: float
     length: float
+    is_external: bool
 
 
-def analyze_external_cylinder(selected_face) -> CylinderGeometry:
+def analyze_cylinder(selected_face) -> CylinderGeometry:
     face = adsk.fusion.BRepFace.cast(selected_face)
     if face is None:
         raise ValueError('Die Auswahl ist keine Fläche.')
@@ -48,8 +49,7 @@ def analyze_external_cylinder(selected_face) -> CylinderGeometry:
         raise ValueError('Die Flächennormale konnte nicht ermittelt werden.')
     normal = normal_result[1]
     normal.normalize()
-    if normal.dotProduct(radial) < 0:
-        raise ValueError('Es muss eine äußere Zylinderfläche ausgewählt werden.')
+    is_external = normal.dotProduct(radial) >= 0
 
     extent = _axis_extent(face, cylinder.origin, axis)
     if extent is None or extent[1] - extent[0] <= 1e-7:
@@ -67,10 +67,11 @@ def analyze_external_cylinder(selected_face) -> CylinderGeometry:
         radial=radial,
         radius=cylinder.radius,
         length=extent[1] - extent[0],
+        is_external=is_external,
     )
 
 
-def find_updated_external_cylinder(
+def find_updated_cylinder(
     reference: CylinderGeometry, updated_body=None
 ) -> CylinderGeometry:
     """Findet dieselbe Außenfläche nach einem vorgelagerten Modell-Feature neu."""
@@ -90,8 +91,10 @@ def find_updated_external_cylinder(
         if not axis.normalize() or abs(axis.dotProduct(reference.axis)) < 0.999999:
             continue
         try:
-            candidate = analyze_external_cylinder(face)
+            candidate = analyze_cylinder(face)
         except ValueError:
+            continue
+        if candidate.is_external != reference.is_external:
             continue
 
         length_delta = abs(candidate.length - reference.length)
@@ -102,6 +105,21 @@ def find_updated_external_cylinder(
     if best_match is None:
         raise RuntimeError('Die Zylinderfläche konnte nach dem Anfasen nicht erneut gefunden werden.')
     return best_match
+
+
+def analyze_external_cylinder(selected_face) -> CylinderGeometry:
+    """Kompatibilitätsalias für Aufrufer älterer Versionen."""
+    cylinder = analyze_cylinder(selected_face)
+    if not cylinder.is_external:
+        raise ValueError('Es muss eine äußere Zylinderfläche ausgewählt werden.')
+    return cylinder
+
+
+def find_updated_external_cylinder(
+    reference: CylinderGeometry, updated_body=None
+) -> CylinderGeometry:
+    """Kompatibilitätsalias für Aufrufer älterer Versionen."""
+    return find_updated_cylinder(reference, updated_body)
 
 
 def _radial_direction(face, origin, axis):

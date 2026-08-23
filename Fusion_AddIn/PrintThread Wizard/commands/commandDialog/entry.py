@@ -5,8 +5,8 @@ import adsk.fusion
 
 from ... import config
 from ...core.thread_parameters import ThreadParameters
-from ...fusion.face_analysis import analyze_external_cylinder
-from ...fusion.thread_geometry import create_external_thread
+from ...fusion.face_analysis import analyze_cylinder
+from ...fusion.thread_geometry import create_thread
 from ...lib import fusionAddInUtils as futil
 from ...version import VERSION
 
@@ -116,8 +116,8 @@ def command_execute(args: adsk.core.CommandEventArgs):
         if errors:
             raise ValueError('\n'.join(errors))
 
-        create_external_thread(parameters)
-        futil.log(f'{CMD_NAME}: Außengewinde erfolgreich erzeugt.')
+        create_thread(parameters)
+        futil.log(f'{CMD_NAME}: Gewinde erfolgreich erzeugt.')
     except Exception as error:
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
         ui.messageBox(f'PrintThread Wizard:\n{error}')
@@ -163,7 +163,7 @@ def _validation_errors(parameters):
     errors = parameters.validation_errors()
     if parameters.face is not None:
         try:
-            analyze_external_cylinder(parameters.face)
+            analyze_cylinder(parameters.face)
         except ValueError as error:
             errors.append(str(error))
     return errors
@@ -183,12 +183,18 @@ def _set_result_text(inputs, errors):
         result.text = '<br>'.join(errors)
         return
 
-    cylinder = analyze_external_cylinder(_read_parameters(inputs).face)
+    cylinder = analyze_cylinder(_read_parameters(inputs).face)
     units = app.activeProduct.unitsManager
     diameter = units.formatInternalValue(
         cylinder.radius * 2, units.defaultLengthUnits, True
     )
-    result.text = (
-        f'Außengewinde auf Nenndurchmesser {diameter}<br>'
-        'Das Gewinde wird radial nach innen geschnitten.'
-    )
+    if cylinder.is_external:
+        result.text = (
+            f'Außengewinde auf Nenndurchmesser {diameter}<br>'
+            'Das Gewinde wird radial nach innen geschnitten.'
+        )
+    else:
+        result.text = (
+            f'Innengewinde auf Nenndurchmesser {diameter}<br>'
+            'Das Gewindeprofil wird radial nach innen aufgebaut.'
+        )
