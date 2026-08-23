@@ -85,16 +85,16 @@ PrintThread Wizard is intended for:
 
 ## Development Status
 
-This project is currently in the planning and concept phase.
-
-The implementation will be developed later using:
+The project is currently under active development. Version 0.7.9 can generate
+external and internal thread geometry on selected cylindrical faces in Fusion
+360. The implementation uses:
 
 - Python
 - Autodesk Fusion 360 API
 - Visual Studio Code
 - OpenAI Codex-assisted development
 
-At this stage, the focus is on:
+The current focus is on:
 
 - Project structure
 - User workflow
@@ -107,29 +107,24 @@ At this stage, the focus is on:
 
 ## Repository Structure
 
-The final structure may look similar to this:
+The add-in source is located below `Fusion_AddIn/PrintThread Wizard`:
 
 ```text
-PrintThreadWizard/
-├── PrintThreadWizard.py
-├── PrintThreadWizard.manifest
+Fusion_AddIn/PrintThread Wizard/
+├── PrintThread Wizard.py
+├── PrintThread Wizard.manifest
+├── config.py
+├── version.py
 ├── commands/
-│   └── print_thread_command.py
-├── lib/
-│   ├── thread_profiles.py
-│   ├── thread_presets.py
-│   ├── geometry_builder.py
-│   └── fusion_helpers.py
-├── resources/
-│   ├── icons/
-│   └── logo/
-├── docs/
-│   ├── concept.md
-│   ├── development_notes.md
-│   └── thread_design.md
-├── README.md
-└── LICENSE
-````
+│   └── commandDialog/
+├── core/
+│   ├── iso_metric.py
+│   └── thread_parameters.py
+└── fusion/
+    ├── chamfer.py
+    ├── face_analysis.py
+    └── thread_geometry.py
+```
 
 ## Possible Future Ideas
 

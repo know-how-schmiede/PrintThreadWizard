@@ -233,7 +233,7 @@ def _set_result_text(inputs, errors):
     if result is None:
         return
     if errors:
-        result.text = '<br>'.join(errors)
+        result.text = '\n'.join(errors)
         return
 
     cylinder = analyze_cylinder(_read_parameters(inputs).face)
@@ -253,13 +253,13 @@ def _set_result_text(inputs, errors):
     mode_text = 'ISO metrisch' if _is_iso_mode(inputs) else 'Freie Geometrie'
     if cylinder.is_external:
         result.text = (
-            f'Außengewinde auf Nenndurchmesser {diameter}<br>'
-            f'Kerndurchmesser: {core_diameter}<br>'
+            f'Außengewinde auf Nenndurchmesser {diameter}\n'
+            f'Kerndurchmesser: {core_diameter}\n'
             f'Modus: {mode_text}'
         )
     else:
         result.text = (
-            f'Innengewinde auf Nenndurchmesser {diameter}<br>'
-            f'Kerndurchmesser: {core_diameter}<br>'
+            f'Innengewinde auf Nenndurchmesser {diameter}\n'
+            f'Kerndurchmesser: {core_diameter}\n'
             f'Modus: {mode_text}'
         )

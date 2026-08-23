@@ -1,5 +1,38 @@
 # Version Timeline
 
+## 0.7.9 - 2026-08-23
+
+- Fasenwinkel aus dem halben Flankenwinkel abgeleitet; bei 60° Flankenwinkel wird damit eine 30°-Fase erzeugt.
+- Radiale Fasenbreite weiterhin aus der Gewindetiefe berechnet und die axiale Länge passend zum Winkel bestimmt.
+- Alle von einem Plugin-Aufruf erzeugten Features in der Konstruktionshistorie als eingeklappte Gruppe `PrintThread Wizard – Gewinde` zusammengefasst.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.9` gesetzt.
+
+## 0.7.8 - 2026-08-23
+
+- Kontur des rotierten Fasenprofils beim Innengewinde korrigiert: Die Fase beginnt an der Deckfläche am Nenndurchmesser und läuft axial zum Kerndurchmesser aus.
+- Innengewinde-Fasenkörper radial und axial um 0,1 mm über den Gewindegrund hinausgeführt, damit keine tangentialen Restflächen entstehen.
+- Fehlerbereinigung für unvollständig erzeugte Fasen-Skizzen und Konstruktionsebenen ergänzt.
+- Zeilenumbrüche im Ergebnisfeld des Dialogs von HTML-Tags auf echte Zeilenumbrüche umgestellt.
+- Veralteten Entwicklungsstatus und die nicht mehr zutreffende Verzeichnisstruktur in der README aktualisiert.
+- Repository mit Fusion-Python auf Syntaxfehler sowie Manifest, Versionskonsistenz und Patch-Format geprüft.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.8` gesetzt.
+
+## 0.7.7 - 2026-08-23
+
+- Innengewinde-Helix um jeweils eine volle Windung über beide Deckflächen hinaus verlängert.
+- Begrenzte Bohrungsfläche durch eine ebenso verlängerte zylindrische Sweep-Führungsfläche ersetzt.
+- Innengewinde zunächst als separaten Sweep-Körper erzeugt.
+- Empfindliche Trennung an einzelnen Deckflächen durch eine robuste axiale Schnittmenge ersetzt.
+- Verlängerten Sweep-Körper mit einem exakt zwischen den Deckflächen liegenden Hilfszylinder begrenzt.
+- Erst den vollständig beschnittenen Gewindekörper mit dem Grundkörper verbunden.
+- Aufräumen bereits erzeugter Sweep-, Hilfs- und Begrenzungsfeatures im Fehlerfall ergänzt.
+- Helixpfad und verlängerte Sweep-Führungsfläche unmittelbar über ihre Browser-Lampen ausgeblendet.
+- Vorgelagerte Kantenfase durch einen abschließenden 360°-Rotationsschnitt ersetzt.
+- Ausgewählte Kreispositionen vor der Gewindeerzeugung gespeichert und danach als dreieckige Fasenprofile rekonstruiert.
+- Rotationsfase schneidet nach Sweep, axialer Begrenzung und Verschmelzung durch den fertigen Körper.
+- Mittelpunkte ausgewählter Kreiskanten als verbindliche axiale Schnittpositionen verwendet.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.7` gesetzt.
+
 ## 0.7.6 - 2026-08-23
 
 - Axiale Ausdehnung des schräg zur Helix stehenden Innengewindeprofils wird berechnet.

@@ -5,16 +5,15 @@ import adsk.core
 import adsk.fusion
 
 from ..core.thread_parameters import ThreadParameters
-from .chamfer import create_thread_end_chamfer
+from .chamfer import capture_chamfer_ends, create_revolved_chamfers
 from .face_analysis import (
     CylinderGeometry,
     analyze_cylinder,
-    find_updated_cylinder,
 )
 
 
 PROFILE_OVERLAP = 0.01  # 0,1 mm in Fusion-internen Zentimetern
-END_CLEARANCE = 1e-5
+HELIX_OVERRUN_TURNS = 1.0
 
 
 def create_thread(parameters: ThreadParameters):
@@ -23,41 +22,56 @@ def create_thread(parameters: ThreadParameters):
         raise ValueError('\n'.join(errors))
 
     cylinder = analyze_cylinder(parameters.face)
+    timeline = cylinder.component.parentDesign.timeline
+    timeline_start = timeline.count
+    chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
+    trim_reference = _trim_reference_from_selected_circles(cylinder, chamfer_ends)
     if parameters.sharp_profile_depth >= cylinder.radius:
         raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
 
-    chamfer_feature = None
     helix_feature = None
     profile_plane = None
     profile_sketch = None
     try:
-        chamfer_feature = create_thread_end_chamfer(
-            cylinder.component,
-            cylinder.body,
-            parameters.chamfer_edges,
-            parameters.thread_depth,
-        )
-        if chamfer_feature:
-            updated_body = (
-                chamfer_feature.bodies.item(0)
-                if chamfer_feature.bodies.count
-                else cylinder.body
-            )
-            cylinder = find_updated_cylinder(cylinder, updated_body)
+        if not cylinder.is_external:
+            cylinder = _extend_internal_helix(cylinder, trim_reference, parameters.pitch)
 
-        cylinder = _limit_internal_thread_to_end_faces(cylinder, parameters)
-        helix_feature, helix_edge = _create_persistent_helix(cylinder, parameters.pitch)
+        helix_feature, helix_edge, guide_face = _create_persistent_helix(
+            cylinder, parameters.pitch
+        )
         profile_plane = _create_profile_plane(cylinder.component, helix_edge)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
         profile_sketch = profile.parentSketch
-        sweep = _create_thread_sweep(cylinder, profile, helix_edge)
+        sweep = _create_thread_sweep(cylinder, profile, helix_edge, guide_face)
+        result_feature = (
+            sweep
+            if cylinder.is_external
+            else _trim_and_join_internal_thread(
+                cylinder,
+                sweep,
+                trim_reference.axis_start,
+                trim_reference.axis_end,
+            )
+        )
+        target_body = (
+            result_feature.bodies.item(0)
+            if result_feature.bodies.count
+            else cylinder.body
+        )
+        chamfer_feature = create_revolved_chamfers(
+            trim_reference,
+            target_body,
+            chamfer_ends,
+            parameters.thread_depth,
+            parameters.flank_angle,
+        )
         _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch)
-        return sweep
+        _group_timeline_entries(timeline, timeline_start)
+        return chamfer_feature or result_feature
     except Exception:
         _delete_if_valid(profile_sketch)
         _delete_if_valid(profile_plane)
         _delete_if_valid(helix_feature)
-        _delete_if_valid(chamfer_feature)
         raise
 
 
@@ -74,18 +88,55 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
     if temporary_wire is None or temporary_wire.edges.count == 0:
         raise RuntimeError('Die exakte Helix konnte nicht erzeugt werden.')
 
+    temporary_guide = None
+    if not cylinder.is_external:
+        guide_solid = temp_manager.createCylinderOrCone(
+            cylinder.axis_start,
+            cylinder.radius,
+            cylinder.axis_end,
+            cylinder.radius,
+        )
+        if guide_solid is None:
+            raise RuntimeError('Der verlängerte Führungszylinder konnte nicht erzeugt werden.')
+        for index in range(guide_solid.faces.count):
+            face = guide_solid.faces.item(index)
+            if adsk.core.Cylinder.cast(face.geometry):
+                temporary_guide = temp_manager.copy(face)
+                break
+        if temporary_guide is None:
+            raise RuntimeError('Die verlängerte zylindrische Führungsfläche fehlt.')
+
     base_feature = cylinder.component.features.baseFeatures.add()
     base_feature.name = 'PrintThread Wizard – Helix'
     base_feature.startEdit()
     try:
         cylinder.component.bRepBodies.add(temporary_wire, base_feature)
+        if temporary_guide:
+            cylinder.component.bRepBodies.add(temporary_guide, base_feature)
     finally:
         base_feature.finishEdit()
 
-    if base_feature.bodies.count == 0 or base_feature.bodies.item(0).edges.count == 0:
+    helix_edge = None
+    guide_face = cylinder.face
+    for body_index in range(base_feature.bodies.count):
+        body = base_feature.bodies.item(body_index)
+        if body.faces.count == 0 and body.edges.count:
+            body.name = 'PrintThread Wizard – Helixpfad'
+            helix_edge = body.edges.item(0)
+        if not cylinder.is_external:
+            for face_index in range(body.faces.count):
+                face = body.faces.item(face_index)
+                if adsk.core.Cylinder.cast(face.geometry):
+                    body.name = 'PrintThread Wizard – Sweep-Führung'
+                    guide_face = face
+                    break
+        body.isLightBulbOn = False
+        body.isVisible = False
+
+    if helix_edge is None or guide_face is None:
         _delete_if_valid(base_feature)
-        raise RuntimeError('Die Helix konnte nicht in das Modell übernommen werden.')
-    return base_feature, base_feature.bodies.item(0).edges.item(0)
+        raise RuntimeError('Helix oder Führungsfläche konnte nicht übernommen werden.')
+    return base_feature, helix_edge, guide_face
 
 
 def _create_profile_plane(component, helix_edge):
@@ -143,27 +194,35 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
     return sketch.profiles.item(0)
 
 
-def _limit_internal_thread_to_end_faces(
-    cylinder: CylinderGeometry, parameters: ThreadParameters
-) -> CylinderGeometry:
-    """Verkürzt den Join-Pfad um die axiale Ausdehnung des Profils."""
-    if cylinder.is_external:
-        return cylinder
-
-    base_direction = _profile_base_direction(cylinder, parameters.pitch)
-    effective_depth = parameters.sharp_profile_depth + PROFILE_OVERLAP
-    half_width = effective_depth * math.tan(parameters.flank_angle / 2)
-    axial_margin = abs(base_direction.dotProduct(cylinder.axis)) * half_width
-    axial_margin += END_CLEARANCE
-    if 2 * axial_margin >= cylinder.length:
-        raise ValueError('Die Zylinderfläche ist für das Innengewindeprofil zu kurz.')
-
+def _extend_internal_helix(cylinder, trim_reference, pitch):
+    overrun = pitch * HELIX_OVERRUN_TURNS
     return replace(
         cylinder,
-        axis_start=_translated_point(cylinder.axis_start, cylinder.axis, axial_margin),
-        axis_end=_translated_point(cylinder.axis_end, cylinder.axis, -axial_margin),
-        length=cylinder.length - 2 * axial_margin,
+        axis=trim_reference.axis,
+        axis_start=_translated_point(
+            trim_reference.axis_start, trim_reference.axis, -overrun
+        ),
+        axis_end=_translated_point(
+            trim_reference.axis_end, trim_reference.axis, overrun
+        ),
+        length=trim_reference.length + 2 * overrun,
     )
+
+
+def _trim_reference_from_selected_circles(cylinder, chamfer_ends):
+    """Nutzt ausgewählte Kreiszentren als exakte axiale Bauteilgrenzen."""
+    start = cylinder.axis_start
+    end = cylinder.axis_end
+    for chamfer_end in chamfer_ends:
+        if chamfer_end.is_start:
+            start = chamfer_end.center
+        else:
+            end = chamfer_end.center
+
+    length = start.vectorTo(end).dotProduct(cylinder.axis)
+    if length <= 0:
+        raise ValueError('Die ausgewählten Fasen-Kreise ergeben keine gültige Gewindelänge.')
+    return replace(cylinder, axis_start=start, axis_end=end, length=length)
 
 
 def _profile_base_direction(cylinder: CylinderGeometry, pitch: float):
@@ -179,7 +238,7 @@ def _profile_base_direction(cylinder: CylinderGeometry, pitch: float):
     return base_direction
 
 
-def _create_thread_sweep(cylinder, profile, helix_edge):
+def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
     path = adsk.fusion.Path.create(
         helix_edge, adsk.fusion.ChainedCurveOptions.noChainedCurves
     )
@@ -190,7 +249,7 @@ def _create_thread_sweep(cylinder, profile, helix_edge):
     operation = (
         adsk.fusion.FeatureOperations.CutFeatureOperation
         if cylinder.is_external
-        else adsk.fusion.FeatureOperations.JoinFeatureOperation
+        else adsk.fusion.FeatureOperations.NewBodyFeatureOperation
     )
     sweep_input = sweeps.createInput(
         profile, path, operation
@@ -199,15 +258,84 @@ def _create_thread_sweep(cylinder, profile, helix_edge):
     # gesamte Helix. Ohne Führungsfläche kann Fusion den Profilrahmen entlang
     # des räumlichen Pfads verdrehen, sodass der Schnitt den Körper nur noch
     # abschnittsweise überlappt.
-    sweep_input.guideSurfaces = [cylinder.face]
+    sweep_input.guideSurfaces = [guide_face]
     sweep_input.isChainSelection = False
-    sweep_input.participantBodies = [cylinder.body]
+    if cylinder.is_external:
+        sweep_input.participantBodies = [cylinder.body]
     sweep = sweeps.add(sweep_input)
     if sweep is None:
         raise RuntimeError('Der Gewinde-Sweep konnte nicht erzeugt werden.')
     thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
     sweep.name = f'PrintThread Wizard – {thread_type}'
     return sweep
+
+
+def _trim_and_join_internal_thread(
+    cylinder, sweep, trim_start, trim_end
+):
+    if sweep.bodies.count == 0:
+        raise RuntimeError('Der Innengewinde-Sweep enthält keinen Körper.')
+
+    created_features = []
+    try:
+        thread_body = sweep.bodies.item(0)
+        trim_feature, trim_body = _create_axial_trim_body(
+            cylinder.component,
+            trim_start,
+            trim_end,
+            cylinder.radius * 2,
+        )
+        created_features.append(trim_feature)
+
+        trim_tools = adsk.core.ObjectCollection.create()
+        trim_tools.add(trim_body)
+        combines = cylinder.component.features.combineFeatures
+        trim_input = combines.createInput(thread_body, trim_tools)
+        trim_input.operation = adsk.fusion.FeatureOperations.IntersectFeatureOperation
+        trim_input.isKeepToolBodies = False
+        trim_feature_result = combines.add(trim_input)
+        if trim_feature_result is None or trim_feature_result.bodies.count == 0:
+            raise RuntimeError('Der Innengewindekörper konnte nicht axial begrenzt werden.')
+        trim_feature_result.name = 'PrintThread Wizard – Gewinde begrenzen'
+        created_features.append(trim_feature_result)
+        thread_body = trim_feature_result.bodies.item(0)
+
+        tools = adsk.core.ObjectCollection.create()
+        tools.add(thread_body)
+        combine_input = combines.createInput(cylinder.body, tools)
+        combine_input.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+        combine_input.isKeepToolBodies = False
+        combine = combines.add(combine_input)
+        if combine is None:
+            raise RuntimeError('Das beschnittene Innengewinde konnte nicht verbunden werden.')
+        combine.name = 'PrintThread Wizard – Innengewinde'
+        return combine
+    except Exception:
+        for feature in reversed(created_features):
+            _delete_if_valid(feature)
+        _delete_if_valid(sweep)
+        raise
+
+
+def _create_axial_trim_body(component, start_point, end_point, radius):
+    temp_manager = adsk.fusion.TemporaryBRepManager.get()
+    temporary_body = temp_manager.createCylinderOrCone(
+        start_point, radius, end_point, radius
+    )
+    if temporary_body is None:
+        raise RuntimeError('Der Begrenzungskörper für das Innengewinde fehlt.')
+
+    base_feature = component.features.baseFeatures.add()
+    base_feature.name = 'PrintThread Wizard – axiale Begrenzung'
+    base_feature.startEdit()
+    try:
+        component.bRepBodies.add(temporary_body, base_feature)
+    finally:
+        base_feature.finishEdit()
+    if base_feature.bodies.count == 0:
+        _delete_if_valid(base_feature)
+        raise RuntimeError('Der Begrenzungskörper konnte nicht übernommen werden.')
+    return base_feature, base_feature.bodies.item(0)
 
 
 def create_external_thread(parameters: ThreadParameters):
@@ -217,9 +345,24 @@ def create_external_thread(parameters: ThreadParameters):
 
 def _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch):
     for index in range(helix_feature.bodies.count):
-        helix_feature.bodies.item(index).isVisible = False
+        body = helix_feature.bodies.item(index)
+        body.isLightBulbOn = False
+        body.isVisible = False
     profile_plane.isLightBulbOn = False
     profile_sketch.isLightBulbOn = False
+
+
+def _group_timeline_entries(timeline, start_index):
+    end_index = timeline.count - 1
+    if end_index < start_index:
+        return
+    group = timeline.timelineGroups.add(start_index, end_index)
+    if group is None:
+        raise RuntimeError(
+            'Die erzeugten Features konnten nicht in der Konstruktionshistorie gruppiert werden.'
+        )
+    group.name = 'PrintThread Wizard – Gewinde'
+    group.isCollapsed = True
 
 
 def _translated_point(point, direction, distance):
