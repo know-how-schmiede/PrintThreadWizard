@@ -85,11 +85,34 @@ material, layer height, extrusion calibration, and part orientation.
 
 ## Installation
 
-1. Download or clone this repository.
-2. Open Fusion and select **Utilities > Add-Ins > Scripts and Add-Ins**.
-3. Open the **Add-Ins** tab and add the directory
-   `Fusion_AddIn/PrintThread Wizard`.
-4. Run **PrintThread Wizard** and optionally enable automatic startup.
+### Windows installer
+
+1. Download `PrintThreadWizard_Setup_0.8.0.exe` from the GitHub Releases page.
+2. Run the installer. It copies the add-in to the current Windows user's
+   Fusion add-ins directory; administrator privileges are not required.
+3. Restart Fusion or open **Utilities > Add-Ins > Scripts and Add-Ins** and
+   start **PrintThread Wizard**.
+4. Optionally enable automatic startup.
+
+### Manual installation on Windows
+
+Alternatively, download the repository and copy the complete
+`Fusion_AddIn/PrintThread Wizard` directory to
+`%APPDATA%\Autodesk\Autodesk Fusion\API\AddIns\PrintThread Wizard`. Restart
+Fusion afterwards, or add and start the add-in through **Scripts and Add-Ins**.
+
+### Manual installation on macOS
+
+There is currently no macOS installer. In Finder, copy the complete
+`Fusion_AddIn/PrintThread Wizard` directory to
+`~/Library/Application Support/Autodesk/Autodesk Fusion/API/AddIns/PrintThread Wizard`.
+The user `Library` directory is normally hidden; open Finder's **Go** menu while
+holding **Option (⌥)** to access it. Then restart Fusion and start the add-in
+through **Scripts and Add-Ins**.
+
+> **macOS notice:** The macOS installation has not been tested because no Mac
+> is available for development. Feedback about installation on macOS is
+> therefore welcome.
 
 The command is added to the **Design** workspace in the **Solid > Create**
 panel.

@@ -87,13 +87,36 @@ ab.
 
 ## Installation
 
-1. Repository herunterladen oder klonen.
-2. In Fusion **Dienstprogramme > Zusatzmodule > Skripte und Zusatzmodule**
-   öffnen.
-3. Auf der Registerkarte **Zusatzmodule** den Ordner
-   `Fusion_AddIn/PrintThread Wizard` hinzufügen.
-4. **PrintThread Wizard** starten und bei Bedarf den automatischen Start
-   aktivieren.
+### Windows mit Installer
+
+1. `PrintThreadWizard_Setup_0.8.0.exe` aus den GitHub-Releases herunterladen.
+2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
+   aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
+3. Fusion neu starten oder unter **Dienstprogramme > Zusatzmodule > Skripte
+   und Zusatzmodule** den Eintrag **PrintThread Wizard** starten.
+4. Bei Bedarf den automatischen Start aktivieren.
+
+### Manuelle Installation unter Windows
+
+Alternativ das Repository herunterladen und den vollständigen Ordner
+`Fusion_AddIn/PrintThread Wizard` nach
+`%APPDATA%\Autodesk\Autodesk Fusion\API\AddIns\PrintThread Wizard` kopieren.
+Danach Fusion neu starten oder das Add-in über **Skripte und Zusatzmodule**
+hinzufügen und starten.
+
+### Manuelle Installation unter macOS
+
+Für macOS steht derzeit kein Installer zur Verfügung. Den vollständigen Ordner
+`Fusion_AddIn/PrintThread Wizard` im Finder nach
+`~/Library/Application Support/Autodesk/Autodesk Fusion/API/AddIns/PrintThread Wizard`
+kopieren. Der Benutzerordner `Library` ist normalerweise ausgeblendet; im
+Finder lässt er sich über **Gehe zu** bei gedrückter **Wahltaste (⌥)** öffnen.
+Anschließend Fusion neu starten und das Add-in unter **Skripte und
+Zusatzmodule** starten.
+
+> **Hinweis zu macOS:** Die macOS-Installation konnte nicht praktisch getestet
+> werden, da für die Entwicklung kein Mac zur Verfügung steht. Rückmeldungen
+> zur Installation unter macOS sind deshalb willkommen.
 
 Der Befehl wird im Arbeitsbereich **Konstruktion** unter
 **Volumenkörper > Erstellen** eingefügt.
