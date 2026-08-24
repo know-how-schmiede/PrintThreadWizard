@@ -9,7 +9,7 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
-Aktuelle Entwicklungsversion: **0.7.15**
+Aktuelle Entwicklungsversion: **0.7.16**
 
 ## Aktueller Funktionsumfang
 
@@ -28,6 +28,9 @@ Aktuelle Entwicklungsversion: **0.7.15**
   Gewindeanfänge und -enden
 - Zusammenfassung aller erzeugten Konstruktionsschritte in der eingeklappten
   Fusion-Timeline-Gruppe `PrintThread Wizard – Gewinde`
+- Ausgeblendete Dokumentationsskizze als erster Gruppeneintrag mit Gewindeart,
+  Nenndurchmesser, `P`, `α`, `h`, `r`, Toleranz, `d`, `d2`, `d1`, `T` und
+  Anzahl der Fasen-Kanten
 - Lokales Speichern der aktuellen Gewindeeinstellungen mit Bezeichner und Notiz
 - Alphabetisch sortierte Preset-Auswahl zum Übernehmen aller gespeicherten
   Gewindeparameter

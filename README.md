@@ -9,7 +9,7 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
-Current development version: **0.7.15**
+Current development version: **0.7.16**
 
 ## Current features
 
@@ -26,6 +26,9 @@ Current development version: **0.7.15**
 - Helix overrun beyond both end faces for complete thread starts and ends
 - All generated construction steps collected in a collapsed Fusion timeline
   group named `PrintThread Wizard – Gewinde`
+- Hidden documentation sketch as the first group entry containing thread type,
+  nominal diameter, `P`, `α`, `h`, `r`, tolerance, `d`, `d2`, `d1`, `T`, and
+  the number of chamfer edges
 - Local storage of the current thread settings with a name and note
 - Alphabetically sorted preset selection that restores all saved thread values
 - Separate tabs for thread creation including the save controls and for

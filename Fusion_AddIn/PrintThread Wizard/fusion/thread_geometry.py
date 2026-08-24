@@ -24,22 +24,28 @@ def create_thread(parameters: ThreadParameters):
     cylinder = analyze_cylinder(parameters.face)
     timeline = cylinder.component.parentDesign.timeline
     timeline_start = timeline.count
-    chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
-    trim_reference = _trim_reference_from_selected_circles(cylinder, chamfer_ends)
+    parameter_sketch = _create_parameter_note_sketch(cylinder, parameters)
     tolerance_feature = None
-    radial_offset = parameters.tolerance_radius_offset(cylinder.is_external)
-    cylinder, tolerance_feature = _apply_radial_tolerance(
-        cylinder, trim_reference, radial_offset
-    )
-    trim_reference = replace(
-        trim_reference, body=cylinder.body, radius=cylinder.radius
-    )
-    chamfer_ends = tuple(
-        replace(chamfer_end, radius=chamfer_end.radius + radial_offset)
-        for chamfer_end in chamfer_ends
-    )
-    if parameters.sharp_profile_depth >= cylinder.radius:
-        raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
+    try:
+        chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
+        trim_reference = _trim_reference_from_selected_circles(cylinder, chamfer_ends)
+        radial_offset = parameters.tolerance_radius_offset(cylinder.is_external)
+        cylinder, tolerance_feature = _apply_radial_tolerance(
+            cylinder, trim_reference, radial_offset
+        )
+        trim_reference = replace(
+            trim_reference, body=cylinder.body, radius=cylinder.radius
+        )
+        chamfer_ends = tuple(
+            replace(chamfer_end, radius=chamfer_end.radius + radial_offset)
+            for chamfer_end in chamfer_ends
+        )
+        if parameters.sharp_profile_depth >= cylinder.radius:
+            raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
+    except Exception:
+        _delete_if_valid(tolerance_feature)
+        _delete_if_valid(parameter_sketch)
+        raise
 
     helix_feature = None
     profile_plane = None
@@ -84,7 +90,62 @@ def create_thread(parameters: ThreadParameters):
         _delete_if_valid(profile_plane)
         _delete_if_valid(helix_feature)
         _delete_if_valid(tolerance_feature)
+        _delete_if_valid(parameter_sketch)
         raise
+
+
+def _create_parameter_note_sketch(cylinder, parameters):
+    component = cylinder.component
+    units = component.parentDesign.unitsManager
+    length_units = units.defaultLengthUnits
+    radial_offset = parameters.tolerance_radius_offset(cylinder.is_external)
+    major_value = (cylinder.radius + radial_offset) * 2
+    pitch_value = major_value - parameters.thread_depth
+    minor_value = major_value - 2 * parameters.thread_depth
+    thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
+
+    def length(value):
+        return units.formatInternalValue(value, length_units, True)
+
+    angle = units.formatInternalValue(parameters.flank_angle, 'deg', True)
+    bore_value = '–' if cylinder.is_external else length(minor_value)
+    text = (
+        'PrintThread Wizard – Gewindeparameter\n'
+        f'Gewindeart: {thread_type}\n'
+        f'Nenndurchmesser: {length(cylinder.radius * 2)}\n'
+        f'Gewindesteigung (P): {length(parameters.pitch)}\n'
+        f'Profilwinkel (α): {angle}\n'
+        f'Gewindetiefe (h): {length(parameters.thread_depth)}\n'
+        f'Verrundungsradius (r): {length(parameters.fillet_radius)}\n'
+        f'Toleranz: {length(parameters.tolerance)}\n'
+        f'Außendurchmesser (d): {length(major_value)}\n'
+        f'Teilkreisdurchmesser (d2): {length(pitch_value)}\n'
+        f'Innendurchmesser (d1): {length(minor_value)}\n'
+        f'Gewindebohrung (T): {bore_value}\n'
+        f'Fasen-Kanten: {len(parameters.chamfer_edges)}'
+    )
+    sketch = component.sketches.add(component.xYConstructionPlane)
+    sketch.name = (
+        f'PrintThread Wizard – Gewindeparameter – {thread_type} – '
+        f'd {length(major_value)} – P {length(parameters.pitch)}'
+    )
+    texts = sketch.sketchTexts
+    expression = "'" + text.replace("'", "''") + "'"
+    text_input = texts.createInput3(
+        expression, adsk.core.ValueInput.createByReal(0.35)
+    )
+    text_input.setAsMultiLine(
+        adsk.core.Point3D.create(0, 0, 0),
+        adsk.core.Point3D.create(14, 7, 0),
+        adsk.core.HorizontalAlignments.LeftHorizontalAlignment,
+        adsk.core.VerticalAlignments.TopVerticalAlignment,
+        0,
+    )
+    if texts.add(text_input) is None:
+        _delete_if_valid(sketch)
+        raise RuntimeError('Die Skizze mit den Gewindeparametern konnte nicht erstellt werden.')
+    sketch.isLightBulbOn = False
+    return sketch
 
 
 def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):

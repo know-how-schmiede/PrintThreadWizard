@@ -1,5 +1,10 @@
 # Version Timeline
 
+## 0.7.16 - 2026-08-24
+
+- Ausgeblendete, sprechend benannte Dokumentationsskizze mit allen Gewindeparametern als ersten Eintrag der erzeugten Timeline-Gruppe ergänzt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.16` gesetzt.
+
 ## 0.7.15 - 2026-08-24
 
 - Zusätzliches Dropdown im Verwaltungs-Reiter entfernt und die Detailanzeige an die Auswahl einer Tabellenzeile gebunden.
