@@ -155,6 +155,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     dimensions_group = create_inputs.addGroupCommandInput(
         'dimensions_group', 'Skizze der Gewindeparameter'
     )
+    dimensions_group.isExpanded = False
     dimensions_image = dimensions_group.children.addImageCommandInput(
         'thread_dimensions_image', '', THREAD_DIMENSIONS_IMAGE
     )
@@ -193,6 +194,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     preset_group = create_inputs.addGroupCommandInput(
         'preset_group', 'Aktuelle Einstellungen speichern'
     )
+    preset_group.isExpanded = False
     preset_inputs = preset_group.children
     preset_inputs.addStringValueInput('preset_name', 'Gewindebezeichner', '')
     preset_inputs.addTextBoxCommandInput(

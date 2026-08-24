@@ -1,6 +1,6 @@
 # PrintThread Wizard
 
-![PrintThread Wizard Logo](images/PrintThreadWizard_Logo_0.7.14.png)
+<img src="images/PrintThreadWizard_Logo.png" alt="PrintThread Wizard Logo" width="420">
 
 [Deutsch](README_DE.md) | English
 
