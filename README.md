@@ -1,5 +1,7 @@
 # PrintThread Wizard
 
+![PrintThread Wizard Logo](images/PrintThreadWizard_Logo_0.7.14.png)
+
 [Deutsch](README_DE.md) | English
 
 PrintThread Wizard is an Autodesk Fusion add-in for generating modeled external
@@ -7,7 +9,7 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
-Current development version: **0.7.13**
+Current development version: **0.7.14**
 
 ## Current features
 
@@ -17,7 +19,8 @@ Current development version: **0.7.13**
   calculated radial thread depth
 - Free geometry mode for manually setting flank angle and thread depth
 - Adjustable pitch and root fillet radius
-- Selectable total radial clearance from 0.0 to 0.5 mm; default: 0.2 mm
+- Selectable total radial clearance from 0.00 to 0.50 mm in 0.05 mm steps;
+  persistent default: 0.15 mm
 - Optional chamfers on one or two selected circular end edges
 - Chamfer angle derived from half the flank angle
 - Helix overrun beyond both end faces for complete thread starts and ends
@@ -30,6 +33,8 @@ Current development version: **0.7.13**
 - Technical symbols and a profile diagram for pitch `P`, major diameter `d`,
   pitch diameter `d2`, minor diameter `d1`, tap-drill diameter `T`, profile
   depth `h`, and included angle `α`
+- Compact preset table with name, `α`, `h`, and `P` on the management tab
+- Dedicated brand logo for the Fusion dialog, GitHub, and websites
 
 ## How clearance works
 
@@ -96,6 +101,11 @@ tolerance for both parts.
 Parameter sets are stored per user in the versioned JSON file
 `PrintThread Wizard/thread-presets.json` below the operating system's
 application-data directory. Model-specific faces and edges are not stored.
+
+The **Manage settings** tab lets the user persist the tolerance selected by
+default whenever a new dialog opens. A scrollable table lists all saved
+parameter sets with their name, included angle `α`, thread depth `h`, and
+pitch `P`.
 
 The result field shows the thread type, nominal diameter, `P`, `d`, `d2`, `d1`,
 `T`, `α`, tolerance, and calculation mode. The diagram below maps these symbols

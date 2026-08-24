@@ -1,5 +1,7 @@
 # PrintThread Wizard
 
+![PrintThread Wizard Logo](images/PrintThreadWizard_Logo_0.7.14.png)
+
 Deutsch | [English](README.md)
 
 PrintThread Wizard ist ein Add-in für Autodesk Fusion, das modellierte Außen-
@@ -7,7 +9,7 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
-Aktuelle Entwicklungsversion: **0.7.13**
+Aktuelle Entwicklungsversion: **0.7.14**
 
 ## Aktueller Funktionsumfang
 
@@ -18,7 +20,8 @@ Aktuelle Entwicklungsversion: **0.7.13**
 - Freier Geometriemodus zur manuellen Eingabe von Flankenwinkel und
   Gewindetiefe
 - Einstellbare Steigung und Verrundung am Gewindegrund
-- Auswählbares radiales Gesamtspiel von 0,0 bis 0,5 mm; Standard: 0,2 mm
+- Auswählbares radiales Gesamtspiel von 0,00 bis 0,50 mm in 0,05-mm-Schritten;
+  persistenter Standardwert: 0,15 mm
 - Optionale Fasen an einer oder zwei ausgewählten kreisförmigen Endkanten
 - Aus dem halben Flankenwinkel abgeleiteter Fasenwinkel
 - Über beide Deckflächen hinausreichende Helix für vollständige
@@ -33,6 +36,9 @@ Aktuelle Entwicklungsversion: **0.7.13**
 - Technische Kurzzeichen und Profildarstellung für Steigung `P`,
   Außendurchmesser `d`, Teilkreisdurchmesser `d2`, Innendurchmesser `d1`,
   Gewindebohrung `T`, Profiltiefe `h` und Profilwinkel `α`
+- Kompakte Preset-Tabelle mit Bezeichner, `α`, `h` und `P` im
+  Verwaltungs-Reiter
+- Eigenes Markenlogo für Fusion-Dialog, GitHub und Webseiten
 
 ## Funktionsweise der Toleranz
 
@@ -104,6 +110,11 @@ Die Parametersätze werden benutzerspezifisch in der versionierten JSON-Datei
 `PrintThread Wizard/thread-presets.json` im Anwendungsdatenordner des
 Betriebssystems gespeichert. Modellabhängige Flächen und Kanten werden nicht
 gespeichert.
+
+Im Reiter **Einstellungen verwalten** kann die beim Öffnen des nächsten
+Dialogs vorausgewählte Toleranz persistent festgelegt werden. Dort zeigt eine
+scrollbare Tabelle außerdem alle gespeicherten Parametersätze mit Bezeichner,
+Profilwinkel `α`, Gewindetiefe `h` und Gewindesteigung `P`.
 
 Das Ergebnisfeld zeigt Gewindeart, Nenndurchmesser, `P`, `d`, `d2`, `d1`, `T`,
 `α`, Toleranz und Berechnungsmodus. Die darunterliegende Skizze ordnet die

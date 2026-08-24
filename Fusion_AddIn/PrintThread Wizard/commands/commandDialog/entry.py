@@ -6,7 +6,12 @@ import adsk.fusion
 from ... import config
 from ...core.iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
-from ...core.thread_presets import load_thread_presets, save_thread_preset
+from ...core.thread_presets import (
+    load_default_tolerance,
+    load_thread_presets,
+    save_default_tolerance,
+    save_thread_preset,
+)
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
 from ...lib import fusionAddInUtils as futil
@@ -26,24 +31,22 @@ IS_PROMOTED = True
 
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
 THREAD_DIMENSIONS_IMAGE = os.path.join(ICON_FOLDER, 'thread_dimensions.png')
+BRAND_LOGO_IMAGE = os.path.join(ICON_FOLDER, 'PrintThreadWizard_DialogLogo.png')
 
 local_handlers = []
 updating_calculated_inputs = False
 active_command_inputs = None
 available_presets = []
 loading_preset = False
+table_refresh_serial = 0
 
 ISO_MODE_NAME = 'ISO metrisch automatisch'
 FREE_MODE_NAME = 'Freie Geometrie'
-TOLERANCE_OPTIONS = (
-    ('0,0 mm', 0.0),
-    ('0,1 mm', 0.01),
-    ('0,2 mm', 0.02),
-    ('0,3 mm', 0.03),
-    ('0,4 mm', 0.04),
-    ('0,5 mm', 0.05),
+TOLERANCE_OPTIONS = tuple(
+    (f'{step * 0.05:.2f}'.replace('.', ',') + ' mm', step * 0.005)
+    for step in range(11)
 )
-DEFAULT_TOLERANCE_NAME = '0,2 mm'
+FALLBACK_TOLERANCE_NAME = '0,15 mm'
 
 
 def start():
@@ -88,6 +91,9 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         'version_info', 'Version', f'PrintThread Wizard {VERSION}', 1, True
     )
     version_text.isFullWidth = True
+
+    brand_logo = inputs.addImageCommandInput('brand_logo', '', BRAND_LOGO_IMAGE)
+    brand_logo.isFullWidth = True
 
     create_tab = inputs.addTabCommandInput('create_tab', 'Gewinde erstellen')
     create_inputs = create_tab.children
@@ -136,8 +142,9 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     tolerance_input = create_inputs.addDropDownCommandInput(
         'tolerance', 'Toleranz', adsk.core.DropDownStyles.TextListDropDownStyle
     )
+    default_tolerance_name = _tolerance_name(load_default_tolerance())
     for name, _ in TOLERANCE_OPTIONS:
-        tolerance_input.listItems.add(name, name == DEFAULT_TOLERANCE_NAME)
+        tolerance_input.listItems.add(name, name == default_tolerance_name)
 
     result_text = create_inputs.addTextBoxCommandInput(
         'result_text', 'Ergebnis',
@@ -161,6 +168,27 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         'management_details', 'Details', 'Noch keine Einstellung ausgewählt.', 4, True
     )
     management_details.isFullWidth = True
+
+    preset_table = management_inputs.addTableCommandInput(
+        'preset_table', 'Gespeicherte Parameter', 4, '3:1:1:1'
+    )
+    preset_table.minimumVisibleRows = 3
+    preset_table.maximumVisibleRows = 8
+    preset_table.hasGrid = True
+
+    default_tolerance_input = management_inputs.addDropDownCommandInput(
+        'default_tolerance', 'Standardtoleranz',
+        adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+    for name, _ in TOLERANCE_OPTIONS:
+        default_tolerance_input.listItems.add(name, name == default_tolerance_name)
+    management_inputs.addBoolValueInput(
+        'save_default_tolerance', 'Als Standard festlegen', False, '', False
+    )
+    default_status = management_inputs.addTextBoxCommandInput(
+        'default_tolerance_status', '', '', 2, True
+    )
+    default_status.isFullWidth = True
 
     preset_group = create_inputs.addGroupCommandInput(
         'preset_group', 'Aktuelle Einstellungen speichern'
@@ -211,6 +239,11 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
         return
     if args.input.id == 'management_selector':
         _show_selected_preset_details(active_command_inputs)
+        return
+    if args.input.id == 'save_default_tolerance':
+        if args.input.value:
+            _save_default_tolerance(active_command_inputs)
+            args.input.value = False
         return
     if args.input.id == 'save_preset':
         if args.input.value:
@@ -272,6 +305,7 @@ def _refresh_preset_selectors(inputs, selected_id=None):
             selector.listItems.add('— Einstellung auswählen —', selected_id is None)
             for preset in available_presets:
                 selector.listItems.add(preset['name'], preset.get('id') == selected_id)
+        _populate_preset_table(inputs)
         if selected_id is not None:
             _show_selected_preset_details(inputs)
     except Exception as error:
@@ -281,6 +315,61 @@ def _refresh_preset_selectors(inputs, selected_id=None):
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
     finally:
         loading_preset = previous_loading_state
+
+
+def _populate_preset_table(inputs):
+    global table_refresh_serial
+    table = _input_by_id(inputs, 'preset_table')
+    if table is None:
+        return
+    table.clear()
+    table_refresh_serial += 1
+    cell_inputs = table.commandInputs
+    units = app.activeProduct.unitsManager
+    length_units = units.defaultLengthUnits
+
+    rows = [('Bezeichner', 'α', 'h', 'P')]
+    for preset in available_presets:
+        settings = preset.get('settings', {})
+        rows.append((
+            str(preset.get('name', '')),
+            _format_table_value(units, settings.get('flank_angle_rad'), 'deg'),
+            _format_table_value(units, settings.get('thread_depth_cm'), length_units),
+            _format_table_value(units, settings.get('pitch_cm'), length_units),
+        ))
+
+    for row_index, row_values in enumerate(rows):
+        for column_index, value in enumerate(row_values):
+            text_value = f'<b>{value}</b>' if row_index == 0 else value
+            cell = cell_inputs.addTextBoxCommandInput(
+                f'preset_table_{table_refresh_serial}_{row_index}_{column_index}',
+                '', text_value, 1, True
+            )
+            table.addCommandInput(cell, row_index, column_index)
+
+
+def _format_table_value(units, value, unit_name):
+    if value is None:
+        return '–'
+    try:
+        return units.formatInternalValue(float(value), unit_name, True)
+    except (TypeError, ValueError):
+        return '–'
+
+
+def _save_default_tolerance(inputs):
+    status = _input_by_id(inputs, 'default_tolerance_status')
+    try:
+        dropdown = _input_by_id(inputs, 'default_tolerance')
+        selected_name = dropdown.selectedItem.name
+        value = dict(TOLERANCE_OPTIONS)[selected_name]
+        save_default_tolerance(value)
+        _select_dropdown_item(_input_by_id(inputs, 'tolerance'), selected_name)
+        status.text = f'{selected_name} wurde als Standardtoleranz gespeichert.'
+        _update_result_text(inputs)
+    except Exception as error:
+        status.text = str(error)
+        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
 
 
 def _selected_preset(inputs, selector_id):
@@ -374,9 +463,13 @@ def _selected_tolerance(inputs):
     selected_name = (
         tolerance_input.selectedItem.name
         if tolerance_input and tolerance_input.selectedItem
-        else DEFAULT_TOLERANCE_NAME
+        else FALLBACK_TOLERANCE_NAME
     )
     return dict(TOLERANCE_OPTIONS)[selected_name]
+
+
+def _tolerance_name(value):
+    return min(TOLERANCE_OPTIONS, key=lambda option: abs(option[1] - value))[0]
 
 
 def _save_current_preset(inputs):

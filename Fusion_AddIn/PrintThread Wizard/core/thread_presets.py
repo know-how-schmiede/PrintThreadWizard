@@ -7,6 +7,7 @@ from uuid import uuid4
 
 SCHEMA_VERSION = 1
 FILE_NAME = 'thread-presets.json'
+DEFAULT_TOLERANCE_CM = 0.015
 
 
 def preset_file_path() -> Path:
@@ -39,12 +40,7 @@ def save_thread_preset(name: str, note: str, settings: dict) -> dict:
     }
     data['presets'].append(preset)
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path = path.with_suffix('.tmp')
-    temporary_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
-    )
-    temporary_path.replace(path)
+    _write_storage(path, data)
     return preset
 
 
@@ -58,6 +54,33 @@ def load_thread_presets() -> list[dict]:
             str(preset.get('created_at', '')),
         ),
     )
+
+
+def load_default_tolerance() -> float:
+    data = _read_storage(preset_file_path())
+    value = data.get('preferences', {}).get('default_tolerance_cm', DEFAULT_TOLERANCE_CM)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return DEFAULT_TOLERANCE_CM
+
+
+def save_default_tolerance(value: float) -> None:
+    if value < 0:
+        raise ValueError('Die Standardtoleranz darf nicht negativ sein.')
+    path = preset_file_path()
+    data = _read_storage(path)
+    data.setdefault('preferences', {})['default_tolerance_cm'] = value
+    _write_storage(path, data)
+
+
+def _write_storage(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = path.with_suffix('.tmp')
+    temporary_path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+    )
+    temporary_path.replace(path)
 
 
 def _read_storage(path: Path) -> dict:

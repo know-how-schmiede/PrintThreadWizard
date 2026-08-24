@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.7.14 - 2026-08-24
+
+- Neues PrintThread-Wizard-Markenlogo im Stil der Wizard-Pluginfamilie als SVG sowie als PNG für GitHub und Webseiten erstellt und im Dialog eingebunden.
+- Toleranzauswahl auf 0,05-mm-Schritte von 0,00 bis 0,50 mm umgestellt; initialer Standardwert ist 0,15 mm.
+- Persistente Auswahl der Standardtoleranz im Reiter `Einstellungen verwalten` ergänzt.
+- Scrollbare Preset-Tabelle mit den Spalten `Bezeichner`, `α`, `h` und `P` ergänzt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.14` gesetzt.
+
 ## 0.7.13 - 2026-08-24
 
 - Dialogbezeichnungen um die technischen Kurzzeichen `P`, `h`, `r` und `α` ergänzt.
