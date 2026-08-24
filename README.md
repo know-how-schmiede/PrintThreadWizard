@@ -7,7 +7,7 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
-Current development version: **0.7.11**
+Current development version: **0.7.13**
 
 ## Current features
 
@@ -24,6 +24,12 @@ Current development version: **0.7.11**
 - All generated construction steps collected in a collapsed Fusion timeline
   group named `PrintThread Wizard – Gewinde`
 - Local storage of the current thread settings with a name and note
+- Alphabetically sorted preset selection that restores all saved thread values
+- Separate tabs for thread creation including the save controls and for
+  managing saved settings
+- Technical symbols and a profile diagram for pitch `P`, major diameter `d`,
+  pitch diameter `d2`, minor diameter `d1`, tap-drill diameter `T`, profile
+  depth `h`, and included angle `α`
 
 ## How clearance works
 
@@ -60,7 +66,8 @@ panel.
 2. Start **PrintThread Wizard**.
 3. Select the cylindrical face.
 4. Optionally select one or both circular end edges for chamfering.
-5. Choose **ISO metric automatic** or **Free geometry**.
+5. Optionally select a saved setting, or choose **ISO metric automatic** or
+   **Free geometry** manually.
 6. Enter the pitch and, in free mode, the flank angle and thread depth.
 7. Select the required tolerance and set the root fillet radius.
 8. Optionally enter a thread name and short note, then use **Save current
@@ -76,11 +83,12 @@ tolerance for both parts.
 | --- | --- |
 | Cylindrical face | Target face; internal/external type is detected automatically |
 | Chamfer edges | Optional selection of up to two circular end edges |
+| Saved setting | Alphabetically sorted preset list; restores all parameters |
 | Calculation | ISO metric automatic or free geometry |
-| Flank angle | Thread included angle; fixed at 60° in ISO mode |
-| Thread depth | Radial profile depth; calculated in ISO mode |
-| Pitch | Axial distance per revolution |
-| Root fillet radius | Rounds the sharp thread root |
+| Included angle (α) | Thread included angle; fixed at 60° in ISO mode |
+| Thread depth (h) | Radial profile depth; calculated in ISO mode |
+| Pitch (P) | Axial distance per revolution |
+| Root fillet radius (r) | Rounds the sharp thread root |
 | Tolerance | Total radial clearance of the mating thread pair |
 | Thread name | Name of the locally stored parameter set |
 | Short note | Optional description of up to 500 characters |
@@ -89,8 +97,9 @@ Parameter sets are stored per user in the versioned JSON file
 `PrintThread Wizard/thread-presets.json` below the operating system's
 application-data directory. Model-specific faces and edges are not stored.
 
-The result field shows the detected thread type, nominal diameter, adjusted
-diameter, core diameter, tolerance, and calculation mode.
+The result field shows the thread type, nominal diameter, `P`, `d`, `d2`, `d1`,
+`T`, `α`, tolerance, and calculation mode. The diagram below maps these symbols
+to the thread profile.
 
 ## Known limitations
 

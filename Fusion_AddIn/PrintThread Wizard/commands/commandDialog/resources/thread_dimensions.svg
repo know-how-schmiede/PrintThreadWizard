@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#0797d5"/>
+    </marker>
+    <pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#a7adb2" stroke-width="3"/>
+    </pattern>
+  </defs>
+  <rect width="760" height="360" fill="#f7f8f9"/>
+  <g stroke="#30363b" stroke-width="3" fill="none" stroke-linejoin="round">
+    <path d="M210 55 H550 V305 H210 Z" fill="url(#hatch)"/>
+    <path d="M300 55 L275 72 L300 89 L275 106 L300 123 L275 140 L300 157 L275 174 L300 191 L275 208 L300 225 L275 242 L300 259 L275 276 L300 293 L282 305 H478 L460 293 L485 276 L460 259 L485 242 L460 225 L485 208 L460 191 L485 174 L460 157 L485 140 L460 123 L485 106 L460 89 L485 72 L460 55 Z" fill="#f7f8f9"/>
+    <line x1="380" y1="42" x2="380" y2="318" stroke="#8b949e" stroke-dasharray="9 7"/>
+  </g>
+  <g stroke="#0797d5" stroke-width="2" fill="none" marker-start="url(#arrow)" marker-end="url(#arrow)">
+    <line x1="590" y1="72" x2="590" y2="106"/>
+    <line x1="300" y1="329" x2="460" y2="329"/>
+    <line x1="320" y1="285" x2="440" y2="285"/>
+    <line x1="342" y1="255" x2="418" y2="255"/>
+    <path d="M266 191 A48 48 0 0 1 296 153"/>
+    <line x1="485" y1="225" x2="550" y2="225"/>
+  </g>
+  <g stroke="#0797d5" stroke-width="1.5">
+    <line x1="485" y1="72" x2="610" y2="72"/><line x1="485" y1="106" x2="610" y2="106"/>
+    <line x1="300" y1="293" x2="300" y2="340"/><line x1="460" y1="293" x2="460" y2="340"/>
+    <line x1="320" y1="276" x2="320" y2="296"/><line x1="440" y1="276" x2="440" y2="296"/>
+    <line x1="342" y1="242" x2="342" y2="266"/><line x1="418" y1="242" x2="418" y2="266"/>
+  </g>
+  <g fill="#0797d5" font-family="Arial, sans-serif" font-size="24">
+    <text x="610" y="97">P</text>
+    <text x="371" y="352">d</text>
+    <text x="365" y="309">d2</text>
+    <text x="365" y="246">d1 / T</text>
+    <text x="230" y="177">α</text>
+    <text x="515" y="216">h</text>
+  </g>
+</svg>

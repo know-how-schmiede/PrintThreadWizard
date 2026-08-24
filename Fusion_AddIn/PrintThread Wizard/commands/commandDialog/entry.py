@@ -6,7 +6,7 @@ import adsk.fusion
 from ... import config
 from ...core.iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
-from ...core.thread_presets import save_thread_preset
+from ...core.thread_presets import load_thread_presets, save_thread_preset
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
 from ...lib import fusionAddInUtils as futil
@@ -25,10 +25,13 @@ PANEL_ID = 'SolidCreatePanel'
 IS_PROMOTED = True
 
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', '')
+THREAD_DIMENSIONS_IMAGE = os.path.join(ICON_FOLDER, 'thread_dimensions.png')
 
 local_handlers = []
 updating_calculated_inputs = False
 active_command_inputs = None
+available_presets = []
+loading_preset = False
 
 ISO_MODE_NAME = 'ISO metrisch automatisch'
 FREE_MODE_NAME = 'Freie Geometrie'
@@ -86,53 +89,82 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     version_text.isFullWidth = True
 
-    face_input = inputs.addSelectionInput(
+    create_tab = inputs.addTabCommandInput('create_tab', 'Gewinde erstellen')
+    create_inputs = create_tab.children
+    management_tab = inputs.addTabCommandInput('management_tab', 'Einstellungen verwalten')
+    management_inputs = management_tab.children
+
+    face_input = create_inputs.addSelectionInput(
         'target_face', 'Zylinderfläche', 'Wählen Sie eine Zylinderfläche aus.'
     )
     face_input.addSelectionFilter('Faces')
     face_input.setSelectionLimits(1, 1)
 
-    edge_input = inputs.addSelectionInput(
+    edge_input = create_inputs.addSelectionInput(
         'chamfer_edges', 'Fasen-Kanten', 'Optional eine oder zwei Zylinderkanten auswählen.'
     )
     edge_input.addSelectionFilter('Edges')
     edge_input.setSelectionLimits(0, 2)
 
+    preset_selector = create_inputs.addDropDownCommandInput(
+        'preset_selector', 'Gespeicherte Einstellung',
+        adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+
     default_units = app.activeProduct.unitsManager.defaultLengthUnits
-    mode_input = inputs.addDropDownCommandInput(
+    mode_input = create_inputs.addDropDownCommandInput(
         'calculation_mode', 'Berechnung', adsk.core.DropDownStyles.TextListDropDownStyle
     )
     mode_input.listItems.add(ISO_MODE_NAME, True)
     mode_input.listItems.add(FREE_MODE_NAME, False)
 
-    inputs.addValueInput(
-        'flank_angle', 'Flankenwinkel', 'deg', adsk.core.ValueInput.createByString('60 deg')
+    create_inputs.addValueInput(
+        'flank_angle', 'Profilwinkel (α)', 'deg', adsk.core.ValueInput.createByString('60 deg')
     )
-    inputs.addValueInput(
-        'thread_depth', 'Gewindetiefe', default_units,
+    create_inputs.addValueInput(
+        'thread_depth', 'Gewindetiefe (h)', default_units,
         adsk.core.ValueInput.createByString(f'5 {default_units}')
     )
-    inputs.addValueInput(
-        'pitch', 'Steigung', default_units,
+    create_inputs.addValueInput(
+        'pitch', 'Gewindesteigung (P)', default_units,
         adsk.core.ValueInput.createByString(f'10 {default_units}')
     )
-    inputs.addValueInput(
-        'fillet_radius', 'Verrundungsradius', default_units,
+    create_inputs.addValueInput(
+        'fillet_radius', 'Verrundungsradius (r)', default_units,
         adsk.core.ValueInput.createByString('0.4 mm')
     )
-    tolerance_input = inputs.addDropDownCommandInput(
+    tolerance_input = create_inputs.addDropDownCommandInput(
         'tolerance', 'Toleranz', adsk.core.DropDownStyles.TextListDropDownStyle
     )
     for name, _ in TOLERANCE_OPTIONS:
         tolerance_input.listItems.add(name, name == DEFAULT_TOLERANCE_NAME)
 
-    result_text = inputs.addTextBoxCommandInput(
+    result_text = create_inputs.addTextBoxCommandInput(
         'result_text', 'Ergebnis',
-        'Neustart der Entwicklung – noch keine Funktion hinterlegt.', 5, True
+        'Bitte eine Zylinderfläche auswählen.', 9, True
     )
     result_text.isFullWidth = True
 
-    preset_group = inputs.addGroupCommandInput('preset_group', 'Einstellungen speichern')
+    dimensions_group = create_inputs.addGroupCommandInput(
+        'dimensions_group', 'Skizze der Gewindeparameter'
+    )
+    dimensions_image = dimensions_group.children.addImageCommandInput(
+        'thread_dimensions_image', '', THREAD_DIMENSIONS_IMAGE
+    )
+    dimensions_image.isFullWidth = True
+
+    management_selector = management_inputs.addDropDownCommandInput(
+        'management_selector', 'Gespeicherte Einstellungen',
+        adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+    management_details = management_inputs.addTextBoxCommandInput(
+        'management_details', 'Details', 'Noch keine Einstellung ausgewählt.', 4, True
+    )
+    management_details.isFullWidth = True
+
+    preset_group = create_inputs.addGroupCommandInput(
+        'preset_group', 'Aktuelle Einstellungen speichern'
+    )
     preset_inputs = preset_group.children
     preset_inputs.addStringValueInput('preset_name', 'Gewindebezeichner', '')
     preset_inputs.addTextBoxCommandInput(
@@ -146,6 +178,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     preset_status.isFullWidth = True
 
+    _refresh_preset_selectors(inputs)
     _apply_calculation_mode(inputs)
 
     futil.add_handler(args.command.execute, command_execute, local_handlers=local_handlers)
@@ -170,6 +203,15 @@ def command_execute(args: adsk.core.CommandEventArgs):
 
 
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
+    global loading_preset
+    if loading_preset:
+        return
+    if args.input.id == 'preset_selector':
+        _load_selected_preset(active_command_inputs, 'preset_selector')
+        return
+    if args.input.id == 'management_selector':
+        _show_selected_preset_details(active_command_inputs)
+        return
     if args.input.id == 'save_preset':
         if args.input.value:
             _save_current_preset(active_command_inputs)
@@ -184,29 +226,134 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
         'fillet_radius',
         'tolerance',
     ):
-        _apply_calculation_mode(args.inputs)
-        _update_result_text(args.inputs)
+        _apply_calculation_mode(active_command_inputs)
+        _update_result_text(active_command_inputs)
 
 
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
-    _apply_calculation_mode(args.inputs)
-    parameters = _read_parameters(args.inputs)
+    _apply_calculation_mode(active_command_inputs)
+    parameters = _read_parameters(active_command_inputs)
     errors = _validation_errors(parameters)
     args.areInputsValid = not errors
-    _set_result_text(args.inputs, errors)
+    _set_result_text(active_command_inputs, errors)
 
 
 def command_destroy(args: adsk.core.CommandEventArgs):
-    global local_handlers, active_command_inputs
+    global local_handlers, active_command_inputs, available_presets
     local_handlers = []
     active_command_inputs = None
+    available_presets = []
+
+
+def _input_by_id(inputs, input_id):
+    """Sucht auch in Gruppen und Tabs nach einer Dialogeingabe."""
+    direct_input = inputs.itemById(input_id)
+    if direct_input is not None:
+        return direct_input
+    for index in range(inputs.count):
+        command_input = inputs.item(index)
+        children = getattr(command_input, 'children', None)
+        if children is not None:
+            nested_input = _input_by_id(children, input_id)
+            if nested_input is not None:
+                return nested_input
+    return None
+
+
+def _refresh_preset_selectors(inputs, selected_id=None):
+    global available_presets, loading_preset
+    previous_loading_state = loading_preset
+    loading_preset = True
+    try:
+        available_presets = load_thread_presets()
+        for selector_id in ('preset_selector', 'management_selector'):
+            selector = _input_by_id(inputs, selector_id)
+            selector.listItems.clear()
+            selector.listItems.add('— Einstellung auswählen —', selected_id is None)
+            for preset in available_presets:
+                selector.listItems.add(preset['name'], preset.get('id') == selected_id)
+        if selected_id is not None:
+            _show_selected_preset_details(inputs)
+    except Exception as error:
+        status = _input_by_id(inputs, 'preset_status')
+        if status is not None:
+            status.text = str(error)
+        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
+    finally:
+        loading_preset = previous_loading_state
+
+
+def _selected_preset(inputs, selector_id):
+    selector = _input_by_id(inputs, selector_id)
+    if selector is None or selector.selectedItem is None:
+        return None
+    preset_index = selector.selectedItem.index - 1
+    if preset_index < 0 or preset_index >= len(available_presets):
+        return None
+    return available_presets[preset_index]
+
+
+def _load_selected_preset(inputs, selector_id):
+    global loading_preset
+    preset = _selected_preset(inputs, selector_id)
+    if preset is None:
+        return
+
+    loading_preset = True
+    try:
+        settings = preset['settings']
+        mode_name = (
+            ISO_MODE_NAME if settings['calculation_mode'] == 'iso_metric' else FREE_MODE_NAME
+        )
+        _select_dropdown_item(_input_by_id(inputs, 'calculation_mode'), mode_name)
+        _input_by_id(inputs, 'flank_angle').value = float(settings['flank_angle_rad'])
+        _input_by_id(inputs, 'thread_depth').value = float(settings['thread_depth_cm'])
+        _input_by_id(inputs, 'pitch').value = float(settings['pitch_cm'])
+        _input_by_id(inputs, 'fillet_radius').value = float(settings['fillet_radius_cm'])
+
+        tolerance_value = float(settings.get('tolerance_cm', 0.0))
+        tolerance_name = min(
+            TOLERANCE_OPTIONS, key=lambda option: abs(option[1] - tolerance_value)
+        )[0]
+        _select_dropdown_item(_input_by_id(inputs, 'tolerance'), tolerance_name)
+        _apply_calculation_mode(inputs)
+        _update_result_text(inputs)
+    except (KeyError, TypeError, ValueError) as error:
+        result = _input_by_id(inputs, 'result_text')
+        result.text = f'Die Einstellung „{preset.get("name", "") }“ ist unvollständig: {error}'
+    finally:
+        loading_preset = False
+
+
+def _select_dropdown_item(dropdown, item_name):
+    for index in range(dropdown.listItems.count):
+        item = dropdown.listItems.item(index)
+        if item.name == item_name:
+            item.isSelected = True
+            return
+
+
+def _show_selected_preset_details(inputs):
+    preset = _selected_preset(inputs, 'management_selector')
+    details = _input_by_id(inputs, 'management_details')
+    if preset is None:
+        details.text = 'Noch keine Einstellung ausgewählt.'
+        return
+    settings = preset.get('settings', {})
+    mode = 'ISO metrisch' if settings.get('calculation_mode') == 'iso_metric' else 'Freie Geometrie'
+    details.text = (
+        f'Bezeichner: {preset.get("name", "")}\n'
+        f'Notiz: {preset.get("note", "–") or "–"}\n'
+        f'Modus: {mode}\n'
+        f'Gespeichert: {preset.get("created_at", "–")}'
+    )
 
 
 def _read_parameters(inputs):
-    face_input = inputs.itemById('target_face')
+    face_input = _input_by_id(inputs, 'target_face')
     face = face_input.selection(0).entity if face_input and face_input.selectionCount else None
 
-    edge_input = inputs.itemById('chamfer_edges')
+    edge_input = _input_by_id(inputs, 'chamfer_edges')
     edges = tuple(
         edge_input.selection(index).entity for index in range(edge_input.selectionCount)
     ) if edge_input else ()
@@ -214,16 +361,16 @@ def _read_parameters(inputs):
     return ThreadParameters(
         face=face,
         chamfer_edges=edges,
-        flank_angle=inputs.itemById('flank_angle').value,
-        thread_depth=inputs.itemById('thread_depth').value,
-        pitch=inputs.itemById('pitch').value,
-        fillet_radius=inputs.itemById('fillet_radius').value,
+        flank_angle=_input_by_id(inputs, 'flank_angle').value,
+        thread_depth=_input_by_id(inputs, 'thread_depth').value,
+        pitch=_input_by_id(inputs, 'pitch').value,
+        fillet_radius=_input_by_id(inputs, 'fillet_radius').value,
         tolerance=_selected_tolerance(inputs),
     )
 
 
 def _selected_tolerance(inputs):
-    tolerance_input = inputs.itemById('tolerance')
+    tolerance_input = _input_by_id(inputs, 'tolerance')
     selected_name = (
         tolerance_input.selectedItem.name
         if tolerance_input and tolerance_input.selectedItem
@@ -233,7 +380,7 @@ def _selected_tolerance(inputs):
 
 
 def _save_current_preset(inputs):
-    status = inputs.itemById('preset_status')
+    status = _input_by_id(inputs, 'preset_status')
     try:
         _apply_calculation_mode(inputs)
         parameters = _read_parameters(inputs)
@@ -256,11 +403,12 @@ def _save_current_preset(inputs):
             **context,
         }
         preset = save_thread_preset(
-            inputs.itemById('preset_name').value,
-            inputs.itemById('preset_note').text,
+            _input_by_id(inputs, 'preset_name').value,
+            _input_by_id(inputs, 'preset_note').text,
             settings,
         )
         status.text = f'„{preset["name"]}“ wurde gespeichert.'
+        _refresh_preset_selectors(inputs, preset['id'])
         futil.log(f'{CMD_NAME}: Gewindeeinstellung „{preset["name"]}“ gespeichert.')
     except Exception as error:
         status.text = str(error)
@@ -281,7 +429,7 @@ def _preset_face_context(face):
 
 
 def _is_iso_mode(inputs):
-    mode_input = inputs.itemById('calculation_mode')
+    mode_input = _input_by_id(inputs, 'calculation_mode')
     return bool(mode_input and mode_input.selectedItem.name == ISO_MODE_NAME)
 
 
@@ -290,9 +438,9 @@ def _apply_calculation_mode(inputs):
     if updating_calculated_inputs:
         return
 
-    angle_input = inputs.itemById('flank_angle')
-    depth_input = inputs.itemById('thread_depth')
-    pitch_input = inputs.itemById('pitch')
+    angle_input = _input_by_id(inputs, 'flank_angle')
+    depth_input = _input_by_id(inputs, 'thread_depth')
+    pitch_input = _input_by_id(inputs, 'pitch')
     is_iso = _is_iso_mode(inputs)
     angle_input.isEnabled = not is_iso
     depth_input.isEnabled = not is_iso
@@ -300,7 +448,7 @@ def _apply_calculation_mode(inputs):
         return
 
     is_external = True
-    face_input = inputs.itemById('target_face')
+    face_input = _input_by_id(inputs, 'target_face')
     if face_input and face_input.selectionCount:
         try:
             is_external = analyze_cylinder(face_input.selection(0).entity).is_external
@@ -340,7 +488,7 @@ def _update_result_text(inputs):
 
 
 def _set_result_text(inputs, errors):
-    result = inputs.itemById('result_text')
+    result = _input_by_id(inputs, 'result_text')
     if result is None:
         return
     if errors:
@@ -363,23 +511,29 @@ def _set_result_text(inputs, errors):
     core_diameter = units.formatInternalValue(
         core_value, units.defaultLengthUnits, True
     )
+    pitch_diameter = units.formatInternalValue(
+        effective_radius * 2 - parameters.thread_depth,
+        units.defaultLengthUnits,
+        True,
+    )
+    pitch_value = units.formatInternalValue(
+        parameters.pitch, units.defaultLengthUnits, True
+    )
+    angle_value = units.formatInternalValue(parameters.flank_angle, 'deg', True)
     mode_text = 'ISO metrisch' if _is_iso_mode(inputs) else 'Freie Geometrie'
     selected_tolerance = next(
         name for name, value in TOLERANCE_OPTIONS if value == parameters.tolerance
     )
-    if cylinder.is_external:
-        result.text = (
-            f'Außengewinde auf Nenndurchmesser {nominal_diameter}\n'
-            f'Tolerierter Durchmesser: {diameter}\n'
-            f'Kerndurchmesser: {core_diameter}\n'
-            f'Toleranz: {selected_tolerance}\n'
-            f'Modus: {mode_text}'
-        )
-    else:
-        result.text = (
-            f'Innengewinde auf Nenndurchmesser {nominal_diameter}\n'
-            f'Tolerierter Durchmesser: {diameter}\n'
-            f'Kerndurchmesser: {core_diameter}\n'
-            f'Toleranz: {selected_tolerance}\n'
-            f'Modus: {mode_text}'
-        )
+    thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
+    bore_diameter = '– (nur Innengewinde)' if cylinder.is_external else core_diameter
+    result.text = (
+        f'{thread_type} – Nenndurchmesser: {nominal_diameter}\n'
+        f'Gewindesteigung (P): {pitch_value}\n'
+        f'Außendurchmesser (d): {diameter}\n'
+        f'Teilkreisdurchmesser (d2): {pitch_diameter}\n'
+        f'Innendurchmesser (d1): {core_diameter}\n'
+        f'Gewindebohrung (T): {bore_diameter}\n'
+        f'Profilwinkel (α): {angle_value}\n'
+        f'Toleranz: {selected_tolerance}\n'
+        f'Modus: {mode_text}'
+    )

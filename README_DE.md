@@ -7,7 +7,7 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
-Aktuelle Entwicklungsversion: **0.7.11**
+Aktuelle Entwicklungsversion: **0.7.13**
 
 ## Aktueller Funktionsumfang
 
@@ -26,6 +26,13 @@ Aktuelle Entwicklungsversion: **0.7.11**
 - Zusammenfassung aller erzeugten Konstruktionsschritte in der eingeklappten
   Fusion-Timeline-Gruppe `PrintThread Wizard – Gewinde`
 - Lokales Speichern der aktuellen Gewindeeinstellungen mit Bezeichner und Notiz
+- Alphabetisch sortierte Preset-Auswahl zum Übernehmen aller gespeicherten
+  Gewindeparameter
+- Getrennte Reiter für Gewindeerstellung einschließlich Speicherfunktion und
+  Verwaltung der gespeicherten Einstellungen
+- Technische Kurzzeichen und Profildarstellung für Steigung `P`,
+  Außendurchmesser `d`, Teilkreisdurchmesser `d2`, Innendurchmesser `d1`,
+  Gewindebohrung `T`, Profiltiefe `h` und Profilwinkel `α`
 
 ## Funktionsweise der Toleranz
 
@@ -66,7 +73,8 @@ Der Befehl wird im Arbeitsbereich **Konstruktion** unter
 2. **PrintThread Wizard** starten.
 3. Die Zylinderfläche auswählen.
 4. Optional eine oder beide kreisförmigen Endkanten für die Fasen auswählen.
-5. **ISO metrisch automatisch** oder **Freie Geometrie** auswählen.
+5. Optional eine gespeicherte Einstellung auswählen oder **ISO metrisch
+   automatisch** beziehungsweise **Freie Geometrie** manuell auswählen.
 6. Die Steigung sowie im freien Modus Flankenwinkel und Gewindetiefe eingeben.
 7. Toleranz auswählen und Verrundungsradius festlegen.
 8. Optional einen Gewindebezeichner und eine kurze Notiz eintragen und die
@@ -82,11 +90,12 @@ Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
 | --- | --- |
 | Zylinderfläche | Zielfläche; Innen-/Außengewinde wird automatisch erkannt |
 | Fasen-Kanten | Optionale Auswahl von bis zu zwei kreisförmigen Endkanten |
+| Gespeicherte Einstellung | Alphabetisch sortierte Preset-Auswahl; übernimmt alle Parameter |
 | Berechnung | ISO metrisch automatisch oder freie Geometrie |
-| Flankenwinkel | Eingeschlossener Profilwinkel; im ISO-Modus fest 60° |
-| Gewindetiefe | Radiale Profiltiefe; im ISO-Modus automatisch berechnet |
-| Steigung | Axialer Weg pro Umdrehung |
-| Verrundungsradius | Rundet den scharfen Gewindegrund ab |
+| Profilwinkel (α) | Eingeschlossener Profilwinkel; im ISO-Modus fest 60° |
+| Gewindetiefe (h) | Radiale Profiltiefe; im ISO-Modus automatisch berechnet |
+| Gewindesteigung (P) | Axialer Weg pro Umdrehung |
+| Verrundungsradius (r) | Rundet den scharfen Gewindegrund ab |
 | Toleranz | Radiales Gesamtspiel des zusammengehörigen Gewindepaars |
 | Gewindebezeichner | Name des lokal gespeicherten Parametersatzes |
 | Kurze Notiz | Optionale Beschreibung mit bis zu 500 Zeichen |
@@ -96,8 +105,9 @@ Die Parametersätze werden benutzerspezifisch in der versionierten JSON-Datei
 Betriebssystems gespeichert. Modellabhängige Flächen und Kanten werden nicht
 gespeichert.
 
-Das Ergebnisfeld zeigt Gewindeart, Nenndurchmesser, tolerierten Durchmesser,
-Kerndurchmesser, Toleranz und Berechnungsmodus.
+Das Ergebnisfeld zeigt Gewindeart, Nenndurchmesser, `P`, `d`, `d2`, `d1`, `T`,
+`α`, Toleranz und Berechnungsmodus. Die darunterliegende Skizze ordnet die
+Kurzzeichen dem Gewindeprofil zu.
 
 ## Bekannte Einschränkungen
 

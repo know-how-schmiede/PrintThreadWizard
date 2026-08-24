@@ -1,5 +1,21 @@
 # Version Timeline
 
+## 0.7.13 - 2026-08-24
+
+- Dialogbezeichnungen um die technischen Kurzzeichen `P`, `h`, `r` und `α` ergänzt.
+- Ergebnisanzeige um Außendurchmesser `d`, Teilkreisdurchmesser `d2`, Innendurchmesser `d1` und Gewindebohrung `T` erweitert.
+- Eigene technische Gewindezeichnung mit den Maßbezeichnungen als Dialoggrafik ergänzt.
+- Editierbare SVG-Quelle und die von Fusion benötigte PNG-Fassung der Grafik hinterlegt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.13` gesetzt.
+
+## 0.7.12 - 2026-08-24
+
+- Dialog in die Reiter `Gewinde erstellen` und `Einstellungen verwalten` aufgeteilt.
+- Alphabetisch sortierte Auswahl der gespeicherten Einstellungen direkt unter den Fasen-Kanten ergänzt.
+- Auswahl eines Presets übernimmt Berechnungsmodus, Flankenwinkel, Gewindetiefe, Steigung, Verrundungsradius und Toleranz.
+- Speicherfunktion im Reiter `Gewinde erstellen` angeordnet; der Verwaltungs-Reiter zeigt die gespeicherten Einstellungen und ihre Metadaten an.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.12` gesetzt.
+
 ## 0.7.11 - 2026-08-24
 
 - Dialog um Gewindebezeichner, kurze Notiz und einen Button zum Speichern der aktuellen Einstellungen ergänzt.

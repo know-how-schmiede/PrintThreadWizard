@@ -48,6 +48,18 @@ def save_thread_preset(name: str, note: str, settings: dict) -> dict:
     return preset
 
 
+def load_thread_presets() -> list[dict]:
+    """Lädt die Presets alphabetisch nach Bezeichner und anschließend Erstellzeit."""
+    presets = list(_read_storage(preset_file_path())['presets'])
+    return sorted(
+        presets,
+        key=lambda preset: (
+            str(preset.get('name', '')).casefold(),
+            str(preset.get('created_at', '')),
+        ),
+    )
+
+
 def _read_storage(path: Path) -> dict:
     if not path.exists():
         return {'schema_version': SCHEMA_VERSION, 'presets': []}
