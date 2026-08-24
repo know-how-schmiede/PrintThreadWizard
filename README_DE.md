@@ -11,6 +11,10 @@ Gewindepaare erforderliche Spiel angepasst werden.
 
 Aktuelle Entwicklungsversion: **0.8.0**
 
+> **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
+> Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
+> Funktionen, Bedienoberfläche und erzeugte Geometrie können sich noch ändern.
+
 ## Aktueller Funktionsumfang
 
 - Automatische Übernahme der Fusion-Oberflächensprache für Deutsch, Englisch,

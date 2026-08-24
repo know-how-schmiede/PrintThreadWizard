@@ -11,6 +11,10 @@ for functional FDM/FFF parts and can be adjusted for the clearance required by
 
 Current development version: **0.8.0**
 
+> **Development notice:** This add-in was developed with assistance from OpenAI
+> Codex and remains under active development. Features, the user interface, and
+> generated geometry may still change.
+
 ## Current features
 
 - Automatic use of the Fusion UI language for German, English, Spanish,
