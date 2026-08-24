@@ -9,9 +9,12 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
-Aktuelle Entwicklungsversion: **0.7.16**
+Aktuelle Entwicklungsversion: **0.8.0**
 
 ## Aktueller Funktionsumfang
+
+- Automatische Übernahme der Fusion-Oberflächensprache für Deutsch, Englisch,
+  Spanisch, Französisch, Italienisch und Polnisch; Englisch dient als Fallback
 
 - Automatische Erkennung von Außenzylindern und Innenbohrungen
 - Modellierte Rechtsgewinde mit exakter B-Rep-Helix und Sweep
@@ -61,6 +64,22 @@ Bei 0,2 mm Toleranz wird beispielsweise der Außenradius um 0,1 mm verkleinert
 und der Innenradius um 0,1 mm vergrößert. Der passende Wert hängt unter anderem
 von Drucker, Material, Schichthöhe, Extrusionskalibrierung und Bauteilausrichtung
 ab.
+
+## Images
+
+<img src="images/24-08-2026_21-26-26.jpg" alt="notwenige Skizze in Fusion360">
+
+<img src="images/24-08-2026_21-26-56.jpg" alt="Notwenige Körper für die Gewinde">
+
+<img src="images/24-08-2026_21-27-20.jpg" alt="Dialog Gewinde erstellen">
+
+<img src="images/24-08-2026_21-27-27.jpg" alt="Dialog Einstellungen verwalten">
+
+<img src="images/24-08-2026_21-28-42.jpg" alt="modellierte 3D Gewinde mit PrintThreadWizard">
+
+<img src="images/24-08-2026_21-30-20.jpg" alt="Aussengewinde mit Flankenwinkel 90°">
+
+<img src="images/24-08-2026_21-31-31.jpg" alt="Innengewinde mit automatischer Fase">
 
 ## Installation
 

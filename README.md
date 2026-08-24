@@ -9,9 +9,12 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
-Current development version: **0.7.16**
+Current development version: **0.8.0**
 
 ## Current features
+
+- Automatic use of the Fusion UI language for German, English, Spanish,
+  French, Italian, and Polish, with English as the fallback
 
 - Automatic detection of external cylinders and internal bores
 - Modeled right-hand thread geometry using an exact B-Rep helix and sweep
@@ -56,6 +59,25 @@ used for the external and internal thread:
 For example, a tolerance of 0.2 mm reduces the external radius by 0.1 mm and
 increases the internal radius by 0.1 mm. The best setting depends on printer,
 material, layer height, extrusion calibration, and part orientation.
+
+## Images
+
+<img src="images/24-08-2026_21-26-26.jpg" alt="notwenige Skizze in Fusion360">
+
+<img src="images/24-08-2026_21-26-56.jpg" alt="Notwenige Körper für die Gewinde">
+
+<img src="images/24-08-2026_21-27-20.jpg" alt="Dialog Gewinde erstellen">
+
+<img src="images/24-08-2026_21-27-27.jpg" alt="Dialog Einstellungen verwalten">
+
+<img src="images/24-08-2026_21-28-42.jpg" alt="modellierte 3D Gewinde mit PrintThreadWizard">
+
+<img src="images/24-08-2026_21-30-20.jpg" alt="Aussengewinde mit Flankenwinkel 90°">
+
+<img src="images/24-08-2026_21-31-31.jpg" alt="Innengewinde mit automatischer Fase">
+
+
+
 
 ## Installation
 

@@ -18,15 +18,18 @@ from ...core.thread_presets import (
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
 from ...lib import fusionAddInUtils as futil
+from ...localization import detect_locale, translator
 from ...version import VERSION
 
 
 app = adsk.core.Application.get()
 ui = app.userInterface
+LOCALE = detect_locale(adsk.core, app)
+tr = translator(LOCALE)
 
 CMD_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_cmdDialog'
 CMD_NAME = f'PrintThread Wizard {VERSION}'
-CMD_DESCRIPTION = 'Dialogbasis für die neue Entwicklung des PrintThread Wizard.'
+CMD_DESCRIPTION = tr('description')
 
 WORKSPACE_ID = 'FusionSolidEnvironment'
 PANEL_ID = 'SolidCreatePanel'
@@ -45,8 +48,8 @@ table_refresh_serial = 0
 table_delete_actions = {}
 table_row_presets = {}
 
-ISO_MODE_NAME = 'ISO metrisch automatisch'
-FREE_MODE_NAME = 'Freie Geometrie'
+ISO_MODE_NAME = tr('iso_mode')
+FREE_MODE_NAME = tr('free_mode')
 TOLERANCE_OPTIONS = tuple(
     (f'{step * 0.05:.2f}'.replace('.', ',') + ' mm', step * 0.005)
     for step in range(11)
@@ -93,59 +96,59 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     active_command_inputs = inputs
 
     version_text = inputs.addTextBoxCommandInput(
-        'version_info', 'Version', f'PrintThread Wizard {VERSION}', 1, True
+        'version_info', tr('version'), f'PrintThread Wizard {VERSION}', 1, True
     )
     version_text.isFullWidth = True
 
     brand_logo = inputs.addImageCommandInput('brand_logo', '', BRAND_LOGO_IMAGE)
     brand_logo.isFullWidth = True
 
-    create_tab = inputs.addTabCommandInput('create_tab', 'Gewinde erstellen')
+    create_tab = inputs.addTabCommandInput('create_tab', tr('create_tab'))
     create_inputs = create_tab.children
-    management_tab = inputs.addTabCommandInput('management_tab', 'Einstellungen verwalten')
+    management_tab = inputs.addTabCommandInput('management_tab', tr('manage_tab'))
     management_inputs = management_tab.children
 
     face_input = create_inputs.addSelectionInput(
-        'target_face', 'Zylinderfläche', 'Wählen Sie eine Zylinderfläche aus.'
+        'target_face', tr('target_face'), tr('select_face')
     )
     face_input.addSelectionFilter('Faces')
     face_input.setSelectionLimits(1, 1)
 
     edge_input = create_inputs.addSelectionInput(
-        'chamfer_edges', 'Fasen-Kanten', 'Optional eine oder zwei Zylinderkanten auswählen.'
+        'chamfer_edges', tr('chamfer_edges'), tr('select_edges')
     )
     edge_input.addSelectionFilter('Edges')
     edge_input.setSelectionLimits(0, 2)
 
     preset_selector = create_inputs.addDropDownCommandInput(
-        'preset_selector', 'Gespeicherte Einstellung',
+        'preset_selector', tr('saved_setting'),
         adsk.core.DropDownStyles.TextListDropDownStyle
     )
 
     default_units = app.activeProduct.unitsManager.defaultLengthUnits
     mode_input = create_inputs.addDropDownCommandInput(
-        'calculation_mode', 'Berechnung', adsk.core.DropDownStyles.TextListDropDownStyle
+        'calculation_mode', tr('calculation'), adsk.core.DropDownStyles.TextListDropDownStyle
     )
     mode_input.listItems.add(ISO_MODE_NAME, True)
     mode_input.listItems.add(FREE_MODE_NAME, False)
 
     create_inputs.addValueInput(
-        'flank_angle', 'Profilwinkel (α)', 'deg', adsk.core.ValueInput.createByString('60 deg')
+        'flank_angle', tr('profile_angle'), 'deg', adsk.core.ValueInput.createByString('60 deg')
     )
     create_inputs.addValueInput(
-        'thread_depth', 'Gewindetiefe (h)', default_units,
+        'thread_depth', tr('thread_depth'), default_units,
         adsk.core.ValueInput.createByString(f'5 {default_units}')
     )
     create_inputs.addValueInput(
-        'pitch', 'Gewindesteigung (P)', default_units,
+        'pitch', tr('pitch'), default_units,
         adsk.core.ValueInput.createByString(f'10 {default_units}')
     )
     create_inputs.addValueInput(
-        'fillet_radius', 'Verrundungsradius (r)', default_units,
+        'fillet_radius', tr('fillet_radius'), default_units,
         adsk.core.ValueInput.createByString('0.4 mm')
     )
     tolerance_input = create_inputs.addDropDownCommandInput(
-        'tolerance', 'Toleranz', adsk.core.DropDownStyles.TextListDropDownStyle
+        'tolerance', tr('tolerance'), adsk.core.DropDownStyles.TextListDropDownStyle
     )
     default_tolerance_name = _tolerance_name(load_default_tolerance())
     for name, _ in TOLERANCE_OPTIONS:
@@ -153,12 +156,12 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
     result_text = create_inputs.addTextBoxCommandInput(
         'result_text', 'Ergebnis',
-        'Bitte eine Zylinderfläche auswählen.', 9, True
+        tr('select_face_result'), 9, True
     )
     result_text.isFullWidth = True
 
     dimensions_group = create_inputs.addGroupCommandInput(
-        'dimensions_group', 'Skizze der Gewindeparameter'
+        'dimensions_group', tr('dimensions_group')
     )
     dimensions_group.isExpanded = False
     dimensions_image = dimensions_group.children.addImageCommandInput(
@@ -178,12 +181,12 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     preset_table.hasGrid = False
 
     management_details = management_inputs.addTextBoxCommandInput(
-        'management_details', '', 'Noch keine Tabellenzeile ausgewählt.', 7, True
+        'management_details', '', tr('no_row'), 7, True
     )
     management_details.isFullWidth = True
 
     transfer_group = management_inputs.addGroupCommandInput(
-        'transfer_group', 'Einstellungen als JSON exportieren / importieren'
+        'transfer_group', tr('json_group')
     )
     transfer_inputs = transfer_group.children
     transfer_buttons = transfer_inputs.addTableCommandInput(
@@ -197,10 +200,10 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         adsk.core.TablePresentationStyles.itemBorderTablePresentationStyle
     )
     export_button = transfer_inputs.addBoolValueInput(
-        'export_presets', 'Export', False, '', False
+        'export_presets', tr('export'), False, '', False
     )
     import_button = transfer_inputs.addBoolValueInput(
-        'import_presets', 'Import', False, '', False
+        'import_presets', tr('import'), False, '', False
     )
     transfer_buttons.addCommandInput(export_button, 0, 0)
     transfer_buttons.addCommandInput(import_button, 0, 1)
@@ -210,13 +213,13 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     transfer_status.isFullWidth = True
 
     default_tolerance_input = management_inputs.addDropDownCommandInput(
-        'default_tolerance', 'Standardtoleranz',
+        'default_tolerance', tr('default_tolerance'),
         adsk.core.DropDownStyles.TextListDropDownStyle
     )
     for name, _ in TOLERANCE_OPTIONS:
         default_tolerance_input.listItems.add(name, name == default_tolerance_name)
     management_inputs.addBoolValueInput(
-        'save_default_tolerance', 'Als Standard festlegen', False, '', False
+        'save_default_tolerance', tr('set_default'), False, '', False
     )
     default_status = management_inputs.addTextBoxCommandInput(
         'default_tolerance_status', '', '', 2, True
@@ -224,16 +227,16 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     default_status.isFullWidth = True
 
     preset_group = create_inputs.addGroupCommandInput(
-        'preset_group', 'Aktuelle Einstellungen speichern'
+        'preset_group', tr('save_group')
     )
     preset_group.isExpanded = False
     preset_inputs = preset_group.children
-    preset_inputs.addStringValueInput('preset_name', 'Gewindebezeichner', '')
+    preset_inputs.addStringValueInput('preset_name', tr('thread_name'), '')
     preset_inputs.addTextBoxCommandInput(
-        'preset_note', 'Kurze Notiz', '', 2, False
+        'preset_note', tr('short_note'), '', 2, False
     )
     preset_inputs.addBoolValueInput(
-        'save_preset', 'Aktuelle Einstellungen speichern', False, '', False
+        'save_preset', tr('save_current'), False, '', False
     )
     preset_status = preset_inputs.addTextBoxCommandInput(
         'preset_status', '', '', 2, True
@@ -354,7 +357,7 @@ def _refresh_preset_selectors(inputs, selected_id=None):
         for selector_id in ('preset_selector',):
             selector = _input_by_id(inputs, selector_id)
             selector.listItems.clear()
-            selector.listItems.add('— Einstellung auswählen —', selected_id is None)
+            selector.listItems.add(tr('choose_setting'), selected_id is None)
             for preset in available_presets:
                 selector.listItems.add(preset['name'], preset.get('id') == selected_id)
         _populate_preset_table(inputs)
@@ -380,7 +383,7 @@ def _populate_preset_table(inputs):
     units = app.activeProduct.unitsManager
     length_units = units.defaultLengthUnits
 
-    rows = [('Bezeichner', 'α', 'h', 'P', 'Aktion')]
+    rows = [(tr('name'), 'α', 'h', 'P', tr('action'))]
     for preset in available_presets:
         settings = preset.get('settings', {})
         rows.append((
@@ -398,7 +401,7 @@ def _populate_preset_table(inputs):
             if row_index > 0 and column_index == 4:
                 input_id = f'delete_preset_{table_refresh_serial}_{row_index}'
                 delete_button = cell_inputs.addBoolValueInput(
-                    input_id, 'Löschen', False, '', False
+                    input_id, tr('delete'), False, '', False
                 )
                 table.addCommandInput(delete_button, row_index, column_index)
                 table_delete_actions[input_id] = available_presets[row_index - 1]['id']
@@ -428,7 +431,7 @@ def _save_default_tolerance(inputs):
         value = dict(TOLERANCE_OPTIONS)[selected_name]
         save_default_tolerance(value)
         _select_dropdown_item(_input_by_id(inputs, 'tolerance'), selected_name)
-        status.text = f'{selected_name} wurde als Standardtoleranz gespeichert.'
+        status.text = tr('default_saved', value=selected_name)
         _update_result_text(inputs)
     except Exception as error:
         status.text = str(error)
@@ -472,7 +475,9 @@ def _load_selected_preset(inputs, selector_id):
         _update_result_text(inputs)
     except (KeyError, TypeError, ValueError) as error:
         result = _input_by_id(inputs, 'result_text')
-        result.text = f'Die Einstellung „{preset.get("name", "") }“ ist unvollständig: {error}'
+        result.text = tr(
+            'preset_incomplete', name=preset.get('name', ''), error=error
+        )
     finally:
         loading_preset = False
 
@@ -493,20 +498,20 @@ def _show_selected_table_details(inputs):
         (item for item in available_presets if item.get('id') == preset_id), None
     )
     if preset is None:
-        details.text = 'Noch keine Tabellenzeile ausgewählt.'
+        details.text = tr('no_row')
         return
     settings = preset.get('settings', {})
-    mode = 'ISO metrisch' if settings.get('calculation_mode') == 'iso_metric' else 'Freie Geometrie'
+    mode = tr('profile_mode_iso') if settings.get('calculation_mode') == 'iso_metric' else tr('profile_mode_free')
     units = app.activeProduct.unitsManager
     length_units = units.defaultLengthUnits
     details.text = (
-        f'Bezeichner: {preset.get("name", "")}\n'
-        f'Notiz: {preset.get("note", "–") or "–"}\n'
-        f'Modus: {mode}\n'
-        f'Profilwinkel (α): {_format_table_value(units, settings.get("flank_angle_rad"), "deg")}\n'
-        f'Gewindetiefe (h): {_format_table_value(units, settings.get("thread_depth_cm"), length_units)}\n'
-        f'Gewindesteigung (P): {_format_table_value(units, settings.get("pitch_cm"), length_units)}\n'
-        f'Gespeichert: {preset.get("created_at", "–")}'
+        f'{tr("details_name")}: {preset.get("name", "")}\n'
+        f'{tr("note")}: {preset.get("note", "–") or "–"}\n'
+        f'{tr("mode")}: {mode}\n'
+        f'{tr("profile_angle")}: {_format_table_value(units, settings.get("flank_angle_rad"), "deg")}\n'
+        f'{tr("thread_depth")}: {_format_table_value(units, settings.get("thread_depth_cm"), length_units)}\n'
+        f'{tr("pitch")}: {_format_table_value(units, settings.get("pitch_cm"), length_units)}\n'
+        f'{tr("saved_at")}: {preset.get("created_at", "–")}'
     )
 
 
@@ -516,7 +521,7 @@ def _delete_preset(inputs, preset_id):
     if preset is None:
         return
     answer = ui.messageBox(
-        f'Soll die Einstellung „{preset.get("name", "")}“ wirklich gelöscht werden?',
+        tr('confirm_delete', name=preset.get('name', '')),
         'PrintThread Wizard',
         adsk.core.MessageBoxButtonTypes.YesNoButtonType,
         adsk.core.MessageBoxIconTypes.QuestionIconType,
@@ -538,7 +543,7 @@ def _delete_preset(inputs, preset_id):
         available_presets = load_thread_presets()
         _refresh_quick_selector(inputs)
         _input_by_id(inputs, 'management_details').text = (
-            f'„{preset.get("name", "")}“ wurde gelöscht.'
+            tr('deleted', name=preset.get('name', ''))
         )
 
 
@@ -549,7 +554,7 @@ def _refresh_quick_selector(inputs):
     try:
         selector = _input_by_id(inputs, 'preset_selector')
         selector.listItems.clear()
-        selector.listItems.add('— Einstellung auswählen —', True)
+        selector.listItems.add(tr('choose_setting'), True)
         for preset in available_presets:
             selector.listItems.add(preset['name'], False)
     finally:
@@ -560,19 +565,19 @@ def _export_presets(inputs):
     status = _input_by_id(inputs, 'transfer_status')
     try:
         dialog = ui.createFileDialog()
-        dialog.title = 'Gewindeeinstellungen als JSON exportieren'
+        dialog.title = tr('export_title')
         dialog.filter = 'JSON-Dateien (*.json)'
         dialog.initialFilename = 'PrintThreadWizard-Einstellungen.json'
         if dialog.showSave() != adsk.core.DialogResults.DialogOK:
-            status.text = 'Export abgebrochen.'
+            status.text = tr('export_cancelled')
             return
         filename = dialog.filename
         if not filename.lower().endswith('.json'):
             filename += '.json'
         count = export_thread_presets(filename)
-        status.text = f'{count} Einstellung(en) erfolgreich exportiert.'
+        status.text = tr('export_ok', count=count)
     except Exception as error:
-        status.text = f'Export fehlgeschlagen: {error}'
+        status.text = tr('export_failed', error=error)
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
 
 
@@ -580,19 +585,19 @@ def _import_presets(inputs):
     status = _input_by_id(inputs, 'transfer_status')
     try:
         dialog = ui.createFileDialog()
-        dialog.title = 'Gewindeeinstellungen aus JSON importieren'
+        dialog.title = tr('import_title')
         dialog.filter = 'JSON-Dateien (*.json)'
         dialog.isMultiSelectEnabled = False
         if dialog.showOpen() != adsk.core.DialogResults.DialogOK:
-            status.text = 'Import abgebrochen.'
+            status.text = tr('import_cancelled')
             return
         count = import_thread_presets(dialog.filename)
         _refresh_preset_selectors(inputs)
         default_name = _tolerance_name(load_default_tolerance())
         _select_dropdown_item(_input_by_id(inputs, 'default_tolerance'), default_name)
-        status.text = f'{count} Einstellung(en) erfolgreich importiert.'
+        status.text = tr('import_ok', count=count)
     except Exception as error:
-        status.text = f'Import fehlgeschlagen: {error}'
+        status.text = tr('import_failed', error=error)
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
 
 
@@ -658,7 +663,7 @@ def _save_current_preset(inputs):
             _input_by_id(inputs, 'preset_note').text,
             settings,
         )
-        status.text = f'„{preset["name"]}“ wurde gespeichert.'
+        status.text = tr('saved', name=preset['name'])
         _refresh_preset_selectors(inputs, preset['id'])
         futil.log(f'{CMD_NAME}: Gewindeeinstellung „{preset["name"]}“ gespeichert.')
     except Exception as error:
@@ -771,20 +776,20 @@ def _set_result_text(inputs, errors):
         parameters.pitch, units.defaultLengthUnits, True
     )
     angle_value = units.formatInternalValue(parameters.flank_angle, 'deg', True)
-    mode_text = 'ISO metrisch' if _is_iso_mode(inputs) else 'Freie Geometrie'
+    mode_text = tr('profile_mode_iso') if _is_iso_mode(inputs) else tr('profile_mode_free')
     selected_tolerance = next(
         name for name, value in TOLERANCE_OPTIONS if value == parameters.tolerance
     )
-    thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
-    bore_diameter = '– (nur Innengewinde)' if cylinder.is_external else core_diameter
+    thread_type = tr('external_thread') if cylinder.is_external else tr('internal_thread')
+    bore_diameter = tr('internal_only') if cylinder.is_external else core_diameter
     result.text = (
-        f'{thread_type} – Nenndurchmesser: {nominal_diameter}\n'
-        f'Gewindesteigung (P): {pitch_value}\n'
-        f'Außendurchmesser (d): {diameter}\n'
-        f'Teilkreisdurchmesser (d2): {pitch_diameter}\n'
-        f'Innendurchmesser (d1): {core_diameter}\n'
-        f'Gewindebohrung (T): {bore_diameter}\n'
-        f'Profilwinkel (α): {angle_value}\n'
-        f'Toleranz: {selected_tolerance}\n'
-        f'Modus: {mode_text}'
+        f'{thread_type} – {tr("nominal_diameter")}: {nominal_diameter}\n'
+        f'{tr("pitch")}: {pitch_value}\n'
+        f'{tr("major_diameter")}: {diameter}\n'
+        f'{tr("pitch_diameter")}: {pitch_diameter}\n'
+        f'{tr("minor_diameter")}: {core_diameter}\n'
+        f'{tr("tap_drill")}: {bore_diameter}\n'
+        f'{tr("profile_angle")}: {angle_value}\n'
+        f'{tr("tolerance")}: {selected_tolerance}\n'
+        f'{tr("mode")}: {mode_text}'
     )

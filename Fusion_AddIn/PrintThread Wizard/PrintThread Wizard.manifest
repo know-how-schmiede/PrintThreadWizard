@@ -3,9 +3,15 @@
 	"type":	"addin",
 	"author":	"Rene Triebenstein / Know-How-Schmiede",
 	"description":	{
-		"":	"PrintThread Wizard is a Fusion 360 add-in for creating 3D-printable thread geometry on selected cylindrical faces."
+		"":	"PrintThread Wizard creates 3D-printable thread geometry on selected cylindrical faces.",
+		"1031":	"PrintThread Wizard erstellt 3D-druckbare Gewinde auf ausgewählten Zylinderflächen.",
+		"1033":	"PrintThread Wizard creates 3D-printable thread geometry on selected cylindrical faces.",
+		"1034":	"PrintThread Wizard crea roscas imprimibles en 3D en caras cilíndricas seleccionadas.",
+		"1036":	"PrintThread Wizard crée des filetages imprimables en 3D sur les faces cylindriques sélectionnées.",
+		"1040":	"PrintThread Wizard crea filettature stampabili in 3D sulle facce cilindriche selezionate.",
+		"1045":	"PrintThread Wizard tworzy gwinty do druku 3D na wybranych powierzchniach cylindrycznych."
 	},
-	"version":	"0.7.16",
+	"version":	"0.8.0",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true,

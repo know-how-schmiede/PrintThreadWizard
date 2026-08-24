@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.8.0 - 2026-08-24
+
+- Zentrale Übersetzungsschicht für `de`, `en`, `es`, `fr`, `it` und `pl` ergänzt.
+- Dialogreiter, Eingabefelder, Berechnungsmodi, Tabellen, Detailanzeige, Ergebnisfeld, Preset-Aktionen sowie Import-/Exportstatus lokalisiert.
+- Sprache wird automatisch aus `Application.preferences.generalPreferences.userLanguage` übernommen; nicht unterstützte Sprachen verwenden Englisch.
+- Add-in-Beschreibungen im Fusion-Manifest für alle sechs Sprachcodes lokalisiert.
+- Version in `version.py` und im Fusion-Manifest auf `0.8.0` gesetzt.
+
 ## 0.7.16 - 2026-08-24
 
 - Ausgeblendete, sprechend benannte Dokumentationsskizze mit allen Gewindeparametern als ersten Eintrag der erzeugten Timeline-Gruppe ergänzt.
