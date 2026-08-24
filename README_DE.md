@@ -7,7 +7,7 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
-Aktuelle Entwicklungsversion: **0.7.10**
+Aktuelle Entwicklungsversion: **0.7.11**
 
 ## Aktueller Funktionsumfang
 
@@ -25,6 +25,7 @@ Aktuelle Entwicklungsversion: **0.7.10**
   Gewindeanfänge und -enden
 - Zusammenfassung aller erzeugten Konstruktionsschritte in der eingeklappten
   Fusion-Timeline-Gruppe `PrintThread Wizard – Gewinde`
+- Lokales Speichern der aktuellen Gewindeeinstellungen mit Bezeichner und Notiz
 
 ## Funktionsweise der Toleranz
 
@@ -68,7 +69,9 @@ Der Befehl wird im Arbeitsbereich **Konstruktion** unter
 5. **ISO metrisch automatisch** oder **Freie Geometrie** auswählen.
 6. Die Steigung sowie im freien Modus Flankenwinkel und Gewindetiefe eingeben.
 7. Toleranz auswählen und Verrundungsradius festlegen.
-8. Die berechneten Werte im Ergebnisfeld prüfen und den Befehl bestätigen.
+8. Optional einen Gewindebezeichner und eine kurze Notiz eintragen und die
+   aktuellen Einstellungen über **Aktuelle Einstellungen speichern** ablegen.
+9. Die berechneten Werte im Ergebnisfeld prüfen und den Befehl bestätigen.
 
 Für ein zusammengehöriges Gewindepaar müssen Nenndurchmesser, Steigung,
 Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
@@ -85,6 +88,13 @@ Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
 | Steigung | Axialer Weg pro Umdrehung |
 | Verrundungsradius | Rundet den scharfen Gewindegrund ab |
 | Toleranz | Radiales Gesamtspiel des zusammengehörigen Gewindepaars |
+| Gewindebezeichner | Name des lokal gespeicherten Parametersatzes |
+| Kurze Notiz | Optionale Beschreibung mit bis zu 500 Zeichen |
+
+Die Parametersätze werden benutzerspezifisch in der versionierten JSON-Datei
+`PrintThread Wizard/thread-presets.json` im Anwendungsdatenordner des
+Betriebssystems gespeichert. Modellabhängige Flächen und Kanten werden nicht
+gespeichert.
 
 Das Ergebnisfeld zeigt Gewindeart, Nenndurchmesser, tolerierten Durchmesser,
 Kerndurchmesser, Toleranz und Berechnungsmodus.

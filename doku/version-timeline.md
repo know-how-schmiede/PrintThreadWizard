@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.7.11 - 2026-08-24
+
+- Dialog um Gewindebezeichner, kurze Notiz und einen Button zum Speichern der aktuellen Einstellungen ergänzt.
+- Wiederverwendbare Gewindeeinstellungen als versionierte JSON-Liste im benutzerspezifischen Anwendungsdatenordner gespeichert.
+- Persistentes Datenformat für die spätere Verwaltung, Auswahl sowie den Import und Export vorbereitet.
+- Speicherbutton greift auch aus seiner Dialoggruppe auf die vollständige Eingabesammlung zu.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.11` gesetzt.
+
 ## 0.7.10 - 2026-08-23
 
 - Dropdown `Toleranz` mit radialem Gesamtspiel von 0,0 bis 0,5 mm ergänzt; Standardwert ist 0,2 mm.

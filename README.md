@@ -7,7 +7,7 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
-Current development version: **0.7.10**
+Current development version: **0.7.11**
 
 ## Current features
 
@@ -23,6 +23,7 @@ Current development version: **0.7.10**
 - Helix overrun beyond both end faces for complete thread starts and ends
 - All generated construction steps collected in a collapsed Fusion timeline
   group named `PrintThread Wizard – Gewinde`
+- Local storage of the current thread settings with a name and note
 
 ## How clearance works
 
@@ -62,7 +63,9 @@ panel.
 5. Choose **ISO metric automatic** or **Free geometry**.
 6. Enter the pitch and, in free mode, the flank angle and thread depth.
 7. Select the required tolerance and set the root fillet radius.
-8. Check the calculated values in the result field and confirm the command.
+8. Optionally enter a thread name and short note, then use **Save current
+   settings** to store the parameter set.
+9. Check the calculated values in the result field and confirm the command.
 
 For a matching pair, use the same nominal diameter, pitch, flank geometry, and
 tolerance for both parts.
@@ -79,6 +82,12 @@ tolerance for both parts.
 | Pitch | Axial distance per revolution |
 | Root fillet radius | Rounds the sharp thread root |
 | Tolerance | Total radial clearance of the mating thread pair |
+| Thread name | Name of the locally stored parameter set |
+| Short note | Optional description of up to 500 characters |
+
+Parameter sets are stored per user in the versioned JSON file
+`PrintThread Wizard/thread-presets.json` below the operating system's
+application-data directory. Model-specific faces and edges are not stored.
 
 The result field shows the detected thread type, nominal diameter, adjusted
 diameter, core diameter, tolerance, and calculation mode.

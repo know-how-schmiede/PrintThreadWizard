@@ -6,6 +6,7 @@ import adsk.fusion
 from ... import config
 from ...core.iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
+from ...core.thread_presets import save_thread_preset
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
 from ...lib import fusionAddInUtils as futil
@@ -27,6 +28,7 @@ ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resource
 
 local_handlers = []
 updating_calculated_inputs = False
+active_command_inputs = None
 
 ISO_MODE_NAME = 'ISO metrisch automatisch'
 FREE_MODE_NAME = 'Freie Geometrie'
@@ -75,7 +77,9 @@ def stop():
 
 
 def command_created(args: adsk.core.CommandCreatedEventArgs):
+    global active_command_inputs
     inputs = args.command.commandInputs
+    active_command_inputs = inputs
 
     version_text = inputs.addTextBoxCommandInput(
         'version_info', 'Version', f'PrintThread Wizard {VERSION}', 1, True
@@ -128,6 +132,20 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     result_text.isFullWidth = True
 
+    preset_group = inputs.addGroupCommandInput('preset_group', 'Einstellungen speichern')
+    preset_inputs = preset_group.children
+    preset_inputs.addStringValueInput('preset_name', 'Gewindebezeichner', '')
+    preset_inputs.addTextBoxCommandInput(
+        'preset_note', 'Kurze Notiz', '', 2, False
+    )
+    preset_inputs.addBoolValueInput(
+        'save_preset', 'Aktuelle Einstellungen speichern', False, '', False
+    )
+    preset_status = preset_inputs.addTextBoxCommandInput(
+        'preset_status', '', '', 2, True
+    )
+    preset_status.isFullWidth = True
+
     _apply_calculation_mode(inputs)
 
     futil.add_handler(args.command.execute, command_execute, local_handlers=local_handlers)
@@ -152,6 +170,11 @@ def command_execute(args: adsk.core.CommandEventArgs):
 
 
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
+    if args.input.id == 'save_preset':
+        if args.input.value:
+            _save_current_preset(active_command_inputs)
+            args.input.value = False
+        return
     if args.input.id in (
         'target_face',
         'pitch',
@@ -174,8 +197,9 @@ def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
 
 
 def command_destroy(args: adsk.core.CommandEventArgs):
-    global local_handlers
+    global local_handlers, active_command_inputs
     local_handlers = []
+    active_command_inputs = None
 
 
 def _read_parameters(inputs):
@@ -206,6 +230,54 @@ def _selected_tolerance(inputs):
         else DEFAULT_TOLERANCE_NAME
     )
     return dict(TOLERANCE_OPTIONS)[selected_name]
+
+
+def _save_current_preset(inputs):
+    status = inputs.itemById('preset_status')
+    try:
+        _apply_calculation_mode(inputs)
+        parameters = _read_parameters(inputs)
+        parameter_errors = [
+            error for error in parameters.validation_errors()
+            if error != 'Eine Zylinderfläche muss ausgewählt werden.'
+        ]
+        if parameter_errors:
+            raise ValueError('\n'.join(parameter_errors))
+
+        context = _preset_face_context(parameters.face)
+        settings = {
+            'calculation_mode': 'iso_metric' if _is_iso_mode(inputs) else 'free',
+            'flank_angle_rad': parameters.flank_angle,
+            'thread_depth_cm': parameters.thread_depth,
+            'pitch_cm': parameters.pitch,
+            'fillet_radius_cm': parameters.fillet_radius,
+            'tolerance_cm': parameters.tolerance,
+            'display_length_units': app.activeProduct.unitsManager.defaultLengthUnits,
+            **context,
+        }
+        preset = save_thread_preset(
+            inputs.itemById('preset_name').value,
+            inputs.itemById('preset_note').text,
+            settings,
+        )
+        status.text = f'„{preset["name"]}“ wurde gespeichert.'
+        futil.log(f'{CMD_NAME}: Gewindeeinstellung „{preset["name"]}“ gespeichert.')
+    except Exception as error:
+        status.text = str(error)
+        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
+
+
+def _preset_face_context(face):
+    if face is None:
+        return {}
+    try:
+        cylinder = analyze_cylinder(face)
+        return {
+            'thread_type': 'external' if cylinder.is_external else 'internal',
+            'nominal_diameter_cm': cylinder.radius * 2,
+        }
+    except ValueError:
+        return {}
 
 
 def _is_iso_mode(inputs):
