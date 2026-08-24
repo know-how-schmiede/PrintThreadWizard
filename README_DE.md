@@ -9,6 +9,11 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
+Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
+[Know-How-Schmiede](https://www.youtube.com/c/knowhowschmiede), alternativ auch
+über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
+Über ein Abonnement des Kanals würde ich mich sehr freuen.
+
 Aktuelle Entwicklungsversion: **0.8.0**
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI

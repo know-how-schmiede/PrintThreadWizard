@@ -9,6 +9,11 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
+More Fusion 360 video tutorials are available on the
+[Know-How-Schmiede YouTube channel](https://www.youtube.com/c/knowhowschmiede),
+or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
+I would be very happy if you subscribed to the channel.
+
 Current development version: **0.8.0**
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
