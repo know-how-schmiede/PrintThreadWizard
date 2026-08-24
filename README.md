@@ -9,7 +9,7 @@ and internal threads on selected cylindrical faces. Its geometry is intended
 for functional FDM/FFF parts and can be adjusted for the clearance required by
 3D-printed mating components.
 
-Current development version: **0.7.14**
+Current development version: **0.7.15**
 
 ## Current features
 
@@ -33,7 +33,9 @@ Current development version: **0.7.14**
 - Technical symbols and a profile diagram for pitch `P`, major diameter `d`,
   pitch diameter `d2`, minor diameter `d1`, tap-drill diameter `T`, profile
   depth `h`, and included angle `α`
-- Compact preset table with name, `α`, `h`, and `P` on the management tab
+- Compact preset table with name, `α`, `h`, `P`, and a delete action
+- Selecting a table row displays its complete values and note
+- JSON import and export in a dedicated dialog section with status feedback
 - Dedicated brand logo for the Fusion dialog, GitHub, and websites
 
 ## How clearance works
@@ -105,7 +107,11 @@ application-data directory. Model-specific faces and edges are not stored.
 The **Manage settings** tab lets the user persist the tolerance selected by
 default whenever a new dialog opens. A scrollable table lists all saved
 parameter sets with their name, included angle `α`, thread depth `h`, and
-pitch `P`.
+pitch `P`. Entries can be deleted by row.
+
+The **Export/import settings as JSON** section saves or loads all presets,
+including the default tolerance. Success, cancellation, and errors are shown
+directly below the two buttons.
 
 The result field shows the thread type, nominal diameter, `P`, `d`, `d2`, `d1`,
 `T`, `α`, tolerance, and calculation mode. The diagram below maps these symbols

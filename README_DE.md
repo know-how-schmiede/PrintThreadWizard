@@ -9,7 +9,7 @@ und Innengewinde auf ausgewählten Zylinderflächen erzeugt. Die Geometrie ist
 für funktionale FDM-/FFF-Bauteile vorgesehen und kann an das für gedruckte
 Gewindepaare erforderliche Spiel angepasst werden.
 
-Aktuelle Entwicklungsversion: **0.7.14**
+Aktuelle Entwicklungsversion: **0.7.15**
 
 ## Aktueller Funktionsumfang
 
@@ -36,8 +36,10 @@ Aktuelle Entwicklungsversion: **0.7.14**
 - Technische Kurzzeichen und Profildarstellung für Steigung `P`,
   Außendurchmesser `d`, Teilkreisdurchmesser `d2`, Innendurchmesser `d1`,
   Gewindebohrung `T`, Profiltiefe `h` und Profilwinkel `α`
-- Kompakte Preset-Tabelle mit Bezeichner, `α`, `h` und `P` im
+- Kompakte Preset-Tabelle mit Bezeichner, `α`, `h`, `P` und Löschaktion im
   Verwaltungs-Reiter
+- Auswahl einer Tabellenzeile zeigt deren vollständige Daten und Notiz an
+- JSON-Import und -Export in einem eigenen Dialogbereich mit Statusanzeige
 - Eigenes Markenlogo für Fusion-Dialog, GitHub und Webseiten
 
 ## Funktionsweise der Toleranz
@@ -114,7 +116,12 @@ gespeichert.
 Im Reiter **Einstellungen verwalten** kann die beim Öffnen des nächsten
 Dialogs vorausgewählte Toleranz persistent festgelegt werden. Dort zeigt eine
 scrollbare Tabelle außerdem alle gespeicherten Parametersätze mit Bezeichner,
-Profilwinkel `α`, Gewindetiefe `h` und Gewindesteigung `P`.
+Profilwinkel `α`, Gewindetiefe `h` und Gewindesteigung `P`. Einträge können
+zeilenweise gelöscht werden.
+
+Der Bereich **Einstellungen als JSON exportieren / importieren** sichert oder
+lädt alle Presets einschließlich Standardtoleranz. Erfolg, Abbruch und Fehler
+werden direkt unter den beiden Schaltflächen angezeigt.
 
 Das Ergebnisfeld zeigt Gewindeart, Nenndurchmesser, `P`, `d`, `d2`, `d1`, `T`,
 `α`, Toleranz und Berechnungsmodus. Die darunterliegende Skizze ordnet die

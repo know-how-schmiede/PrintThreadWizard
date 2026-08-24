@@ -74,6 +74,71 @@ def save_default_tolerance(value: float) -> None:
     _write_storage(path, data)
 
 
+def delete_thread_preset(preset_id: str) -> bool:
+    path = preset_file_path()
+    data = _read_storage(path)
+    original_count = len(data['presets'])
+    data['presets'] = [
+        preset for preset in data['presets'] if preset.get('id') != preset_id
+    ]
+    if len(data['presets']) == original_count:
+        return False
+    _write_storage(path, data)
+    return True
+
+
+def export_thread_presets(path: str) -> int:
+    data = _read_storage(preset_file_path())
+    export_data = {
+        'schema_version': SCHEMA_VERSION,
+        'exported_at': datetime.now(timezone.utc).isoformat(),
+        'presets': data['presets'],
+        'preferences': data.get('preferences', {}),
+    }
+    Path(path).write_text(
+        json.dumps(export_data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+    )
+    return len(export_data['presets'])
+
+
+def import_thread_presets(path: str) -> int:
+    try:
+        imported = json.loads(Path(path).read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f'Die Importdatei ist nicht lesbar: {error}') from error
+    if imported.get('schema_version') != SCHEMA_VERSION:
+        raise ValueError('Die Importdatei hat eine nicht unterstützte Formatversion.')
+    presets = imported.get('presets')
+    if not isinstance(presets, list):
+        raise ValueError('Die Importdatei enthält keine gültige Preset-Liste.')
+
+    normalized = []
+    for preset in presets:
+        if not isinstance(preset, dict) or not str(preset.get('name', '')).strip():
+            raise ValueError('Die Importdatei enthält einen Eintrag ohne Bezeichner.')
+        if not isinstance(preset.get('settings'), dict):
+            raise ValueError(f'Der Eintrag „{preset.get("name", "")}“ enthält keine Parameter.')
+        entry = dict(preset)
+        entry['id'] = str(entry.get('id') or uuid4())
+        entry['name'] = str(entry['name']).strip()
+        entry['note'] = str(entry.get('note', '')).strip()
+        entry['created_at'] = str(
+            entry.get('created_at') or datetime.now(timezone.utc).isoformat()
+        )
+        normalized.append(entry)
+
+    storage_path = preset_file_path()
+    data = _read_storage(storage_path)
+    merged = {str(preset.get('id')): preset for preset in data['presets']}
+    for preset in normalized:
+        merged[preset['id']] = preset
+    data['presets'] = list(merged.values())
+    if isinstance(imported.get('preferences'), dict):
+        data['preferences'] = imported['preferences']
+    _write_storage(storage_path, data)
+    return len(normalized)
+
+
 def _write_storage(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = path.with_suffix('.tmp')

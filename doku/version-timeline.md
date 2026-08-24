@@ -1,5 +1,15 @@
 # Version Timeline
 
+## 0.7.15 - 2026-08-24
+
+- Zusätzliches Dropdown im Verwaltungs-Reiter entfernt und die Detailanzeige an die Auswahl einer Tabellenzeile gebunden.
+- Preset-Tabelle um eine Löschaktion pro Zeile ergänzt.
+- Native Tabellenpräsentation auf dezente, vom Fusion-Theme bestimmte Zellrahmen ohne schwarzes Vollgitter umgestellt.
+- Absturz beim Löschen verhindert: Die aktive Tabellenzeile wird während ihres Klick-Ereignisses nur ausgeblendet, nicht mitsamt dem auslösenden Button zerstört.
+- Überflüssige Tabellen- und Detailbeschriftungen entfernt und die Detailanzeige auch bei Auswahl eines Tabellenfeldes aktualisiert.
+- Eigenen Bereich `Einstellungen als JSON exportieren / importieren` mit den Buttons `Export` und `Import` sowie Statusmeldungen am unteren Rand ergänzt.
+- Version in `version.py` und im Fusion-Manifest auf `0.7.15` gesetzt.
+
 ## 0.7.14 - 2026-08-24
 
 - Bestehendes PrintThread-Wizard-Logo im Dialog sowie in beiden README-Dateien eingebunden.

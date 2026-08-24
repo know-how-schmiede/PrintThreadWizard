@@ -7,6 +7,9 @@ from ... import config
 from ...core.iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
 from ...core.thread_presets import (
+    delete_thread_preset,
+    export_thread_presets,
+    import_thread_presets,
     load_default_tolerance,
     load_thread_presets,
     save_default_tolerance,
@@ -39,6 +42,8 @@ active_command_inputs = None
 available_presets = []
 loading_preset = False
 table_refresh_serial = 0
+table_delete_actions = {}
+table_row_presets = {}
 
 ISO_MODE_NAME = 'ISO metrisch automatisch'
 FREE_MODE_NAME = 'Freie Geometrie'
@@ -161,21 +166,48 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     dimensions_image.isFullWidth = True
 
-    management_selector = management_inputs.addDropDownCommandInput(
-        'management_selector', 'Gespeicherte Einstellungen',
-        adsk.core.DropDownStyles.TextListDropDownStyle
+    preset_table = management_inputs.addTableCommandInput(
+        'preset_table', '', 5, '3:1:1:1:1'
     )
+    preset_table.isFullWidth = True
+    preset_table.minimumVisibleRows = 3
+    preset_table.maximumVisibleRows = 8
+    preset_table.tablePresentationStyle = (
+        adsk.core.TablePresentationStyles.itemBorderTablePresentationStyle
+    )
+    preset_table.hasGrid = False
+
     management_details = management_inputs.addTextBoxCommandInput(
-        'management_details', 'Details', 'Noch keine Einstellung ausgewählt.', 4, True
+        'management_details', '', 'Noch keine Tabellenzeile ausgewählt.', 7, True
     )
     management_details.isFullWidth = True
 
-    preset_table = management_inputs.addTableCommandInput(
-        'preset_table', 'Gespeicherte Parameter', 4, '3:1:1:1'
+    transfer_group = management_inputs.addGroupCommandInput(
+        'transfer_group', 'Einstellungen als JSON exportieren / importieren'
     )
-    preset_table.minimumVisibleRows = 3
-    preset_table.maximumVisibleRows = 8
-    preset_table.hasGrid = True
+    transfer_inputs = transfer_group.children
+    transfer_buttons = transfer_inputs.addTableCommandInput(
+        'transfer_buttons', '', 2, '1:1'
+    )
+    transfer_buttons.minimumVisibleRows = 1
+    transfer_buttons.maximumVisibleRows = 1
+    transfer_buttons.hasGrid = False
+    transfer_buttons.isFullWidth = True
+    transfer_buttons.tablePresentationStyle = (
+        adsk.core.TablePresentationStyles.itemBorderTablePresentationStyle
+    )
+    export_button = transfer_inputs.addBoolValueInput(
+        'export_presets', 'Export', False, '', False
+    )
+    import_button = transfer_inputs.addBoolValueInput(
+        'import_presets', 'Import', False, '', False
+    )
+    transfer_buttons.addCommandInput(export_button, 0, 0)
+    transfer_buttons.addCommandInput(import_button, 0, 1)
+    transfer_status = transfer_inputs.addTextBoxCommandInput(
+        'transfer_status', '', '', 2, True
+    )
+    transfer_status.isFullWidth = True
 
     default_tolerance_input = management_inputs.addDropDownCommandInput(
         'default_tolerance', 'Standardtoleranz',
@@ -239,8 +271,23 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
     if args.input.id == 'preset_selector':
         _load_selected_preset(active_command_inputs, 'preset_selector')
         return
-    if args.input.id == 'management_selector':
-        _show_selected_preset_details(active_command_inputs)
+    if args.input.id == 'preset_table' or args.input.id.startswith('preset_table_'):
+        _show_selected_table_details(active_command_inputs)
+        return
+    if args.input.id in table_delete_actions:
+        if args.input.value:
+            args.input.value = False
+            _delete_preset(active_command_inputs, table_delete_actions[args.input.id])
+        return
+    if args.input.id == 'export_presets':
+        if args.input.value:
+            args.input.value = False
+            _export_presets(active_command_inputs)
+        return
+    if args.input.id == 'import_presets':
+        if args.input.value:
+            args.input.value = False
+            _import_presets(active_command_inputs)
         return
     if args.input.id == 'save_default_tolerance':
         if args.input.value:
@@ -275,9 +322,12 @@ def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
 
 def command_destroy(args: adsk.core.CommandEventArgs):
     global local_handlers, active_command_inputs, available_presets
+    global table_delete_actions, table_row_presets
     local_handlers = []
     active_command_inputs = None
     available_presets = []
+    table_delete_actions = {}
+    table_row_presets = {}
 
 
 def _input_by_id(inputs, input_id):
@@ -301,15 +351,13 @@ def _refresh_preset_selectors(inputs, selected_id=None):
     loading_preset = True
     try:
         available_presets = load_thread_presets()
-        for selector_id in ('preset_selector', 'management_selector'):
+        for selector_id in ('preset_selector',):
             selector = _input_by_id(inputs, selector_id)
             selector.listItems.clear()
             selector.listItems.add('— Einstellung auswählen —', selected_id is None)
             for preset in available_presets:
                 selector.listItems.add(preset['name'], preset.get('id') == selected_id)
         _populate_preset_table(inputs)
-        if selected_id is not None:
-            _show_selected_preset_details(inputs)
     except Exception as error:
         status = _input_by_id(inputs, 'preset_status')
         if status is not None:
@@ -320,17 +368,19 @@ def _refresh_preset_selectors(inputs, selected_id=None):
 
 
 def _populate_preset_table(inputs):
-    global table_refresh_serial
+    global table_refresh_serial, table_delete_actions, table_row_presets
     table = _input_by_id(inputs, 'preset_table')
     if table is None:
         return
     table.clear()
+    table_delete_actions = {}
+    table_row_presets = {}
     table_refresh_serial += 1
     cell_inputs = table.commandInputs
     units = app.activeProduct.unitsManager
     length_units = units.defaultLengthUnits
 
-    rows = [('Bezeichner', 'α', 'h', 'P')]
+    rows = [('Bezeichner', 'α', 'h', 'P', 'Aktion')]
     for preset in available_presets:
         settings = preset.get('settings', {})
         rows.append((
@@ -338,10 +388,21 @@ def _populate_preset_table(inputs):
             _format_table_value(units, settings.get('flank_angle_rad'), 'deg'),
             _format_table_value(units, settings.get('thread_depth_cm'), length_units),
             _format_table_value(units, settings.get('pitch_cm'), length_units),
+            '',
         ))
 
     for row_index, row_values in enumerate(rows):
+        if row_index > 0:
+            table_row_presets[row_index] = available_presets[row_index - 1]['id']
         for column_index, value in enumerate(row_values):
+            if row_index > 0 and column_index == 4:
+                input_id = f'delete_preset_{table_refresh_serial}_{row_index}'
+                delete_button = cell_inputs.addBoolValueInput(
+                    input_id, 'Löschen', False, '', False
+                )
+                table.addCommandInput(delete_button, row_index, column_index)
+                table_delete_actions[input_id] = available_presets[row_index - 1]['id']
+                continue
             text_value = f'<b>{value}</b>' if row_index == 0 else value
             cell = cell_inputs.addTextBoxCommandInput(
                 f'preset_table_{table_refresh_serial}_{row_index}_{column_index}',
@@ -424,20 +485,115 @@ def _select_dropdown_item(dropdown, item_name):
             return
 
 
-def _show_selected_preset_details(inputs):
-    preset = _selected_preset(inputs, 'management_selector')
+def _show_selected_table_details(inputs):
+    table = _input_by_id(inputs, 'preset_table')
     details = _input_by_id(inputs, 'management_details')
+    preset_id = table_row_presets.get(table.selectedRow) if table is not None else None
+    preset = next(
+        (item for item in available_presets if item.get('id') == preset_id), None
+    )
     if preset is None:
-        details.text = 'Noch keine Einstellung ausgewählt.'
+        details.text = 'Noch keine Tabellenzeile ausgewählt.'
         return
     settings = preset.get('settings', {})
     mode = 'ISO metrisch' if settings.get('calculation_mode') == 'iso_metric' else 'Freie Geometrie'
+    units = app.activeProduct.unitsManager
+    length_units = units.defaultLengthUnits
     details.text = (
         f'Bezeichner: {preset.get("name", "")}\n'
         f'Notiz: {preset.get("note", "–") or "–"}\n'
         f'Modus: {mode}\n'
+        f'Profilwinkel (α): {_format_table_value(units, settings.get("flank_angle_rad"), "deg")}\n'
+        f'Gewindetiefe (h): {_format_table_value(units, settings.get("thread_depth_cm"), length_units)}\n'
+        f'Gewindesteigung (P): {_format_table_value(units, settings.get("pitch_cm"), length_units)}\n'
         f'Gespeichert: {preset.get("created_at", "–")}'
     )
+
+
+def _delete_preset(inputs, preset_id):
+    global available_presets
+    preset = next((item for item in available_presets if item.get('id') == preset_id), None)
+    if preset is None:
+        return
+    answer = ui.messageBox(
+        f'Soll die Einstellung „{preset.get("name", "")}“ wirklich gelöscht werden?',
+        'PrintThread Wizard',
+        adsk.core.MessageBoxButtonTypes.YesNoButtonType,
+        adsk.core.MessageBoxIconTypes.QuestionIconType,
+    )
+    if answer != adsk.core.DialogResults.DialogYes:
+        return
+    if delete_thread_preset(preset_id):
+        table = _input_by_id(inputs, 'preset_table')
+        row = next(
+            (row_index for row_index, row_id in table_row_presets.items() if row_id == preset_id),
+            None,
+        )
+        if table is not None and row is not None:
+            for column in range(5):
+                cell_input = table.getInputAtPosition(row, column)
+                if cell_input is not None:
+                    cell_input.isVisible = False
+        table_row_presets.pop(row, None)
+        available_presets = load_thread_presets()
+        _refresh_quick_selector(inputs)
+        _input_by_id(inputs, 'management_details').text = (
+            f'„{preset.get("name", "")}“ wurde gelöscht.'
+        )
+
+
+def _refresh_quick_selector(inputs):
+    global loading_preset
+    previous_loading_state = loading_preset
+    loading_preset = True
+    try:
+        selector = _input_by_id(inputs, 'preset_selector')
+        selector.listItems.clear()
+        selector.listItems.add('— Einstellung auswählen —', True)
+        for preset in available_presets:
+            selector.listItems.add(preset['name'], False)
+    finally:
+        loading_preset = previous_loading_state
+
+
+def _export_presets(inputs):
+    status = _input_by_id(inputs, 'transfer_status')
+    try:
+        dialog = ui.createFileDialog()
+        dialog.title = 'Gewindeeinstellungen als JSON exportieren'
+        dialog.filter = 'JSON-Dateien (*.json)'
+        dialog.initialFilename = 'PrintThreadWizard-Einstellungen.json'
+        if dialog.showSave() != adsk.core.DialogResults.DialogOK:
+            status.text = 'Export abgebrochen.'
+            return
+        filename = dialog.filename
+        if not filename.lower().endswith('.json'):
+            filename += '.json'
+        count = export_thread_presets(filename)
+        status.text = f'{count} Einstellung(en) erfolgreich exportiert.'
+    except Exception as error:
+        status.text = f'Export fehlgeschlagen: {error}'
+        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
+
+
+def _import_presets(inputs):
+    status = _input_by_id(inputs, 'transfer_status')
+    try:
+        dialog = ui.createFileDialog()
+        dialog.title = 'Gewindeeinstellungen aus JSON importieren'
+        dialog.filter = 'JSON-Dateien (*.json)'
+        dialog.isMultiSelectEnabled = False
+        if dialog.showOpen() != adsk.core.DialogResults.DialogOK:
+            status.text = 'Import abgebrochen.'
+            return
+        count = import_thread_presets(dialog.filename)
+        _refresh_preset_selectors(inputs)
+        default_name = _tolerance_name(load_default_tolerance())
+        _select_dropdown_item(_input_by_id(inputs, 'default_tolerance'), default_name)
+        status.text = f'{count} Einstellung(en) erfolgreich importiert.'
+    except Exception as error:
+        status.text = f'Import fehlgeschlagen: {error}'
+        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
 
 
 def _read_parameters(inputs):
