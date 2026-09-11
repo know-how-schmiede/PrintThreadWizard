@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.8.1 - 2026-09-11
+
+- Windows-Installer prüft die API-Ordner unter `Autodesk Fusion` und `Autodesk Fusion 360` und schlägt einen Zielpfad vor.
+- Zielordner bleibt auch bei Updates sichtbar und änderbar; bei uneindeutiger Erkennung wird auf die Fusion-Voreinstellungen verwiesen.
+- Frühere Installationspfade werden nicht mehr automatisch übernommen. Unbeaufsichtigte Installation erfordert einen expliziten Zielpfad mit `/DIR`.
+- Installationsanleitung für Installer, manuelle Installation und Korrektur falscher Installationspfade ergänzt; README-Dateien aktualisiert.
+- Version in Installer, `version.py` und Fusion-Manifest auf `0.8.1` gesetzt.
+
 ## 0.8.0 - 2026-08-24
 
 - Zentrale Übersetzungsschicht für `de`, `en`, `es`, `fr`, `it` und `pl` ergänzt.
