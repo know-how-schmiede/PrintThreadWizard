@@ -100,13 +100,55 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     version_text.isFullWidth = True
 
-    brand_logo = inputs.addImageCommandInput('brand_logo', '', BRAND_LOGO_IMAGE)
-    brand_logo.isFullWidth = True
-
     create_tab = inputs.addTabCommandInput('create_tab', tr('create_tab'))
     create_inputs = create_tab.children
     management_tab = inputs.addTabCommandInput('management_tab', tr('manage_tab'))
     management_inputs = management_tab.children
+    info_tab = inputs.addTabCommandInput('info_tab', tr('info_tab'))
+    info_inputs = info_tab.children
+
+    brand_logo = info_inputs.addImageCommandInput('brand_logo', '', BRAND_LOGO_IMAGE)
+    brand_logo.isFullWidth = True
+
+    info_description = info_inputs.addTextBoxCommandInput(
+        'info_description', '', tr('info_description'), 3, True
+    )
+    info_description.isFullWidth = True
+
+    homepage_link = info_inputs.addTextBoxCommandInput(
+        'homepage_link', '',
+        tr('info_homepage', url='https://www.know-how-schmiede.de'),
+        3, True
+    )
+    homepage_link.isFullWidth = True
+
+    repository_link = info_inputs.addTextBoxCommandInput(
+        'repository_link', '',
+        tr('info_source', url='https://github.com/know-how-schmiede/PrintThreadWizard'),
+        2, True
+    )
+    repository_link.isFullWidth = True
+
+    update_info = info_inputs.addTextBoxCommandInput(
+        'update_info', '',
+        tr('info_updates', url='https://github.com/know-how-schmiede/PrintThreadWizard/releases'),
+        2, True
+    )
+    update_info.isFullWidth = True
+
+    issue_info = info_inputs.addTextBoxCommandInput(
+        'issue_info', '',
+        tr('info_issues', url='https://github.com/know-how-schmiede/PrintThreadWizard/issues'),
+        3, True
+    )
+    issue_info.isFullWidth = True
+
+    subscribe_info = info_inputs.addTextBoxCommandInput(
+        'subscribe_info', '',
+        tr('info_subscribe', url='https://www.youtube.com/@knowhowschmiede'),
+        3, True
+    )
+    subscribe_info.isFullWidth = True
 
     face_input = create_inputs.addSelectionInput(
         'target_face', tr('target_face'), tr('select_face')

@@ -1,5 +1,15 @@
 # Version Timeline
 
+## 0.8.2 - 2026-09-12
+
+- Neuen Dialogreiter `Info` ergänzt und das Logo dorthin verschoben.
+- Kurzbeschreibung und Links zur Know-How-Schmiede-Homepage sowie zum GitHub-Repository unter dem Logo ergänzt.
+- Hinweise mit direkten Links zu Updates (Releases) und Fehlermeldungen (Issues) ergänzt.
+- Infotexte zu Fusion-Tutorials, weiteren Plugins und Quellcode sowie einen Link zum kostenlosen YouTube-Abo bei `@knowhowschmiede` ergänzt.
+- Info-Reiter vollständig auf Deutsch, Englisch, Spanisch, Französisch, Italienisch und Polnisch verfügbar.
+- Add-in-, Menü- und Werkzeugleisten-Icons durch ein zum Logo passendes Gewinde mit Zauberstab in Blau und Dunkelblau ersetzt.
+- Version in Installer, `version.py`, Fusion-Manifest und aktueller Dokumentation auf `0.8.2` gesetzt.
+
 ## 0.8.1 - 2026-09-11
 
 - Windows-Installer prüft die API-Ordner unter `Autodesk Fusion` und `Autodesk Fusion 360` und schlägt einen Zielpfad vor.

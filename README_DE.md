@@ -14,7 +14,7 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.8.1**
+Aktuelle Entwicklungsversion: **0.8.2**
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -97,7 +97,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.8.1.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.8.2.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion
