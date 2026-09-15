@@ -10,6 +10,8 @@ _LANGUAGE_ENUM_NAMES = {
 }
 
 _EN = {
+    'chamfer_extra': 'Additional chamfer size',
+    'chamfer_extra_help': 'Radial increase at the selected edges. 0.0 mm keeps the default size; axial depth grows according to the profile angle.',
     'info_tab': 'Info',
     'info_homepage': 'Find Fusion tutorials and more Fusion plugins on the <a href="{url}">Know-How-Schmiede website</a>.',
     'info_source': 'View the source code in the <a href="{url}">GitHub repository</a>.',
@@ -52,6 +54,8 @@ _EN = {
 _TRANSLATIONS = {
     'en': _EN,
     'de': {**_EN,
+        'chamfer_extra': 'Fase zusätzlich vergrößern',
+        'chamfer_extra_help': 'Radiale Vergrößerung an den ausgewählten Kanten. 0,0 mm behält die Standardgröße bei; die axiale Tiefe wächst passend zum Profilwinkel mit.',
         'info_homepage': 'Tutorials zu Fusion und weitere Plugins für Fusion finden Sie auf der <a href="{url}">Homepage der Know-How-Schmiede</a>.',
         'info_source': 'Der Quellcode kann im <a href="{url}">GitHub-Repository</a> eingesehen werden.',
         'info_subscribe': 'Gefällt Ihnen das Plugin? Dann lassen Sie gerne ein kostenloses YouTube-Abo bei <a href="{url}">@knowhowschmiede</a> da.',
@@ -74,6 +78,8 @@ _TRANSLATIONS = {
         'external_thread': 'Außengewinde', 'internal_thread': 'Innengewinde', 'nominal_diameter': 'Nenndurchmesser', 'major_diameter': 'Außendurchmesser (d)',
         'pitch_diameter': 'Teilkreisdurchmesser (d2)', 'minor_diameter': 'Innendurchmesser (d1)', 'tap_drill': 'Gewindebohrung (T)', 'internal_only': '– (nur Innengewinde)', 'profile_mode_iso': 'ISO metrisch', 'profile_mode_free': 'Freie Geometrie'},
     'es': {**_EN,
+        'chamfer_extra': 'Ampliación adicional del chaflán',
+        'chamfer_extra_help': 'Ampliación radial en las aristas seleccionadas. 0,0 mm mantiene el tamaño predeterminado; la profundidad axial aumenta según el ángulo del perfil.',
         'info_tab': "Información",
         'info_homepage': "Encontrará tutoriales de Fusion y más complementos para Fusion en el <a href=\"{url}\">sitio web de Know-How-Schmiede</a>.",
         'info_source': "Puede consultar el código fuente en el <a href=\"{url}\">repositorio de GitHub</a>.",
@@ -83,6 +89,8 @@ _TRANSLATIONS = {
         'info_issues': "¿Ha encontrado un error? Repórtelo en la sección <a href=\"{url}\">Issues del repositorio</a>, indicando la versión del complemento y los pasos para reproducirlo.",
         'create_tab':'Crear rosca','manage_tab':'Gestionar ajustes','target_face':'Cara cilíndrica','select_face':'Seleccione una cara cilíndrica.','chamfer_edges':'Aristas de chaflán','saved_setting':'Ajuste guardado','choose_setting':'— Seleccionar ajuste —','calculation':'Cálculo','iso_mode':'ISO métrica automática','free_mode':'Geometría libre','profile_angle':'Ángulo de perfil (α)','thread_depth':'Profundidad de rosca (h)','pitch':'Paso de rosca (P)','fillet_radius':'Radio de redondeo (r)','tolerance':'Tolerancia','dimensions_group':'Esquema de parámetros de rosca','name':'Nombre','action':'Acción','delete':'Eliminar','no_row':'No hay ninguna fila seleccionada.','json_group':'Exportar / importar ajustes como JSON','export':'Exportar','import':'Importar','default_tolerance':'Tolerancia predeterminada','set_default':'Establecer como predeterminada','save_group':'Guardar ajustes actuales','thread_name':'Nombre de rosca','short_note':'Nota breve','save_current':'Guardar ajustes actuales','note':'Nota','mode':'Modo','saved_at':'Guardado','saved':'“{name}” se ha guardado.','deleted':'“{name}” se ha eliminado.','confirm_delete':'¿Eliminar realmente “{name}”?','export_cancelled':'Exportación cancelada.','import_cancelled':'Importación cancelada.','export_ok':'{count} ajuste(s) exportado(s).','import_ok':'{count} ajuste(s) importado(s).','external_thread':'Rosca exterior','internal_thread':'Rosca interior','nominal_diameter':'Diámetro nominal','major_diameter':'Diámetro exterior (d)','pitch_diameter':'Diámetro de paso (d2)','minor_diameter':'Diámetro interior (d1)','tap_drill':'Taladro de rosca (T)'},
     'fr': {**_EN,
+        'chamfer_extra': 'Agrandissement supplémentaire du chanfrein',
+        'chamfer_extra_help': 'Agrandissement radial sur les arêtes sélectionnées. 0,0 mm conserve la taille par défaut ; la profondeur axiale augmente selon l’angle du profil.',
         'info_tab': "Informations",
         'info_homepage': "Retrouvez des tutoriels Fusion et d’autres extensions pour Fusion sur le <a href=\"{url}\">site de Know-How-Schmiede</a>.",
         'info_source': "Le code source est consultable dans le <a href=\"{url}\">dépôt GitHub</a>.",
@@ -92,6 +100,8 @@ _TRANSLATIONS = {
         'info_issues': "Vous avez trouvé un bug ? Signalez-le dans la section <a href=\"{url}\">Issues du dépôt</a>, avec la version de l’extension et les étapes pour le reproduire.",
         'create_tab':'Créer un filetage','manage_tab':'Gérer les réglages','target_face':'Face cylindrique','select_face':'Sélectionnez une face cylindrique.','chamfer_edges':'Arêtes de chanfrein','saved_setting':'Réglage enregistré','choose_setting':'— Sélectionner un réglage —','calculation':'Calcul','iso_mode':'ISO métrique automatique','free_mode':'Géométrie libre','profile_angle':'Angle de profil (α)','thread_depth':'Profondeur du filet (h)','pitch':'Pas du filet (P)','fillet_radius':'Rayon de congé (r)','tolerance':'Tolérance','dimensions_group':'Schéma des paramètres du filetage','name':'Désignation','action':'Action','delete':'Supprimer','no_row':'Aucune ligne sélectionnée.','json_group':'Exporter / importer les réglages en JSON','export':'Exporter','import':'Importer','default_tolerance':'Tolérance par défaut','set_default':'Définir par défaut','save_group':'Enregistrer les réglages actuels','thread_name':'Désignation du filetage','short_note':'Note courte','save_current':'Enregistrer les réglages actuels','note':'Note','mode':'Mode','saved_at':'Enregistré','saved':'« {name} » a été enregistré.','deleted':'« {name} » a été supprimé.','confirm_delete':'Supprimer réellement « {name} » ?','export_cancelled':'Exportation annulée.','import_cancelled':'Importation annulée.','export_ok':'{count} réglage(s) exporté(s).','import_ok':'{count} réglage(s) importé(s).','external_thread':'Filetage extérieur','internal_thread':'Filetage intérieur','nominal_diameter':'Diamètre nominal','major_diameter':'Diamètre extérieur (d)','pitch_diameter':'Diamètre sur flancs (d2)','minor_diameter':'Diamètre intérieur (d1)','tap_drill':'Perçage de filetage (T)'},
     'it': {**_EN,
+        'chamfer_extra': 'Aumento aggiuntivo dello smusso',
+        'chamfer_extra_help': 'Aumento radiale sugli spigoli selezionati. 0,0 mm mantiene la dimensione predefinita; la profondità assiale aumenta in base all’angolo del profilo.',
         'info_tab': "Informazioni",
         'info_homepage': "Troverà tutorial su Fusion e altri plugin per Fusion sul <a href=\"{url}\">sito di Know-How-Schmiede</a>.",
         'info_source': "Il codice sorgente è consultabile nel <a href=\"{url}\">repository GitHub</a>.",
@@ -101,6 +111,8 @@ _TRANSLATIONS = {
         'info_issues': "Ha trovato un errore? Lo segnali nella sezione <a href=\"{url}\">Issues del repository</a>, indicando la versione del plugin e i passaggi per riprodurlo.",
         'create_tab':'Crea filettatura','manage_tab':'Gestisci impostazioni','target_face':'Faccia cilindrica','select_face':'Selezionare una faccia cilindrica.','chamfer_edges':'Spigoli smusso','saved_setting':'Impostazione salvata','choose_setting':'— Seleziona impostazione —','calculation':'Calcolo','iso_mode':'ISO metrica automatica','free_mode':'Geometria libera','profile_angle':'Angolo profilo (α)','thread_depth':'Profondità filetto (h)','pitch':'Passo filetto (P)','fillet_radius':'Raggio raccordo (r)','tolerance':'Tolleranza','dimensions_group':'Schema parametri filettatura','name':'Nome','action':'Azione','delete':'Elimina','no_row':'Nessuna riga selezionata.','json_group':'Esporta / importa impostazioni JSON','export':'Esporta','import':'Importa','default_tolerance':'Tolleranza predefinita','set_default':'Imposta come predefinita','save_group':'Salva impostazioni correnti','thread_name':'Nome filettatura','short_note':'Nota breve','save_current':'Salva impostazioni correnti','note':'Nota','mode':'Modalità','saved_at':'Salvato','saved':'“{name}” è stato salvato.','deleted':'“{name}” è stato eliminato.','confirm_delete':'Eliminare davvero “{name}”?','export_cancelled':'Esportazione annullata.','import_cancelled':'Importazione annullata.','export_ok':'{count} impostazione/i esportata/e.','import_ok':'{count} impostazione/i importata/e.','external_thread':'Filettatura esterna','internal_thread':'Filettatura interna','nominal_diameter':'Diametro nominale','major_diameter':'Diametro esterno (d)','pitch_diameter':'Diametro primitivo (d2)','minor_diameter':'Diametro interno (d1)','tap_drill':'Foro di maschiatura (T)'},
     'pl': {**_EN,
+        'chamfer_extra': 'Dodatkowe powiększenie fazy',
+        'chamfer_extra_help': 'Powiększenie promieniowe na wybranych krawędziach. 0,0 mm zachowuje domyślny rozmiar; głębokość osiowa zwiększa się zgodnie z kątem profilu.',
         'info_tab': "Informacje",
         'info_homepage': "Poradniki dotyczące Fusion i inne wtyczki do Fusion znajdziesz na <a href=\"{url}\">stronie Know-How-Schmiede</a>.",
         'info_source': "Kod źródłowy można przeglądać w <a href=\"{url}\">repozytorium GitHub</a>.",

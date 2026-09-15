@@ -55,6 +55,10 @@ TOLERANCE_OPTIONS = tuple(
     for step in range(11)
 )
 FALLBACK_TOLERANCE_NAME = '0,15 mm'
+CHAMFER_EXTRA_OPTIONS = tuple(
+    (f'{step / 10:.1f}'.replace('.', ',') + ' mm', step / 100)
+    for step in range(11)
+)
 
 
 def start():
@@ -161,6 +165,14 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     edge_input.addSelectionFilter('Edges')
     edge_input.setSelectionLimits(0, 2)
+
+    chamfer_extra = create_inputs.addDropDownCommandInput(
+        'chamfer_extra', tr('chamfer_extra'),
+        adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+    chamfer_extra.tooltip = tr('chamfer_extra_help')
+    for name, value in CHAMFER_EXTRA_OPTIONS:
+        chamfer_extra.listItems.add(name, value == 0.0)
 
     preset_selector = create_inputs.addDropDownCommandInput(
         'preset_selector', tr('saved_setting'),
@@ -509,6 +521,11 @@ def _load_selected_preset(inputs, selector_id):
         _input_by_id(inputs, 'fillet_radius').value = float(settings['fillet_radius_cm'])
 
         tolerance_value = float(settings.get('tolerance_cm', 0.0))
+        extra_value = float(settings.get('chamfer_extra_cm', 0.0))
+        extra_name = min(
+            CHAMFER_EXTRA_OPTIONS, key=lambda option: abs(option[1] - extra_value)
+        )[0]
+        _select_dropdown_item(_input_by_id(inputs, 'chamfer_extra'), extra_name)
         tolerance_name = min(
             TOLERANCE_OPTIONS, key=lambda option: abs(option[1] - tolerance_value)
         )[0]
@@ -660,6 +677,9 @@ def _read_parameters(inputs):
         pitch=_input_by_id(inputs, 'pitch').value,
         fillet_radius=_input_by_id(inputs, 'fillet_radius').value,
         tolerance=_selected_tolerance(inputs),
+        chamfer_extra=dict(CHAMFER_EXTRA_OPTIONS)[
+            _input_by_id(inputs, 'chamfer_extra').selectedItem.name
+        ],
     )
 
 
@@ -697,6 +717,7 @@ def _save_current_preset(inputs):
             'pitch_cm': parameters.pitch,
             'fillet_radius_cm': parameters.fillet_radius,
             'tolerance_cm': parameters.tolerance,
+            'chamfer_extra_cm': parameters.chamfer_extra,
             'display_length_units': app.activeProduct.unitsManager.defaultLengthUnits,
             **context,
         }

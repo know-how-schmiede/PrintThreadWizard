@@ -81,6 +81,7 @@ def create_thread(parameters: ThreadParameters):
             chamfer_ends,
             parameters.thread_depth,
             parameters.flank_angle,
+            parameters.chamfer_extra,
         )
         _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch)
         _group_timeline_entries(timeline, timeline_start)

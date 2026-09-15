@@ -37,11 +37,19 @@ def capture_chamfer_ends(cylinder, selected_edges):
 
 
 def create_revolved_chamfers(
-    cylinder, target_body, chamfer_ends, distance, flank_angle
+    cylinder, target_body, chamfer_ends, distance, flank_angle, extra_distance=0.0
 ):
     """Schneidet die Fasen nach dem Gewinde als rotierte Dreiecksprofile."""
     if not chamfer_ends:
         return None
+
+    if not math.isfinite(extra_distance) or extra_distance < 0:
+        raise ValueError('Die zusätzliche Fasengröße muss endlich und nicht negativ sein.')
+    distance += extra_distance
+    for end in chamfer_ends:
+        outer_radius = end.radius + (0.0 if cylinder.is_external else extra_distance)
+        if distance + CHAMFER_CUT_OVERLAP >= outer_radius:
+            raise ValueError('Die Fase ist für diesen Zylinderradius zu groß.')
 
     component = cylinder.component
     helper_sketch = None
@@ -86,13 +94,17 @@ def create_revolved_chamfers(
             # Berührung mit dem letzten Gewindegang keine Restflächen.
             cut_overlap = CHAMFER_CUT_OVERLAP
             axial_distance = distance * math.tan(flank_angle / 2) + cut_overlap
+            # Außen nach innen erweitern; innen die Öffnung nach außen erweitern.
+            outer_radius = chamfer_end.radius + (
+                0.0 if cylinder.is_external else extra_distance
+            )
             corner = _translated_point(
-                chamfer_end.center, cylinder.radial, chamfer_end.radius
+                chamfer_end.center, cylinder.radial, outer_radius
             )
             radial_point = _translated_point(
                 chamfer_end.center,
                 cylinder.radial,
-                chamfer_end.radius - distance - cut_overlap,
+                outer_radius - distance - cut_overlap,
             )
             axial_point = (
                 corner.copy()

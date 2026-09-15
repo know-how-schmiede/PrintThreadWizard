@@ -1,5 +1,12 @@
 # Version Timeline
 
+## 0.8.3 - 2026-09-15
+
+- Neues Auswahlfeld und Hilfetext in allen sechs unterstützten Sprachen verfügbar.
+- Auswahl für die zusätzliche radiale Fasengröße von 0,0 bis 1,0 mm in 0,1-mm-Schritten ergänzt.
+- Zusatzwert wird mit den Gewindeeinstellungen gespeichert; ältere Einstellungen verwenden 0,0 mm.
+- Version in Installer, `version.py`, Fusion-Manifest und aktueller Dokumentation auf `0.8.3` gesetzt.
+
 ## 0.8.2 - 2026-09-12
 
 - Neuen Dialogreiter `Info` ergänzt und das Logo dorthin verschoben.

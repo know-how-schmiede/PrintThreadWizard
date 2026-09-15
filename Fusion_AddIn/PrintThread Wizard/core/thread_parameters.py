@@ -14,6 +14,7 @@ class ThreadParameters:
     pitch: float
     fillet_radius: float
     tolerance: float = 0.0
+    chamfer_extra: float = 0.0
 
     def tolerance_radius_offset(self, is_external: bool) -> float:
         """Versetzt das gesamte Gewinde um das halbe gewünschte Gesamtspiel."""
@@ -42,6 +43,8 @@ class ThreadParameters:
             errors.append('Der Verrundungsradius darf nicht negativ sein.')
         if self.tolerance < 0:
             errors.append('Die Toleranz darf nicht negativ sein.')
+        if not math.isfinite(self.chamfer_extra) or self.chamfer_extra < 0:
+            errors.append('Die zusätzliche Fasengröße muss endlich und nicht negativ sein.')
 
         half_profile_width = self.sharp_profile_depth * math.tan(self.flank_angle / 2)
         if self.pitch > 0 and 2 * half_profile_width >= self.pitch:

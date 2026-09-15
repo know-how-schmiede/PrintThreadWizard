@@ -14,7 +14,7 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.8.2**
+Aktuelle Entwicklungsversion: **0.8.3**
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -35,6 +35,8 @@ Aktuelle Entwicklungsversion: **0.8.2**
 - Auswählbares radiales Gesamtspiel von 0,00 bis 0,50 mm in 0,05-mm-Schritten;
   persistenter Standardwert: 0,15 mm
 - Optionale Fasen an einer oder zwei ausgewählten kreisförmigen Endkanten
+- Auswahl „Fase zusätzlich vergrößern“: 0,0 bis 1,0 mm in 0,1-mm-Schritten.
+  Auswahlfeld und Hilfetext sind in allen sechs unterstützten Sprachen verfügbar.
 - Aus dem halben Flankenwinkel abgeleiteter Fasenwinkel
 - Über beide Deckflächen hinausreichende Helix für vollständige
   Gewindeanfänge und -enden
@@ -74,6 +76,20 @@ und der Innenradius um 0,1 mm vergrößert. Der passende Wert hängt unter ander
 von Drucker, Material, Schichthöhe, Extrusionskalibrierung und Bauteilausrichtung
 ab.
 
+## Zusätzliche Fasengröße
+
+**Fase zusätzlich vergrößern** erweitert die standardmäßig erzeugte Fase an den
+ausgewählten Endkanten radial. Beispielsweise addiert **0,4 mm** zur bisherigen
+radialen Fasengröße weitere 0,4 mm. Die axiale Tiefe wächst entsprechend dem
+Profilwinkel mit. Außenfasen werden nach innen erweitert; bei Innengewinden
+wird die Öffnung nach außen erweitert. Der Wert gilt für beide ausgewählten
+Kanten und hat ohne ausgewählte Fasen-Kanten keine Wirkung.
+
+Standard ist **0,0 mm**, wodurch die bisherige Fasengröße erhalten bleibt.
+Der Wert wird mit den Gewindeeinstellungen gespeichert und wiederhergestellt,
+auch beim JSON-Export und -Import. Ältere Einstellungen ohne diesen Parameter
+verwenden 0,0 mm.
+
 ## Images
 
 <img src="images/24-08-2026_21-26-26.jpg" alt="notwenige Skizze in Fusion360">
@@ -97,7 +113,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.8.2.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.8.3.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion
@@ -151,6 +167,8 @@ Der Befehl wird im Arbeitsbereich **Konstruktion** unter
    automatisch** beziehungsweise **Freie Geometrie** manuell auswählen.
 6. Die Steigung sowie im freien Modus Flankenwinkel und Gewindetiefe eingeben.
 7. Toleranz auswählen und Verrundungsradius festlegen.
+   Bei ausgewählten Fasen-Kanten **Fase zusätzlich vergrößern** einstellen,
+   beispielsweise **0,4 mm** für eine zusätzliche radiale Vergrößerung um 0,4 mm.
 8. Optional einen Gewindebezeichner und eine kurze Notiz eintragen und die
    aktuellen Einstellungen über **Aktuelle Einstellungen speichern** ablegen.
 9. Die berechneten Werte im Ergebnisfeld prüfen und den Befehl bestätigen.
@@ -164,6 +182,7 @@ Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
 | --- | --- |
 | Zylinderfläche | Zielfläche; Innen-/Außengewinde wird automatisch erkannt |
 | Fasen-Kanten | Optionale Auswahl von bis zu zwei kreisförmigen Endkanten |
+| Fase zusätzlich vergrößern | Zusätzliche radiale Vergrößerung an den ausgewählten Kanten: 0,0–1,0 mm in 0,1-mm-Schritten; Standard 0,0 mm |
 | Gespeicherte Einstellung | Alphabetisch sortierte Preset-Auswahl; übernimmt alle Parameter |
 | Berechnung | ISO metrisch automatisch oder freie Geometrie |
 | Profilwinkel (α) | Eingeschlossener Profilwinkel; im ISO-Modus fest 60° |

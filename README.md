@@ -14,7 +14,7 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.8.2**
+Current development version: **0.8.3**
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -34,6 +34,8 @@ Current development version: **0.8.2**
 - Selectable total radial clearance from 0.00 to 0.50 mm in 0.05 mm steps;
   persistent default: 0.15 mm
 - Optional chamfers on one or two selected circular end edges
+- **Additional chamfer size**: 0.0 to 1.0 mm in 0.1 mm steps;
+  the selection field and tooltip are available in all six supported languages
 - Chamfer angle derived from half the flank angle
 - Helix overrun beyond both end faces for complete thread starts and ends
 - All generated construction steps collected in a collapsed Fusion timeline
@@ -69,6 +71,19 @@ For example, a tolerance of 0.2 mm reduces the external radius by 0.1 mm and
 increases the internal radius by 0.1 mm. The best setting depends on printer,
 material, layer height, extrusion calibration, and part orientation.
 
+## Additional chamfer size
+
+**Additional chamfer size** increases the default chamfer radially at the
+selected end edges. For example, **0.4 mm** adds 0.4 mm to the existing radial
+chamfer size. The axial depth increases according to the profile angle.
+External chamfers extend inward; internal chamfers expand the opening outward.
+The setting applies to both selected edges and has no effect without selected
+chamfer edges.
+
+The default is **0.0 mm**, which preserves the previous chamfer size. The value
+is saved and restored with thread presets, including JSON export and import.
+Older presets without this parameter use 0.0 mm.
+
 ## Images
 
 <img src="images/24-08-2026_21-26-26.jpg" alt="notwenige Skizze in Fusion360">
@@ -95,7 +110,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.8.2.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.8.3.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:
@@ -145,6 +160,8 @@ panel.
    **Free geometry** manually.
 6. Enter the pitch and, in free mode, the flank angle and thread depth.
 7. Select the required tolerance and set the root fillet radius.
+   If chamfer edges are selected, set **Additional chamfer size**, for example
+   **0.4 mm** for an additional radial enlargement of 0.4 mm.
 8. Optionally enter a thread name and short note, then use **Save current
    settings** to store the parameter set.
 9. Check the calculated values in the result field and confirm the command.
@@ -158,6 +175,7 @@ tolerance for both parts.
 | --- | --- |
 | Cylindrical face | Target face; internal/external type is detected automatically |
 | Chamfer edges | Optional selection of up to two circular end edges |
+| Additional chamfer size | Additional radial enlargement at the selected edges: 0.0–1.0 mm in 0.1 mm steps; default 0.0 mm |
 | Saved setting | Alphabetically sorted preset list; restores all parameters |
 | Calculation | ISO metric automatic or free geometry |
 | Included angle (α) | Thread included angle; fixed at 60° in ISO mode |
