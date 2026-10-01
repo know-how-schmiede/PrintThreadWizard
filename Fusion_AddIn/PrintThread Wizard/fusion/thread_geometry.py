@@ -1,3 +1,5 @@
+from ..localization import translate as tr
+
 import math
 from dataclasses import replace
 
@@ -41,7 +43,7 @@ def create_thread(parameters: ThreadParameters):
             for chamfer_end in chamfer_ends
         )
         if parameters.sharp_profile_depth >= cylinder.radius:
-            raise ValueError('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
+            raise ValueError(tr('depth_radius'))
     except Exception:
         _delete_if_valid(tolerance_feature)
         _delete_if_valid(parameter_sketch)
@@ -103,31 +105,32 @@ def _create_parameter_note_sketch(cylinder, parameters):
     major_value = (cylinder.radius + radial_offset) * 2
     pitch_value = major_value - parameters.thread_depth
     minor_value = major_value - 2 * parameters.thread_depth
-    thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
+    thread_type = tr('external_thread') if cylinder.is_external else tr('internal_thread')
 
     def length(value):
         return units.formatInternalValue(value, length_units, True)
 
     angle = units.formatInternalValue(parameters.flank_angle, 'deg', True)
     bore_value = '–' if cylinder.is_external else length(minor_value)
-    text = (
-        'PrintThread Wizard – Gewindeparameter\n'
-        f'Gewindeart: {thread_type}\n'
-        f'Nenndurchmesser: {length(cylinder.radius * 2)}\n'
-        f'Gewindesteigung (P): {length(parameters.pitch)}\n'
-        f'Profilwinkel (α): {angle}\n'
-        f'Gewindetiefe (h): {length(parameters.thread_depth)}\n'
-        f'Verrundungsradius (r): {length(parameters.fillet_radius)}\n'
-        f'Toleranz: {length(parameters.tolerance)}\n'
-        f'Außendurchmesser (d): {length(major_value)}\n'
-        f'Teilkreisdurchmesser (d2): {length(pitch_value)}\n'
-        f'Innendurchmesser (d1): {length(minor_value)}\n'
-        f'Gewindebohrung (T): {bore_value}\n'
-        f'Fasen-Kanten: {len(parameters.chamfer_edges)}'
+    fields = (
+        ('thread_type', thread_type),
+        ('nominal_diameter', length(cylinder.radius * 2)),
+        ('pitch', length(parameters.pitch)),
+        ('profile_angle', angle),
+        ('thread_depth', length(parameters.thread_depth)),
+        ('fillet_radius', length(parameters.fillet_radius)),
+        ('tolerance', length(parameters.tolerance)),
+        ('major_diameter', length(major_value)),
+        ('pitch_diameter', length(pitch_value)),
+        ('minor_diameter', length(minor_value)),
+        ('tap_drill', bore_value),
+        ('chamfer_edges', len(parameters.chamfer_edges)),
     )
+    text = 'PrintThread Wizard – ' + tr('parameters') + '\n'
+    text += '\n'.join(f'{tr(key)}: {value}' for key, value in fields)
     sketch = component.sketches.add(component.xYConstructionPlane)
     sketch.name = (
-        f'PrintThread Wizard – Gewindeparameter – {thread_type} – '
+        f"PrintThread Wizard – {tr('parameters')} – {thread_type} – "
         f'd {length(major_value)} – P {length(parameters.pitch)}'
     )
     texts = sketch.sketchTexts
@@ -144,7 +147,7 @@ def _create_parameter_note_sketch(cylinder, parameters):
     )
     if texts.add(text_input) is None:
         _delete_if_valid(sketch)
-        raise RuntimeError('Die Skizze mit den Gewindeparametern konnte nicht erstellt werden.')
+        raise RuntimeError(tr('note_failed'))
     sketch.isLightBulbOn = False
     return sketch
 
@@ -155,7 +158,7 @@ def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
 
     adjusted_radius = cylinder.radius + radial_offset
     if adjusted_radius <= 0:
-        raise ValueError('Die Toleranz ist für diesen Zylinderdurchmesser zu groß.')
+        raise ValueError(tr('tolerance_large'))
 
     temp_manager = adsk.fusion.TemporaryBRepManager.get()
     if cylinder.is_external:
@@ -174,7 +177,7 @@ def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
         if tool_body is None or inner_body is None or not temp_manager.booleanOperation(
             tool_body, inner_body, adsk.fusion.BooleanTypes.DifferenceBooleanType
         ):
-            raise RuntimeError('Der Toleranzring für das Außengewinde fehlt.')
+            raise RuntimeError(tr('tolerance_ring_missing'))
     else:
         tool_body = temp_manager.createCylinderOrCone(
             trim_reference.axis_start,
@@ -183,10 +186,10 @@ def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
             adjusted_radius,
         )
         if tool_body is None:
-            raise RuntimeError('Der Toleranzzylinder für das Innengewinde fehlt.')
+            raise RuntimeError(tr('tolerance_cylinder_missing'))
 
     base_feature = cylinder.component.features.baseFeatures.add()
-    base_feature.name = 'PrintThread Wizard – Toleranzwerkzeug'
+    base_feature.name = "PrintThread Wizard – " + tr('tolerance_tool')
     base_feature.startEdit()
     try:
         cylinder.component.bRepBodies.add(tool_body, base_feature)
@@ -194,7 +197,7 @@ def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
         base_feature.finishEdit()
     if base_feature.bodies.count == 0:
         _delete_if_valid(base_feature)
-        raise RuntimeError('Das Toleranzwerkzeug konnte nicht übernommen werden.')
+        raise RuntimeError(tr('tolerance_tool_failed'))
 
     tools = adsk.core.ObjectCollection.create()
     tools.add(base_feature.bodies.item(0))
@@ -205,8 +208,8 @@ def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
     tolerance_cut = combines.add(combine_input)
     if tolerance_cut is None or tolerance_cut.bodies.count == 0:
         _delete_if_valid(base_feature)
-        raise RuntimeError('Die Toleranz konnte nicht auf die Zylinderfläche angewendet werden.')
-    tolerance_cut.name = 'PrintThread Wizard – Zylindertoleranz'
+        raise RuntimeError(tr('tolerance_cut_failed'))
+    tolerance_cut.name = "PrintThread Wizard – " + tr('cylinder_tolerance')
     return replace(
         cylinder, body=tolerance_cut.bodies.item(0), radius=adjusted_radius
     ), tolerance_cut
@@ -216,14 +219,14 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
     start_point = _translated_point(cylinder.axis_start, cylinder.radial, cylinder.radius)
     turns = cylinder.length / pitch
     if turns <= 0:
-        raise ValueError('Aus Zylinderlänge und Steigung ergeben sich keine Windungen.')
+        raise ValueError(tr('no_turns'))
 
     temp_manager = adsk.fusion.TemporaryBRepManager.get()
     temporary_wire = temp_manager.createHelixWire(
         cylinder.axis_start, cylinder.axis, start_point, pitch, turns, 0.0
     )
     if temporary_wire is None or temporary_wire.edges.count == 0:
-        raise RuntimeError('Die exakte Helix konnte nicht erzeugt werden.')
+        raise RuntimeError(tr('helix_failed'))
 
     guide_solid = temp_manager.createCylinderOrCone(
         cylinder.axis_start,
@@ -232,7 +235,7 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
         cylinder.radius,
     )
     if guide_solid is None:
-        raise RuntimeError('Der verlängerte Führungszylinder konnte nicht erzeugt werden.')
+        raise RuntimeError(tr('guide_failed'))
     temporary_guide = None
     for index in range(guide_solid.faces.count):
         face = guide_solid.faces.item(index)
@@ -240,10 +243,10 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
             temporary_guide = temp_manager.copy(face)
             break
     if temporary_guide is None:
-        raise RuntimeError('Die verlängerte zylindrische Führungsfläche fehlt.')
+        raise RuntimeError(tr('guide_missing'))
 
     base_feature = cylinder.component.features.baseFeatures.add()
-    base_feature.name = 'PrintThread Wizard – Helix'
+    base_feature.name = "PrintThread Wizard – " + tr('helix')
     base_feature.startEdit()
     try:
         cylinder.component.bRepBodies.add(temporary_wire, base_feature)
@@ -256,12 +259,12 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
     for body_index in range(base_feature.bodies.count):
         body = base_feature.bodies.item(body_index)
         if body.faces.count == 0 and body.edges.count:
-            body.name = 'PrintThread Wizard – Helixpfad'
+            body.name = "PrintThread Wizard – " + tr('helix_path')
             helix_edge = body.edges.item(0)
         for face_index in range(body.faces.count):
             face = body.faces.item(face_index)
             if adsk.core.Cylinder.cast(face.geometry):
-                body.name = 'PrintThread Wizard – Sweep-Führung'
+                body.name = "PrintThread Wizard – " + tr('sweep_guide')
                 guide_face = face
                 break
         body.isLightBulbOn = False
@@ -269,7 +272,7 @@ def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
 
     if helix_edge is None or guide_face is None:
         _delete_if_valid(base_feature)
-        raise RuntimeError('Helix oder Führungsfläche konnte nicht übernommen werden.')
+        raise RuntimeError(tr('helix_add_failed'))
     return base_feature, helix_edge, guide_face
 
 
@@ -278,15 +281,15 @@ def _create_profile_plane(component, helix_edge):
     if not plane_input.setByDistanceOnPath(
         helix_edge, adsk.core.ValueInput.createByReal(0.0)
     ):
-        raise RuntimeError('Die Profilebene konnte nicht definiert werden.')
+        raise RuntimeError(tr('profile_plane_failed'))
     plane = component.constructionPlanes.add(plane_input)
-    plane.name = 'PrintThread Wizard – Profilebene'
+    plane.name = "PrintThread Wizard – " + tr('profile_plane')
     return plane
 
 
 def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadParameters):
     sketch = cylinder.component.sketches.add(plane)
-    sketch.name = 'PrintThread Wizard – Schneidprofil'
+    sketch.name = "PrintThread Wizard – " + tr('cut_profile')
 
     base_center = _translated_point(
         cylinder.axis_start, cylinder.radial, cylinder.radius + PROFILE_OVERLAP
@@ -321,10 +324,10 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
             parameters.fillet_radius,
         )
         if arc is None:
-            raise ValueError('Der Verrundungsradius kann am Gewindegrund nicht erzeugt werden.')
+            raise ValueError(tr('fillet_failed'))
 
     if sketch.profiles.count != 1:
-        raise RuntimeError('Das Schneidprofil ist nicht eindeutig geschlossen.')
+        raise RuntimeError(tr('profile_open'))
     return sketch.profiles.item(0)
 
 
@@ -355,7 +358,7 @@ def _trim_reference_from_selected_circles(cylinder, chamfer_ends):
 
     length = start.vectorTo(end).dotProduct(cylinder.axis)
     if length <= 0:
-        raise ValueError('Die ausgewählten Fasen-Kreise ergeben keine gültige Gewindelänge.')
+        raise ValueError(tr('trim_length_invalid'))
     return replace(cylinder, axis_start=start, axis_end=end, length=length)
 
 
@@ -364,11 +367,11 @@ def _profile_base_direction(cylinder: CylinderGeometry, pitch: float):
     tangent.scaleBy(2 * math.pi * cylinder.radius / pitch)
     tangent.add(cylinder.axis)
     if not tangent.normalize():
-        raise RuntimeError('Die Tangente der Helix konnte nicht ermittelt werden.')
+        raise RuntimeError(tr('tangent_missing'))
 
     base_direction = tangent.crossProduct(cylinder.radial)
     if not base_direction.normalize():
-        raise RuntimeError('Die Richtung des Gewindeprofils konnte nicht ermittelt werden.')
+        raise RuntimeError(tr('profile_direction_missing'))
     return base_direction
 
 
@@ -377,7 +380,7 @@ def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
         helix_edge, adsk.fusion.ChainedCurveOptions.noChainedCurves
     )
     if path is None:
-        raise RuntimeError('Aus der Helix konnte kein Sweep-Pfad erzeugt werden.')
+        raise RuntimeError(tr('path_failed'))
 
     sweeps = cylinder.component.features.sweepFeatures
     operation = (
@@ -398,8 +401,8 @@ def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
         sweep_input.participantBodies = [cylinder.body]
     sweep = sweeps.add(sweep_input)
     if sweep is None:
-        raise RuntimeError('Der Gewinde-Sweep konnte nicht erzeugt werden.')
-    thread_type = 'Außengewinde' if cylinder.is_external else 'Innengewinde'
+        raise RuntimeError(tr('sweep_failed'))
+    thread_type = tr('external_thread') if cylinder.is_external else tr('internal_thread')
     sweep.name = f'PrintThread Wizard – {thread_type}'
     return sweep
 
@@ -408,7 +411,7 @@ def _trim_and_join_internal_thread(
     cylinder, sweep, trim_start, trim_end
 ):
     if sweep.bodies.count == 0:
-        raise RuntimeError('Der Innengewinde-Sweep enthält keinen Körper.')
+        raise RuntimeError(tr('internal_body_missing'))
 
     created_features = []
     try:
@@ -429,8 +432,8 @@ def _trim_and_join_internal_thread(
         trim_input.isKeepToolBodies = False
         trim_feature_result = combines.add(trim_input)
         if trim_feature_result is None or trim_feature_result.bodies.count == 0:
-            raise RuntimeError('Der Innengewindekörper konnte nicht axial begrenzt werden.')
-        trim_feature_result.name = 'PrintThread Wizard – Gewinde begrenzen'
+            raise RuntimeError(tr('trim_failed'))
+        trim_feature_result.name = "PrintThread Wizard – " + tr('trim_thread')
         created_features.append(trim_feature_result)
         thread_body = trim_feature_result.bodies.item(0)
 
@@ -441,8 +444,8 @@ def _trim_and_join_internal_thread(
         combine_input.isKeepToolBodies = False
         combine = combines.add(combine_input)
         if combine is None:
-            raise RuntimeError('Das beschnittene Innengewinde konnte nicht verbunden werden.')
-        combine.name = 'PrintThread Wizard – Innengewinde'
+            raise RuntimeError(tr('join_failed'))
+        combine.name = "PrintThread Wizard – " + tr('internal_thread')
         return combine
     except Exception:
         for feature in reversed(created_features):
@@ -457,10 +460,10 @@ def _create_axial_trim_body(component, start_point, end_point, radius):
         start_point, radius, end_point, radius
     )
     if temporary_body is None:
-        raise RuntimeError('Der Begrenzungskörper für das Innengewinde fehlt.')
+        raise RuntimeError(tr('trim_body_missing'))
 
     base_feature = component.features.baseFeatures.add()
-    base_feature.name = 'PrintThread Wizard – axiale Begrenzung'
+    base_feature.name = "PrintThread Wizard – " + tr('axial_trim')
     base_feature.startEdit()
     try:
         component.bRepBodies.add(temporary_body, base_feature)
@@ -468,7 +471,7 @@ def _create_axial_trim_body(component, start_point, end_point, radius):
         base_feature.finishEdit()
     if base_feature.bodies.count == 0:
         _delete_if_valid(base_feature)
-        raise RuntimeError('Der Begrenzungskörper konnte nicht übernommen werden.')
+        raise RuntimeError(tr('trim_add_failed'))
     return base_feature, base_feature.bodies.item(0)
 
 
@@ -493,9 +496,9 @@ def _group_timeline_entries(timeline, start_index):
     group = timeline.timelineGroups.add(start_index, end_index)
     if group is None:
         raise RuntimeError(
-            'Die erzeugten Features konnten nicht in der Konstruktionshistorie gruppiert werden.'
+            tr('group_failed')
         )
-    group.name = 'PrintThread Wizard – Gewinde'
+    group.name = "PrintThread Wizard – " + tr('thread')
     group.isCollapsed = True
 
 

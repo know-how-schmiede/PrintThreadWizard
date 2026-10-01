@@ -14,7 +14,7 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.8.3**
+Current development version: **0.8.4**
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -24,6 +24,8 @@ Current development version: **0.8.3**
 
 - Automatic use of the Fusion UI language for German, English, Spanish,
   French, Italian, and Polish, with English as the fallback
+- Localized validation and error messages, file dialogs, timeline feature names,
+  and thread parameter documentation
 
 - Automatic detection of external cylinders and internal bores
 - Modeled right-hand thread geometry using an exact B-Rep helix and sweep
@@ -39,7 +41,7 @@ Current development version: **0.8.3**
 - Chamfer angle derived from half the flank angle
 - Helix overrun beyond both end faces for complete thread starts and ends
 - All generated construction steps collected in a collapsed Fusion timeline
-  group named `PrintThread Wizard – Gewinde`
+  group with a localized name such as `PrintThread Wizard – Thread`
 - Hidden documentation sketch as the first group entry containing thread type,
   nominal diameter, `P`, `α`, `h`, `r`, tolerance, `d`, `d2`, `d1`, `T`, and
   the number of chamfer edges
@@ -110,7 +112,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.8.3.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.8.4.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:

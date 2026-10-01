@@ -1,6 +1,6 @@
 # PrintThread Wizard installieren
 
-Diese Anleitung gilt für Version **0.8.3**. Der Installer ist für Windows;
+Diese Anleitung gilt für Version **0.8.4**. Der Installer ist für Windows;
 unter Windows und macOS ist außerdem eine manuelle Installation möglich.
 
 ## 1. Den richtigen Fusion-Pfad feststellen
@@ -28,7 +28,7 @@ Pfad nicht bestimmen. Die Fusion-Einstellung muss für die Installation nicht ge
 
 ## 2. Windows: Installation mit Installer
 
-1. `PrintThreadWizard_Setup_0.8.3.exe` aus den
+1. `PrintThreadWizard_Setup_0.8.4.exe` aus den
    [Releases des Projekts](https://github.com/know-how-schmiede/PrintThreadWizard/releases) herunterladen, sobald dort verfügbar.
 2. Den Installer als normaler Windows-Benutzer starten. Administratorrechte
    sind nicht erforderlich.
@@ -57,7 +57,7 @@ angegeben werden. Beispiel für die Windows-Eingabeaufforderung, wenn Fusion
 genau diesen API-Pfad verwendet:
 
 ```bat
-PrintThreadWizard_Setup_0.8.3.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="%APPDATA%\Autodesk\Autodesk Fusion 360\API\AddIns\PrintThread Wizard"
+PrintThreadWizard_Setup_0.8.4.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="%APPDATA%\Autodesk\Autodesk Fusion 360\API\AddIns\PrintThread Wizard"
 ```
 
 ## 3. Installation von Hand
@@ -95,7 +95,7 @@ Eine zusätzliche Verschachtelung wie
 > Rückmeldungen von Mac-Nutzern sind willkommen.
 
 Für macOS steht kein Installer zur Verfügung. Die Windows-Datei
-`PrintThreadWizard_Setup_0.8.3.exe` ist für diese Installation nicht geeignet.
+`PrintThreadWizard_Setup_0.8.4.exe` ist für diese Installation nicht geeignet.
 Das Add-in wird von Hand kopiert:
 
 1. Den Quellcode der gewünschten Version von der
@@ -144,7 +144,7 @@ den vollständigen Ordner der neuen Version ersetzen; eigene Änderungen vorher 
 2. Unter den Zusatzmodulen **PrintThread Wizard** auswählen und starten.
 3. Bei Bedarf **Beim Start ausführen** aktivieren.
 4. Der Befehl steht im Arbeitsbereich **Konstruktion**, Register **Volumenkörper**,
-   im Bereich **Erstellen** zur Verfügung. Im Add-in-Dialog muss Version **0.8.3**
+   im Bereich **Erstellen** zur Verfügung. Im Add-in-Dialog muss Version **0.8.4**
    angezeigt werden.
 
 Falls der Eintrag fehlt, zunächst den Installationspfad prüfen. Über die Funktion
@@ -153,7 +153,7 @@ registrieren.
 
 ## 5. Update oder bisher falschen Installationspfad korrigieren
 
-Bei einem regulären Update Fusion schließen und Version 0.8.3 in denselben,
+Bei einem regulären Update Fusion schließen und Version 0.8.4 in denselben,
 mit den Fusion-Voreinstellungen abgeglichenen Zielordner installieren bzw. die
 Add-in-Dateien dort durch die neue Version ersetzen.
 
@@ -165,7 +165,7 @@ Wenn die bisherige Version im falschen Ordner liegt:
 3. Bei einer manuellen Installation den alten Ordner `PrintThread Wizard` außerhalb
    der Fusion-Add-in-Ordner sichern und anschließend die alte Kopie entfernen.
    Keine anderen Add-ins oder ganzen Autodesk-Ordner löschen.
-4. Version 0.8.3 im richtigen Zielordner installieren.
+4. Version 0.8.4 im richtigen Zielordner installieren.
 5. Fusion starten, gegebenenfalls einen alten verknüpften Eintrag aus der Liste
    entfernen und das Add-in aus dem richtigen Ordner hinzufügen.
 

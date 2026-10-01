@@ -18,14 +18,14 @@ from ...core.thread_presets import (
 from ...fusion.face_analysis import analyze_cylinder
 from ...fusion.thread_geometry import create_thread
 from ...lib import fusionAddInUtils as futil
-from ...localization import detect_locale, translator
+from ...localization import detect_locale, set_locale, translate as tr
 from ...version import VERSION
 
 
 app = adsk.core.Application.get()
 ui = app.userInterface
 LOCALE = detect_locale(adsk.core, app)
-tr = translator(LOCALE)
+set_locale(LOCALE)
 
 CMD_ID = f'{config.COMPANY_NAME}_{config.ADDIN_NAME}_cmdDialog'
 CMD_NAME = f'PrintThread Wizard {VERSION}'
@@ -51,12 +51,12 @@ table_row_presets = {}
 ISO_MODE_NAME = tr('iso_mode')
 FREE_MODE_NAME = tr('free_mode')
 TOLERANCE_OPTIONS = tuple(
-    (f'{step * 0.05:.2f}'.replace('.', ',') + ' mm', step * 0.005)
+    (f'{step * 0.05:.2f}'.replace('.', ',' if LOCALE != 'en' else '.') + ' mm', step * 0.005)
     for step in range(11)
 )
-FALLBACK_TOLERANCE_NAME = '0,15 mm'
+FALLBACK_TOLERANCE_NAME = '0.15 mm' if LOCALE == 'en' else '0,15 mm'
 CHAMFER_EXTRA_OPTIONS = tuple(
-    (f'{step / 10:.1f}'.replace('.', ',') + ' mm', step / 100)
+    (f'{step / 10:.1f}'.replace('.', ',' if LOCALE != 'en' else '.') + ' mm', step / 100)
     for step in range(11)
 )
 
@@ -73,7 +73,7 @@ def start():
     workspace = ui.workspaces.itemById(WORKSPACE_ID)
     panel = workspace.toolbarPanels.itemById(PANEL_ID) if workspace else None
     if panel is None:
-        ui.messageBox('PrintThread Wizard: Der Bereich Konstruktion / Erstellen wurde nicht gefunden.')
+        ui.messageBox("PrintThread Wizard: " + tr("panel_missing"))
         return
 
     control = panel.controls.itemById(CMD_ID)
@@ -209,7 +209,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         tolerance_input.listItems.add(name, name == default_tolerance_name)
 
     result_text = create_inputs.addTextBoxCommandInput(
-        'result_text', 'Ergebnis',
+        'result_text', tr('result'),
         tr('select_face_result'), 9, True
     )
     result_text.isFullWidth = True
@@ -315,7 +315,7 @@ def command_execute(args: adsk.core.CommandEventArgs):
             raise ValueError('\n'.join(errors))
 
         create_thread(parameters)
-        futil.log(f'{CMD_NAME}: Gewinde erfolgreich erzeugt.')
+        futil.log(f"{CMD_NAME}: {tr('thread_created')}")
     except Exception as error:
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
         ui.messageBox(f'PrintThread Wizard:\n{error}')
@@ -625,8 +625,8 @@ def _export_presets(inputs):
     try:
         dialog = ui.createFileDialog()
         dialog.title = tr('export_title')
-        dialog.filter = 'JSON-Dateien (*.json)'
-        dialog.initialFilename = 'PrintThreadWizard-Einstellungen.json'
+        dialog.filter = tr('json_filter')
+        dialog.initialFilename = 'PrintThreadWizard-settings.json'
         if dialog.showSave() != adsk.core.DialogResults.DialogOK:
             status.text = tr('export_cancelled')
             return
@@ -645,7 +645,7 @@ def _import_presets(inputs):
     try:
         dialog = ui.createFileDialog()
         dialog.title = tr('import_title')
-        dialog.filter = 'JSON-Dateien (*.json)'
+        dialog.filter = tr('json_filter')
         dialog.isMultiSelectEnabled = False
         if dialog.showOpen() != adsk.core.DialogResults.DialogOK:
             status.text = tr('import_cancelled')
@@ -704,7 +704,7 @@ def _save_current_preset(inputs):
         parameters = _read_parameters(inputs)
         parameter_errors = [
             error for error in parameters.validation_errors()
-            if error != 'Eine Zylinderfläche muss ausgewählt werden.'
+            if error != tr('face_required')
         ]
         if parameter_errors:
             raise ValueError('\n'.join(parameter_errors))
@@ -728,7 +728,7 @@ def _save_current_preset(inputs):
         )
         status.text = tr('saved', name=preset['name'])
         _refresh_preset_selectors(inputs, preset['id'])
-        futil.log(f'{CMD_NAME}: Gewindeeinstellung „{preset["name"]}“ gespeichert.')
+        futil.log(f"{CMD_NAME}: {tr('saved', name=preset['name'])}")
     except Exception as error:
         status.text = str(error)
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
@@ -792,9 +792,9 @@ def _validation_errors(parameters):
                 + parameters.tolerance_radius_offset(cylinder.is_external)
             )
             if effective_radius <= 0:
-                errors.append('Die Toleranz ist für diesen Zylinderdurchmesser zu groß.')
+                errors.append(tr('tolerance_large'))
             if parameters.sharp_profile_depth >= effective_radius:
-                errors.append('Die Gewindetiefe muss kleiner als der Zylinderradius sein.')
+                errors.append(tr('depth_radius'))
         except ValueError as error:
             errors.append(str(error))
     return errors

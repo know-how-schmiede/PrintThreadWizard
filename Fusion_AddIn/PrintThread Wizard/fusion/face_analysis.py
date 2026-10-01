@@ -1,3 +1,5 @@
+from ..localization import translate as tr
+
 from dataclasses import dataclass
 
 import adsk.core
@@ -21,7 +23,7 @@ class CylinderGeometry:
 def analyze_cylinder(selected_face) -> CylinderGeometry:
     face = adsk.fusion.BRepFace.cast(selected_face)
     if face is None:
-        raise ValueError('Die Auswahl ist keine Fläche.')
+        raise ValueError(tr('not_face'))
 
     native_face = getattr(face, 'nativeObject', None)
     if native_face:
@@ -29,31 +31,31 @@ def analyze_cylinder(selected_face) -> CylinderGeometry:
 
     cylinder = adsk.core.Cylinder.cast(face.geometry)
     if cylinder is None:
-        raise ValueError('Die ausgewählte Fläche ist keine Zylinderfläche.')
+        raise ValueError(tr('not_cylinder'))
 
     body = face.body
     component = body.parentComponent if body else None
     if body is None or component is None:
-        raise ValueError('Der Körper der Zylinderfläche konnte nicht ermittelt werden.')
+        raise ValueError(tr('body_missing'))
 
     axis = cylinder.axis.copy()
     if not axis.normalize():
-        raise ValueError('Die Zylinderachse ist ungültig.')
+        raise ValueError(tr('axis_invalid'))
 
     radial = _radial_direction(face, cylinder.origin, axis)
     if radial is None:
-        raise ValueError('Die radiale Richtung konnte nicht ermittelt werden.')
+        raise ValueError(tr('radial_missing'))
 
     normal_result = face.evaluator.getNormalAtPoint(face.pointOnFace)
     if not normal_result or not normal_result[0]:
-        raise ValueError('Die Flächennormale konnte nicht ermittelt werden.')
+        raise ValueError(tr('normal_missing'))
     normal = normal_result[1]
     normal.normalize()
     is_external = normal.dotProduct(radial) >= 0
 
     extent = _axis_extent(face, cylinder.origin, axis)
     if extent is None or extent[1] - extent[0] <= 1e-7:
-        raise ValueError('Die Länge der Zylinderfläche konnte nicht ermittelt werden.')
+        raise ValueError(tr('length_missing'))
 
     axis_start = _translated_point(cylinder.origin, axis, extent[0])
     axis_end = _translated_point(cylinder.origin, axis, extent[1])
@@ -103,7 +105,7 @@ def find_updated_cylinder(
             best_length_delta = length_delta
 
     if best_match is None:
-        raise RuntimeError('Die Zylinderfläche konnte nach dem Anfasen nicht erneut gefunden werden.')
+        raise RuntimeError(tr('face_lost'))
     return best_match
 
 
@@ -111,7 +113,7 @@ def analyze_external_cylinder(selected_face) -> CylinderGeometry:
     """Kompatibilitätsalias für Aufrufer älterer Versionen."""
     cylinder = analyze_cylinder(selected_face)
     if not cylinder.is_external:
-        raise ValueError('Es muss eine äußere Zylinderfläche ausgewählt werden.')
+        raise ValueError(tr('external_required'))
     return cylinder
 
 

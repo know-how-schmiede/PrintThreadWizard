@@ -1,3 +1,5 @@
+from ..localization import translate as tr
+
 import json
 import os
 from datetime import datetime, timezone
@@ -23,11 +25,11 @@ def save_thread_preset(name: str, note: str, settings: dict) -> dict:
     clean_name = name.strip()
     clean_note = note.strip()
     if not clean_name:
-        raise ValueError('Bitte einen Gewindebezeichner eingeben.')
+        raise ValueError(tr('name_required'))
     if len(clean_name) > 100:
-        raise ValueError('Der Gewindebezeichner darf höchstens 100 Zeichen lang sein.')
+        raise ValueError(tr('name_long'))
     if len(clean_note) > 500:
-        raise ValueError('Die Notiz darf höchstens 500 Zeichen lang sein.')
+        raise ValueError(tr('note_long'))
 
     path = preset_file_path()
     data = _read_storage(path)
@@ -67,7 +69,7 @@ def load_default_tolerance() -> float:
 
 def save_default_tolerance(value: float) -> None:
     if value < 0:
-        raise ValueError('Die Standardtoleranz darf nicht negativ sein.')
+        raise ValueError(tr('default_negative'))
     path = preset_file_path()
     data = _read_storage(path)
     data.setdefault('preferences', {})['default_tolerance_cm'] = value
@@ -105,19 +107,19 @@ def import_thread_presets(path: str) -> int:
     try:
         imported = json.loads(Path(path).read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f'Die Importdatei ist nicht lesbar: {error}') from error
+        raise ValueError(tr('import_unreadable', error=error)) from error
     if imported.get('schema_version') != SCHEMA_VERSION:
-        raise ValueError('Die Importdatei hat eine nicht unterstützte Formatversion.')
+        raise ValueError(tr('import_version'))
     presets = imported.get('presets')
     if not isinstance(presets, list):
-        raise ValueError('Die Importdatei enthält keine gültige Preset-Liste.')
+        raise ValueError(tr('import_list'))
 
     normalized = []
     for preset in presets:
         if not isinstance(preset, dict) or not str(preset.get('name', '')).strip():
-            raise ValueError('Die Importdatei enthält einen Eintrag ohne Bezeichner.')
+            raise ValueError(tr('import_name'))
         if not isinstance(preset.get('settings'), dict):
-            raise ValueError(f'Der Eintrag „{preset.get("name", "")}“ enthält keine Parameter.')
+            raise ValueError(tr("import_parameters", name=preset.get("name", "")))
         entry = dict(preset)
         entry['id'] = str(entry.get('id') or uuid4())
         entry['name'] = str(entry['name']).strip()
@@ -154,8 +156,8 @@ def _read_storage(path: Path) -> dict:
     try:
         data = json.loads(path.read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f'Die gespeicherte Gewindeliste ist nicht lesbar: {error}') from error
+        raise ValueError(tr('storage_unreadable', error=error)) from error
 
     if data.get('schema_version') != SCHEMA_VERSION or not isinstance(data.get('presets'), list):
-        raise ValueError('Die gespeicherte Gewindeliste hat ein unbekanntes Format.')
+        raise ValueError(tr('storage_format'))
     return data

@@ -1,3 +1,5 @@
+from .localization_extra import TRANSLATIONS as _EXTRA_TRANSLATIONS
+
 SUPPORTED_LOCALES = ('de', 'en', 'es', 'fr', 'it', 'pl')
 
 _LANGUAGE_ENUM_NAMES = {
@@ -122,6 +124,22 @@ _TRANSLATIONS = {
         'info_issues': "Znaleziono błąd? Zgłoś go w sekcji <a href=\"{url}\">Issues w repozytorium</a>, podając wersję wtyczki i kroki pozwalające go odtworzyć.",
         'create_tab':'Utwórz gwint','manage_tab':'Zarządzaj ustawieniami','target_face':'Powierzchnia cylindryczna','select_face':'Wybierz powierzchnię cylindryczną.','chamfer_edges':'Krawędzie fazowania','saved_setting':'Zapisane ustawienie','choose_setting':'— Wybierz ustawienie —','calculation':'Obliczenia','iso_mode':'Automatyczny ISO metryczny','free_mode':'Geometria dowolna','profile_angle':'Kąt profilu (α)','thread_depth':'Głębokość gwintu (h)','pitch':'Skok gwintu (P)','fillet_radius':'Promień zaokrąglenia (r)','tolerance':'Tolerancja','dimensions_group':'Schemat parametrów gwintu','name':'Nazwa','action':'Akcja','delete':'Usuń','no_row':'Nie wybrano wiersza tabeli.','json_group':'Eksport / import ustawień JSON','export':'Eksport','import':'Import','default_tolerance':'Tolerancja domyślna','set_default':'Ustaw jako domyślną','save_group':'Zapisz bieżące ustawienia','thread_name':'Nazwa gwintu','short_note':'Krótka notatka','save_current':'Zapisz bieżące ustawienia','note':'Notatka','mode':'Tryb','saved_at':'Zapisano','saved':'Zapisano „{name}”.','deleted':'Usunięto „{name}”.','confirm_delete':'Czy na pewno usunąć „{name}”?','export_cancelled':'Anulowano eksport.','import_cancelled':'Anulowano import.','export_ok':'Wyeksportowano ustawienia: {count}.','import_ok':'Zaimportowano ustawienia: {count}.','external_thread':'Gwint zewnętrzny','internal_thread':'Gwint wewnętrzny','nominal_diameter':'Średnica nominalna','major_diameter':'Średnica zewnętrzna (d)','pitch_diameter':'Średnica podziałowa (d2)','minor_diameter':'Średnica wewnętrzna (d1)','tap_drill':'Otwór pod gwint (T)'},
 }
+
+
+for _locale in SUPPORTED_LOCALES:
+    _TRANSLATIONS[_locale].update(_EXTRA_TRANSLATIONS[_locale])
+
+_active_locale = 'en'
+
+
+def set_locale(locale: str) -> None:
+    """Share the Fusion language with core and geometry code without importing adsk."""
+    global _active_locale
+    _active_locale = locale if locale in SUPPORTED_LOCALES else 'en'
+
+
+def translate(key: str, **values) -> str:
+    return translator(_active_locale)(key, **values)
 
 
 def detect_locale(adsk_core, app) -> str:

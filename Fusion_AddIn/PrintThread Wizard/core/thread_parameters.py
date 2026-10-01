@@ -1,3 +1,5 @@
+from ..localization import translate as tr
+
 from dataclasses import dataclass
 import math
 from typing import Any
@@ -32,23 +34,23 @@ class ThreadParameters:
     def validation_errors(self) -> list[str]:
         errors = []
         if self.face is None:
-            errors.append('Eine Zylinderfläche muss ausgewählt werden.')
+            errors.append(tr('face_required'))
         if not 0 < self.flank_angle < math.pi:
-            errors.append('Der Flankenwinkel muss zwischen 0° und 180° liegen.')
+            errors.append(tr('angle_invalid'))
         if self.thread_depth <= 0:
-            errors.append('Die Gewindetiefe muss größer als 0 sein.')
+            errors.append(tr('depth_positive'))
         if self.pitch <= 0:
-            errors.append('Die Steigung muss größer als 0 sein.')
+            errors.append(tr('pitch_positive'))
         if self.fillet_radius < 0:
-            errors.append('Der Verrundungsradius darf nicht negativ sein.')
+            errors.append(tr('fillet_negative'))
         if self.tolerance < 0:
-            errors.append('Die Toleranz darf nicht negativ sein.')
+            errors.append(tr('tolerance_negative'))
         if not math.isfinite(self.chamfer_extra) or self.chamfer_extra < 0:
-            errors.append('Die zusätzliche Fasengröße muss endlich und nicht negativ sein.')
+            errors.append(tr('chamfer_extra_invalid'))
 
         half_profile_width = self.sharp_profile_depth * math.tan(self.flank_angle / 2)
         if self.pitch > 0 and 2 * half_profile_width >= self.pitch:
-            errors.append('Das Gewindeprofil ist für diese Steigung zu breit.')
+            errors.append(tr('profile_wide'))
         if self.fillet_radius > 0 and self.fillet_radius >= self.thread_depth:
-            errors.append('Der Verrundungsradius muss kleiner als die Gewindetiefe sein.')
+            errors.append(tr('fillet_large'))
         return errors

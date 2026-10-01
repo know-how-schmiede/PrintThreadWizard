@@ -14,7 +14,7 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.8.3**
+Aktuelle Entwicklungsversion: **0.8.4**
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -24,6 +24,8 @@ Aktuelle Entwicklungsversion: **0.8.3**
 
 - Automatische Übernahme der Fusion-Oberflächensprache für Deutsch, Englisch,
   Spanisch, Französisch, Italienisch und Polnisch; Englisch dient als Fallback
+- Lokalisierte Validierungs- und Fehlermeldungen, Dateidialoge, Timeline-Namen
+  und Dokumentation der Gewindeparameter
 
 - Automatische Erkennung von Außenzylindern und Innenbohrungen
 - Modellierte Rechtsgewinde mit exakter B-Rep-Helix und Sweep
@@ -113,7 +115,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.8.3.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.8.4.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion

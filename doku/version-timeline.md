@@ -1,5 +1,23 @@
 # Version Timeline
 
+## 0.8.4 - 2026-10-01
+
+- Fehlende Übersetzungen für Dialogtexte, Dateidialoge und Preset-Meldungen in allen sechs unterstützten Sprachen ergänzt.
+- Validierungs-, Import-/Export- und Geometriefehlermeldungen an die Fusion-Oberflächensprache angebunden.
+- Namen erzeugter Features, Hilfsgeometrien, Timeline-Gruppen und Texte der Dokumentationsskizze lokalisiert.
+- Englische Auswahllisten verwenden den Dezimalpunkt; die übrigen unterstützten Sprachen das Dezimalkomma.
+- Automatische Prüfungen für Übersetzungsabdeckung, Platzhalter, Sprachauswahl und Preset-Import/-Export ergänzt.
+- Version in Installer, `version.py`, Fusion-Manifest und aktueller Dokumentation auf `0.8.4` gesetzt.
+
+## 0.8.4 - 2026-10-01
+
+- Fehlende Übersetzungen für Dialogtexte, Dateidialoge und Preset-Meldungen in allen sechs unterstützten Sprachen ergänzt.
+- Validierungs-, Import-/Export- und Geometriefehlermeldungen an die Fusion-Oberflächensprache angebunden.
+- Namen erzeugter Features, Hilfsgeometrien, Timeline-Gruppen und Texte der Dokumentationsskizze lokalisiert.
+- Englische Auswahllisten verwenden den Dezimalpunkt; die übrigen unterstützten Sprachen das Dezimalkomma.
+- Automatische Prüfungen für Übersetzungsabdeckung, Platzhalter, Sprachauswahl und Preset-Import/-Export ergänzt.
+- Version in Installer, `version.py`, Fusion-Manifest und aktueller Dokumentation auf `0.8.4` gesetzt.
+
 ## 0.8.3 - 2026-09-15
 
 - Neues Auswahlfeld und Hilfetext in allen sechs unterstützten Sprachen verfügbar.

@@ -1,3 +1,5 @@
+from ..localization import translate as tr
+
 from dataclasses import dataclass
 import math
 
@@ -21,16 +23,16 @@ def capture_chamfer_ends(cylinder, selected_edges):
     for selected_edge in selected_edges:
         edge = adsk.fusion.BRepEdge.cast(selected_edge)
         if edge is None:
-            raise ValueError('Eine ausgewählte Fasen-Kante ist ungültig.')
+            raise ValueError(tr('edge_invalid'))
         native_edge = getattr(edge, 'nativeObject', None)
         if native_edge:
             edge = native_edge
         if edge.body != cylinder.body:
-            raise ValueError('Alle Fasen-Kanten müssen zum ausgewählten Zylinderkörper gehören.')
+            raise ValueError(tr('edge_body'))
 
         circle = adsk.core.Circle3D.cast(edge.geometry)
         if circle is None:
-            raise ValueError('Für die Rotationsfase müssen kreisförmige Kanten ausgewählt werden.')
+            raise ValueError(tr('edge_circular'))
         position = cylinder.axis_start.vectorTo(circle.center).dotProduct(cylinder.axis)
         result.append(ChamferEnd(circle.center.copy(), circle.radius, position <= cylinder.length / 2))
     return tuple(result)
@@ -44,12 +46,12 @@ def create_revolved_chamfers(
         return None
 
     if not math.isfinite(extra_distance) or extra_distance < 0:
-        raise ValueError('Die zusätzliche Fasengröße muss endlich und nicht negativ sein.')
+        raise ValueError(tr('chamfer_extra_invalid'))
     distance += extra_distance
     for end in chamfer_ends:
         outer_radius = end.radius + (0.0 if cylinder.is_external else extra_distance)
         if distance + CHAMFER_CUT_OVERLAP >= outer_radius:
-            raise ValueError('Die Fase ist für diesen Zylinderradius zu groß.')
+            raise ValueError(tr('chamfer_large'))
 
     component = cylinder.component
     helper_sketch = None
@@ -57,7 +59,7 @@ def create_revolved_chamfers(
     sketch = None
     try:
         helper_sketch = component.sketches.add(component.xYConstructionPlane)
-        helper_sketch.name = 'PrintThread Wizard – Fasenebene Hilfspunkte'
+        helper_sketch.name = "PrintThread Wizard – " + tr('chamfer_helpers')
         helper_sketch.is3D = True
         points = helper_sketch.sketchPoints
         axis_start = points.add(cylinder.axis_start)
@@ -68,12 +70,12 @@ def create_revolved_chamfers(
 
         plane_input = component.constructionPlanes.createInput()
         if not plane_input.setByThreePoints(axis_start, axis_end, radial_point):
-            raise RuntimeError('Die Ebene für die Rotationsfase konnte nicht definiert werden.')
+            raise RuntimeError(tr('chamfer_plane_failed'))
         plane = component.constructionPlanes.add(plane_input)
-        plane.name = 'PrintThread Wizard – Fasenebene'
+        plane.name = "PrintThread Wizard – " + tr('chamfer_plane')
 
         sketch = component.sketches.add(plane)
-        sketch.name = 'PrintThread Wizard – Fasenprofile'
+        sketch.name = "PrintThread Wizard – " + tr('chamfer_profiles')
         lines = sketch.sketchCurves.sketchLines
         axis_line = lines.addByTwoPoints(
             sketch.modelToSketchSpace(cylinder.axis_start),
@@ -123,7 +125,7 @@ def create_revolved_chamfers(
             lines.addByTwoPoints(second.endSketchPoint, first.startSketchPoint)
 
         if sketch.profiles.count != len(chamfer_ends):
-            raise RuntimeError('Die Dreiecksprofile der Rotationsfase sind nicht geschlossen.')
+            raise RuntimeError(tr('chamfer_open'))
 
         profiles = adsk.core.ObjectCollection.create()
         for index in range(sketch.profiles.count):
@@ -140,9 +142,9 @@ def create_revolved_chamfers(
         revolve = revolves.add(revolve_input)
         if revolve is None:
             raise RuntimeError(
-                'Die rotierte Fase konnte nicht vom Gewindekörper abgezogen werden.'
+                tr('chamfer_cut_failed')
             )
-        revolve.name = 'PrintThread Wizard – Gewindefasen'
+        revolve.name = "PrintThread Wizard – " + tr('thread_chamfers')
 
         helper_sketch.isLightBulbOn = False
         plane.isLightBulbOn = False
