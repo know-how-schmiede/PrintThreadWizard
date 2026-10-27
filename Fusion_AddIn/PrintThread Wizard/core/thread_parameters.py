@@ -22,6 +22,7 @@ class ThreadParameters:
     start_offset: float = 0.0
     thread_length: float = 1.0
     start_edge: Any = None
+    clearance_distribution: str = 'balanced'
 
     def axial_range(self, available_length: float, from_end: bool = False) -> tuple[float, float]:
         """Visible bounds in cm, independent of cylinder surface orientation."""
@@ -47,9 +48,14 @@ class ThreadParameters:
         return length / self.pitch
 
     def tolerance_radius_offset(self, is_external: bool) -> float:
-        """Versetzt das gesamte Gewinde um das halbe gewünschte Gesamtspiel."""
-        half_clearance = self.tolerance / 2
-        return -half_clearance if is_external else half_clearance
+        """Radial correction; the difference across a pair equals tolerance."""
+        if self.clearance_distribution == 'balanced':
+            amount = self.tolerance / 2
+        elif self.clearance_distribution == ('external' if is_external else 'internal'):
+            amount = self.tolerance
+        else:
+            amount = 0.0
+        return -amount if is_external else amount
 
     @property
     def sharp_profile_depth(self) -> float:
@@ -61,6 +67,8 @@ class ThreadParameters:
 
     def validation_errors(self) -> list[str]:
         errors = []
+        if self.clearance_distribution not in ('balanced', 'internal', 'external'):
+            errors.append(tr('distribution_invalid'))
         if self.handedness not in ('right', 'left'):
             errors.append(tr('direction_invalid'))
         if type(self.full_length) is not bool:

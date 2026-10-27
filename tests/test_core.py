@@ -216,7 +216,8 @@ class CoreTests(unittest.TestCase):
         handler = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'command_execute')
         handler.args.args[0].annotation = None
         ns = dict(_apply_calculation_mode=lambda _:None, _read_parameters=lambda _:self.params,
-                  _validation_errors=lambda _:[], CMD_NAME='test', tr=lambda key:key,
+                  _request_errors=lambda *args:[], _partner_parameters=lambda *args:None,
+                  CMD_NAME='test', tr=lambda key:key,
                   futil=types.SimpleNamespace(log=lambda *a, **k:None),
                   ui=types.SimpleNamespace(messageBox=lambda _:None),
                   adsk=types.SimpleNamespace(core=types.SimpleNamespace(LogLevels=types.SimpleNamespace(ErrorLogLevel=1))))
@@ -228,3 +229,104 @@ class CoreTests(unittest.TestCase):
         ns['command_execute'](args)
         self.assertTrue(args.executeFailed)
         self.assertEqual(args.executeFailedMessage, 'injected after body edit')
+
+    def test_all_clearance_distributions_preserve_total_radial_gap(self):
+        for mode, expected in (('balanced', (-.01, .01)),
+                               ('internal', (0, .02)), ('external', (-.02, 0))):
+            p = replace(self.params, tolerance=.02, clearance_distribution=mode)
+            offsets = (p.tolerance_radius_offset(True), p.tolerance_radius_offset(False))
+            self.assertEqual(offsets, expected)
+            self.assertAlmostEqual(offsets[1] - offsets[0], .02)
+            self.assertEqual(p.validation_errors(), [])
+        self.assertTrue(replace(self.params, clearance_distribution='invalid').validation_errors())
+
+    def test_pair_rejects_same_native_body_types_and_diameter_mismatch(self):
+        validate = importlib.import_module('printthread_test.core.thread_pair').validate_pair
+        first = types.SimpleNamespace(body=object(), is_external=True, radius=1.)
+        second = types.SimpleNamespace(body=object(), is_external=False, radius=1.)
+        validate(first, second)
+        for changes in (dict(body=first.body), dict(is_external=True), dict(radius=1.01),
+                        dict(radius=float('nan'))):
+            bad = types.SimpleNamespace(**{**vars(second), **changes})
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                validate(first, bad)
+
+    def test_failure_on_second_thread_aborts_complete_command(self):
+        tree = ast.parse((ADDIN / 'commands/commandDialog/entry.py').read_text(encoding='utf-8'))
+        handler = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'command_execute')
+        handler.args.args[0].annotation = None
+        partner = replace(self.params, face=object())
+        create = Mock(side_effect=[object(), RuntimeError('second failed')])
+        ns = dict(_apply_calculation_mode=lambda _: None, _read_parameters=lambda _: self.params,
+                  _request_errors=lambda *a: [], _partner_parameters=lambda *a: partner,
+                  create_thread=create, CMD_NAME='test', tr=lambda key: key,
+                  futil=types.SimpleNamespace(log=lambda *a, **k: None),
+                  ui=types.SimpleNamespace(messageBox=lambda _: None),
+                  adsk=types.SimpleNamespace(core=types.SimpleNamespace(LogLevels=types.SimpleNamespace(ErrorLogLevel=1))))
+        exec(compile(ast.Module(body=[handler], type_ignores=[]), '<pair-command>', 'exec'), ns)
+        args = types.SimpleNamespace(command=types.SimpleNamespace(commandInputs=None))
+        ns['command_execute'](args)
+        self.assertEqual(create.call_args_list[0].args, (self.params,))
+        self.assertEqual(create.call_args_list[1].args, (partner,))
+        self.assertTrue(args.executeFailed)
+        self.assertEqual(args.executeFailedMessage, 'second failed')
+        create.reset_mock()
+        ns['_request_errors'] = lambda *a: ['invalid second section']
+        ns['command_execute'](args)
+        create.assert_not_called()
+        self.assertEqual(args.executeFailedMessage, 'invalid second section')
+
+    def test_pair_preset_roundtrip_and_invalid_import_is_atomic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            storage = Path(directory) / 'storage.json'
+            source = Path(directory) / 'export.json'
+            with patch.object(presets, 'preset_file_path', return_value=storage):
+                settings = dict(self.settings, clearance_distribution='internal', pair_mode=True,
+                                partner_full_length=False, partner_start_offset_cm=.2,
+                                partner_thread_length_cm=1.5)
+                presets.save_thread_preset('pair', '', settings)
+                presets.export_thread_presets(str(source))
+                presets.import_thread_presets(str(source))
+                self.assertEqual(presets.load_thread_presets()[0]['settings'], settings)
+                original = storage.read_bytes()
+                for field, bad in (('clearance_distribution', 'invalid'),
+                                   ('pair_mode', 1),
+                                   ('partner_full_length', 'false'),
+                                   ('partner_start_offset_cm', -.1),
+                                   ('partner_thread_length_cm', float('inf'))):
+                    data = json.loads(source.read_text(encoding='utf-8'))
+                    data['presets'][0]['settings'][field] = bad
+                    source.write_text(json.dumps(data), encoding='utf-8')
+                    with self.assertRaises(ValueError):
+                        presets.import_thread_presets(str(source))
+                    self.assertEqual(storage.read_bytes(), original)
+                    presets.export_thread_presets(str(source))
+
+    def test_partner_has_independent_section_and_iso_depth(self):
+        tree = ast.parse((ADDIN / 'commands/commandDialog/entry.py').read_text(encoding='utf-8'))
+        function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_partner_parameters')
+        face, edge, chamfer = object(), object(), object()
+        def selection(*entities):
+            return types.SimpleNamespace(selectionCount=len(entities),
+                                         selection=lambda i: types.SimpleNamespace(entity=entities[i]))
+        fields = dict(pair_mode=types.SimpleNamespace(value=True), partner_face=selection(face),
+                      partner_start_edge=selection(edge), partner_chamfer_edges=selection(chamfer),
+                      partner_full_length=types.SimpleNamespace(value=False),
+                      partner_start_offset=types.SimpleNamespace(value=.2),
+                      partner_thread_length=types.SimpleNamespace(value=1.5))
+        ns = dict(replace=replace, _input_by_id=lambda _, key: fields[key],
+                  _is_iso_mode=lambda _: True, radial_thread_depth=iso.radial_thread_depth,
+                  analyze_cylinder=lambda _: types.SimpleNamespace(is_external=False))
+        exec(compile(ast.Module(body=[function], type_ignores=[]), '<partner>', 'exec'), ns)
+        partner = ns['_partner_parameters'](None, self.params)
+        self.assertIs(partner.face, face)
+        self.assertEqual(partner.chamfer_edges, (chamfer,))
+        self.assertIs(partner.start_edge, edge)
+        self.assertEqual(partner.axial_range(4), (.2, 1.7))
+        self.assertAlmostEqual(partner.thread_depth, iso.radial_thread_depth(self.params.pitch, False))
+        self.assertNotEqual(partner.thread_depth, iso.radial_thread_depth(self.params.pitch, True))
+        self.assertTrue(self.params.full_length)
+        ns['_is_iso_mode'] = lambda _: False
+        self.assertEqual(ns['_partner_parameters'](None, self.params).thread_depth, self.params.thread_depth)
+        fields['pair_mode'].value = False
+        self.assertIsNone(ns['_partner_parameters'](None, self.params))

@@ -1,5 +1,16 @@
 # Version Timeline
 
+## 0.9.3 - 2026-10-27
+
+- M3 implementiert: Außen-/Innengewindepaar auf getrennten Körpern mit gemeinsamen Profilparametern; Längen, Startseiten und Fasen pro Bauteil.
+- Art, gleicher Nenndurchmesser und unterschiedliche native Körper vor Erstellung prüfen; keine automatische Größenänderung oder Koaxialitätsforderung.
+- Spielverteilung gleichmäßig / nur innen / nur außen. Einseitig den vollen radialen Gesamtwert anwenden; Gegenseite ohne Spielkorrektur.
+- Metrische Innen-/Außentiefe getrennt berechnen. Fehler beim zweiten Gewinde bricht dieselbe Fusion-Befehlstransaktion ab.
+- Paarmodus, Spielverteilung und zweite Längeneinstellungen in Schema-1-Presets/JSON; alte Presets bleiben Einzelgewinde mit gleichmäßigem Spiel.
+- Dialog, Ergebnis, Preset-Details und Dokumentationsskizzen ergänzt; neue Texte in sechs Sprachen.
+- M2: Sechs Fusion-Prüffälle durch Anwender bestätigt, einschließlich beider Auswahlreihenfolgen derselben Fasen-/Startkante.
+- Version, Manifest, Installer-Konfiguration und Dokumentation auf 0.9.3. Fusion-/Druckabnahme von M3 offen; kein Installer gebaut oder veröffentlicht.
+
 ## 0.9.2 - 2026-10-27
 
 - M2 implementiert: Ganze Länge bleibt Standard; Teilgewinde mit gewählter Start-Endkante, axialem Versatz und Gewindelänge.

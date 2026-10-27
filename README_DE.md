@@ -14,9 +14,9 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.2**
+Aktuelle Entwicklungsversion: **0.9.3**
 
-0.9.2 ergänzt **Gewindelänge und Startversatz**. Standard bleibt **Ganze Länge**. Für ein Teilgewinde die Startseite über eine kreisförmige Endkante wählen, Versatz und Länge eingeben. Rechts- und Linksgewinde bleiben verfügbar. Die Fusion-Abnahme der Teilgewinde ist offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.2.md). Der Installer ist noch nicht gebaut/veröffentlicht.
+0.9.3 ergänzt **Gewindepaare und Spielverteilung**. Ein Außen- und ein Innengewinde können gemeinsam mit getrennten Längen und Startseiten erstellt werden. Gleichmäßige Spielverteilung bleibt Standard; alternativ lässt sich das gesamte radiale Spiel nur innen oder nur außen anwenden. Fusion- und Druckabnahme von M3 sind offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.3.md). Der Installer ist noch nicht gebaut/veröffentlicht.
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -67,8 +67,8 @@ Aktuelle Entwicklungsversion: **0.9.2**
 ## Funktionsweise der Toleranz
 
 Die ausgewählte Toleranz bezeichnet das radiale Gesamtspiel eines passenden
-Gewindepaars. Wenn für Innen- und Außengewinde derselbe Wert verwendet wird,
-wird das Spiel gleichmäßig auf beide Bauteile verteilt:
+Gewindepaars. In der Standardverteilung **Gleichmäßig** wird bei gleichem
+Wert für Innen- und Außengewinde das Spiel auf beide Bauteile verteilt:
 
 - Der Radius des Außengewindes wird um die halbe Toleranz verkleinert.
 - Der Radius des Innengewindes wird um die halbe Toleranz vergrößert.
@@ -80,6 +80,38 @@ Bei 0,2 mm Toleranz wird beispielsweise der Außenradius um 0,1 mm verkleinert
 und der Innenradius um 0,1 mm vergrößert. Der passende Wert hängt unter anderem
 von Drucker, Material, Schichthöhe, Extrusionskalibrierung und Bauteilausrichtung
 ab.
+
+## Gewindepaar und Spielverteilung
+
+**Gewindepaar erstellen** aktivieren. Die erste Zylinderfläche wie gewohnt
+wählen, die zweite unter **Zweites Bauteil**. Erforderlich sind eine Außen- und
+eine Innenzylinderfläche mit gleichem Nenndurchmesser auf zwei verschiedenen
+Körpern. Die Körper dürfen nebeneinander liegen. Mehrere Instanzen desselben
+nativen Körpers werden abgewiesen; automatische Größenänderungen erfolgen nicht.
+
+Teilung, Richtung, Profilwinkel, Verrundung, Zusatzfase und Gesamtspiel gelten
+für beide Gewinde. Im metrischen Modus werden Innen- und Außentiefe getrennt
+berechnet; im freien Modus verwenden beide die eingegebene Tiefe. Unter
+**Zweites Bauteil** Fasen-Kanten sowie ganze Länge oder Startseite, Versatz und
+Gewindelänge unabhängig vom ersten Bauteil festlegen. Die Ergebnisanzeige
+enthält beide Abschnitte. Schlägt die Erstellung eines Gewindes fehl, wird die
+gesamte Paarerstellung über die Fusion-Befehlstransaktion zurückgenommen;
+die praktische Fehler-/Undo-Prüfung bleibt offen.
+
+**Spielverteilung** gilt auch beim Erstellen eines einzelnen Gewindes:
+
+| Verteilung | Außenradius bei 0,20 mm Gesamtspiel | Innenradius bei 0,20 mm Gesamtspiel |
+| --- | --- | --- |
+| Gleichmäßig (Standard) | −0,10 mm | +0,10 mm |
+| Nur Innengewinde | unverändert | +0,20 mm |
+| Nur Außengewinde | −0,20 mm | unverändert |
+
+Die radiale Differenz beträgt in allen Fällen 0,20 mm. Das ist keine Angabe
+zur Durchmesseränderung. Presets und JSON speichern Paarmodus, Spielverteilung
+und beide Längeneinstellungen; Flächen und Kanten müssen am Modell gewählt
+werden. Alte Presets verwenden Einzelgewinde, ganze Länge und gleichmäßige
+Verteilung. Presets mit Paarmodus oder einseitiger Spielverteilung nur mit
+**0.9.3 oder neuer** verwenden: Frühere Versionen ignorieren diese Felder.
 
 ## Zusätzliche Fasengröße
 
@@ -118,7 +150,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.9.2.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.9.3.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion
@@ -200,9 +232,11 @@ Dieselbe Endkante kann sowohl unter **Fasen-Kanten** als auch unter
 **Startseite (Endkante)** ausgewählt werden. Eine zuvor für die Fase gewählte
 Kante bleibt als Startseite auswählbar; die Auswahlfelder sind unabhängig.
 Für eine Fase am Startende den **Startversatz auf 0 mm** setzen.
-Die Auswahlfolge „Fasen-Kante, danach dieselbe Kante als Startseite“ und die
-Erstellung eines Außen-Teilgewindes mit Fase wurden in Fusion vom Anwender
-bestätigt. Die übrige Fusion-Prüfmatrix bleibt offen.
+Vom Anwender in Fusion bestanden: 40 mm Zylinder mit 2 mm Versatz und 15 mm
+Gewindelänge; beide Startseiten; dieselbe Kante für Fase und Startseite in
+beiden Auswahlreihenfolgen; ganze Länge und alte Presets; Versatz 0, Bereiche
+bis zum Ende und sehr kurze/lange Bereiche; Fasen mit 0/1/2 Kanten und Zusatzfase.
+Die übrigen Fälle im [Prüfprotokoll](doku/pruefprotokoll-0.9.2.md) bleiben offen.
 
 Längenmodus, Versatz und Gewindelänge werden in Presets und JSON gespeichert.
 Die Startkante ist ein Modellbezug und muss am jeweiligen Bauteil gewählt werden.
@@ -253,7 +287,7 @@ Kurzzeichen dem Gewindeprofil zu.
 - Das Add-in befindet sich in Entwicklung; die erzeugte Geometrie muss vor der
   produktiven Verwendung geprüft werden.
 - Derzeit werden nur Zylinderflächen unterstützt. Die Funktion der Linksgewinde wurde in Fusion bestätigt; die vollständige Prüfmatrix ist noch offen.
-- Teilgewinde sind implementiert; die Fusion-Prüfung für beide Startseiten, Innen-/Außengewinde und transformierte Komponenten steht aus. Einlauf, Auslauf und Freistich gehören nicht zu diesem Umfang.
+- Teilgewinde sind implementiert; beide Startseiten und die oben aufgeführten Fälle wurden in Fusion bestätigt. Die vollständige Prüfung der Innen-/Außengewinde und transformierter Komponenten bleibt offen. Einlauf, Auslauf und Freistich gehören nicht zu diesem Umfang.
 - Die Steigung wird manuell eingegeben; eine Tabelle genormter
   Gewindegrößen und Steigungen ist noch nicht enthalten.
 - Toleranzwerte sind Ausgangswerte und müssen für Drucker und Material

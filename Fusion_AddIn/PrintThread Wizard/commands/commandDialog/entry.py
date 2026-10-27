@@ -1,4 +1,5 @@
 import os
+from dataclasses import replace
 
 import adsk.core
 import adsk.fusion
@@ -6,6 +7,7 @@ import adsk.fusion
 from ... import config
 from ...core.iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
 from ...core.thread_parameters import ThreadParameters
+from ...core.thread_pair import validate_pair
 from ...core.thread_presets import (
     delete_thread_preset,
     export_thread_presets,
@@ -194,6 +196,33 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         field = create_inputs.addValueInput(input_id, tr(label), default_units,
                                            adsk.core.ValueInput.createByString(initial))
         field.isVisible = False
+    create_inputs.addBoolValueInput('pair_mode', tr('pair_mode'), True, '', False)
+    distribution = create_inputs.addDropDownCommandInput(
+        'clearance_distribution', tr('clearance_distribution'),
+        adsk.core.DropDownStyles.TextListDropDownStyle)
+    distribution.tooltip = tr('distribution_help')
+    for index, key in enumerate(('balanced', 'internal', 'external')):
+        distribution.listItems.add(tr('distribution_' + key), index == 0)
+    partner = create_inputs.addGroupCommandInput('partner_group', tr('partner_group'))
+    partner.isExpanded = True
+    partner.isVisible = False
+    second = partner.children
+    for input_id, label, selection_filter, maximum in (
+        ('partner_face', 'target_face', 'Faces', 1),
+        ('partner_chamfer_edges', 'chamfer_edges', 'Edges', 2),
+        ('partner_start_edge', 'start_edge', 'CircularEdges', 1),
+    ):
+        selection = second.addSelectionInput(input_id, tr(label), tr(label))
+        selection.addSelectionFilter(selection_filter)
+        selection.setSelectionLimits(0, maximum)
+    second.addBoolValueInput('partner_full_length', tr('full_length'), True, '', True)
+    for input_id, label, initial in (
+        ('partner_start_offset', 'start_offset', '0 mm'),
+        ('partner_thread_length', 'thread_length', '15 mm'),
+    ):
+        second.addValueInput(input_id, tr(label), default_units,
+                             adsk.core.ValueInput.createByString(initial))
+    _update_pair_visibility(inputs)
     mode_input = create_inputs.addDropDownCommandInput(
         'calculation_mode', tr('calculation'), adsk.core.DropDownStyles.TextListDropDownStyle
     )
@@ -331,11 +360,16 @@ def command_execute(args: adsk.core.CommandEventArgs):
     try:
         _apply_calculation_mode(args.command.commandInputs)
         parameters = _read_parameters(args.command.commandInputs)
-        errors = _validation_errors(parameters)
+        errors = _request_errors(args.command.commandInputs, parameters)
         if errors:
             raise ValueError('\n'.join(errors))
 
+        # Both creations belong to this command transaction. Any exception
+        # reaches executeFailed below and rolls back the complete pair.
+        partner = _partner_parameters(args.command.commandInputs, parameters)
         create_thread(parameters)
+        if partner is not None:
+            create_thread(partner)
         futil.log(f"{CMD_NAME}: {tr('thread_created')}")
     except Exception as error:
         # Abort the entire Fusion command transaction, including target-body edits.
@@ -349,6 +383,8 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
         return
+    if args.input.id in ('pair_mode', 'partner_full_length'):
+        _update_pair_visibility(active_command_inputs)
     if args.input.id == 'full_length':
         for input_id in ('start_edge', 'start_offset', 'thread_length'):
             _input_by_id(active_command_inputs, input_id).isVisible = not args.input.value
@@ -384,7 +420,9 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
             args.input.value = False
         return
     if args.input.id in (
-        'target_face',
+        'pair_mode', 'partner_face', 'partner_chamfer_edges', 'partner_start_edge',
+        'partner_full_length', 'partner_start_offset', 'partner_thread_length',
+        'clearance_distribution', 'target_face',
         'pitch',
         'calculation_mode',
         'handedness',
@@ -401,7 +439,7 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
     _apply_calculation_mode(active_command_inputs)
     parameters = _read_parameters(active_command_inputs)
-    errors = _validation_errors(parameters)
+    errors = _request_errors(active_command_inputs, parameters)
     args.areInputsValid = not errors
     _set_result_text(active_command_inputs, errors)
 
@@ -540,6 +578,13 @@ def _load_selected_preset(inputs, selector_id):
     loading_preset = True
     try:
         settings = preset['settings']
+        _input_by_id(inputs, 'pair_mode').value = settings.get('pair_mode', False)
+        _input_by_id(inputs, 'clearance_distribution').listItems.item(
+            ('balanced', 'internal', 'external').index(settings.get('clearance_distribution', 'balanced'))).isSelected = True
+        for key, default in (('full_length', True), ('start_offset', 0.0), ('thread_length', 1.0)):
+            storage_key = 'partner_' + key + ('' if key == 'full_length' else '_cm')
+            _input_by_id(inputs, 'partner_' + key).value = settings.get(storage_key, default)
+        _update_pair_visibility(inputs)
         _input_by_id(inputs, 'full_length').value = settings.get('full_length', True)
         _input_by_id(inputs, 'start_offset').value = settings.get('start_offset_cm', 0.0)
         _input_by_id(inputs, 'thread_length').value = settings.get('thread_length_cm', 1.0)
@@ -605,10 +650,15 @@ def _show_selected_table_details(inputs):
         f'{tr("details_name")}: {preset.get("name", "")}\n'
         f'{tr("note")}: {preset.get("note", "–") or "–"}\n'
         f'{tr("mode")}: {mode}\n'
+        f'{tr("pair_mode")}: {tr("yes" if settings.get("pair_mode", False) else "no")}\n'
+        f'{tr("clearance_distribution")}: {tr("distribution_" + settings.get("clearance_distribution", "balanced"))}\n'
         f'{tr("thread_direction")}: {tr("left_hand" if settings.get("handedness", "right") == "left" else "right_hand")}\n'
         f'{tr("full_length")}: {tr("yes" if settings.get("full_length", True) else "no")}\n'
         f'{tr("start_offset")}: {_format_table_value(units, settings.get("start_offset_cm", 0.0), length_units)}\n'
         f'{tr("thread_length")}: {_format_table_value(units, settings.get("thread_length_cm", 1.0), length_units)}\n'
+        f'{tr("partner_group")} – {tr("full_length")}: {tr("yes" if settings.get("partner_full_length", True) else "no")}\n'
+        f'{tr("partner_group")} – {tr("start_offset")}: {_format_table_value(units, settings.get("partner_start_offset_cm", 0.0), length_units)}\n'
+        f'{tr("partner_group")} – {tr("thread_length")}: {_format_table_value(units, settings.get("partner_thread_length_cm", 1.0), length_units)}\n'
         f'{tr("profile_angle")}: {_format_table_value(units, settings.get("flank_angle_rad"), "deg")}\n'
         f'{tr("thread_depth")}: {_format_table_value(units, settings.get("thread_depth_cm"), length_units)}\n'
         f'{tr("pitch")}: {_format_table_value(units, settings.get("pitch_cm"), length_units)}\n'
@@ -719,6 +769,8 @@ def _read_parameters(inputs):
         pitch=_input_by_id(inputs, 'pitch').value,
         fillet_radius=_input_by_id(inputs, 'fillet_radius').value,
         tolerance=_selected_tolerance(inputs),
+        clearance_distribution=('balanced', 'internal', 'external')[
+            _input_by_id(inputs, 'clearance_distribution').selectedItem.index],
         handedness='left' if _input_by_id(inputs, 'handedness').selectedItem.index == 1 else 'right',
         full_length=_input_by_id(inputs, 'full_length').value,
         start_offset=_input_by_id(inputs, 'start_offset').value,
@@ -729,6 +781,47 @@ def _read_parameters(inputs):
             _input_by_id(inputs, 'chamfer_extra').selectedItem.name
         ],
     )
+
+
+def _update_pair_visibility(inputs):
+    enabled = _input_by_id(inputs, 'pair_mode').value
+    _input_by_id(inputs, 'partner_group').isVisible = enabled
+    partial = not _input_by_id(inputs, 'partner_full_length').value
+    for key in ('start_edge', 'start_offset', 'thread_length'):
+        _input_by_id(inputs, 'partner_' + key).isVisible = partial
+
+
+def _partner_parameters(inputs, parameters):
+    if not _input_by_id(inputs, 'pair_mode').value:
+        return None
+    def selected(key):
+        field = _input_by_id(inputs, 'partner_' + key)
+        return tuple(field.selection(i).entity for i in range(field.selectionCount))
+    faces = selected('face')
+    starts = selected('start_edge')
+    depth = parameters.thread_depth
+    if faces and _is_iso_mode(inputs):
+        depth = radial_thread_depth(parameters.pitch, analyze_cylinder(faces[0]).is_external)
+    return replace(parameters, face=faces[0] if faces else None,
+                   chamfer_edges=selected('chamfer_edges'),
+                   start_edge=starts[0] if starts else None,
+                   full_length=_input_by_id(inputs, 'partner_full_length').value,
+                   start_offset=_input_by_id(inputs, 'partner_start_offset').value,
+                   thread_length=_input_by_id(inputs, 'partner_thread_length').value,
+                   thread_depth=depth)
+
+
+def _request_errors(inputs, parameters):
+    errors = _validation_errors(parameters)
+    try:
+        partner = _partner_parameters(inputs, parameters)
+        if partner is not None:
+            errors.extend(tr('partner_group') + ': ' + e for e in _validation_errors(partner))
+            if not errors:
+                validate_pair(analyze_cylinder(parameters.face), analyze_cylinder(partner.face))
+    except ValueError as error:
+        errors.append(str(error))
+    return errors
 
 
 def _selected_tolerance(inputs):
@@ -766,6 +859,11 @@ def _save_current_preset(inputs):
             'fillet_radius_cm': parameters.fillet_radius,
             'tolerance_cm': parameters.tolerance,
             'chamfer_extra_cm': parameters.chamfer_extra,
+            'clearance_distribution': parameters.clearance_distribution,
+            'pair_mode': _input_by_id(inputs, 'pair_mode').value,
+            'partner_full_length': _input_by_id(inputs, 'partner_full_length').value,
+            'partner_start_offset_cm': _input_by_id(inputs, 'partner_start_offset').value,
+            'partner_thread_length_cm': _input_by_id(inputs, 'partner_thread_length').value,
             'handedness': parameters.handedness,
             'full_length': parameters.full_length,
             'start_offset_cm': parameters.start_offset,
@@ -856,7 +954,7 @@ def _validation_errors(parameters):
 
 def _update_result_text(inputs):
     parameters = _read_parameters(inputs)
-    errors = _validation_errors(parameters)
+    errors = _request_errors(inputs, parameters)
     _set_result_text(inputs, errors)
 
 
@@ -905,6 +1003,7 @@ def _set_result_text(inputs, errors):
                          for value in (point.x, point.y, point.z))
     section_length = units.formatInternalValue(section.length, units.defaultLengthUnits, True)
     result.text = (
+        f'{tr("clearance_distribution")}: {tr("distribution_" + parameters.clearance_distribution)}\n'
         f'{tr("thread_length")}: {section_length}\n'
         f'{tr("section_start")}: {point_text(section.axis_start)}\n'
         f'{tr("section_end")}: {point_text(section.axis_end)}\n'
@@ -919,3 +1018,17 @@ def _set_result_text(inputs, errors):
         f'{tr("tolerance")}: {selected_tolerance}\n'
         f'{tr("mode")}: {mode_text}'
     )
+    partner = _partner_parameters(inputs, parameters)
+    if partner is not None:
+        other = analyze_cylinder(partner.face)
+        section = thread_section(other, partner)
+        def length(value):
+            return units.formatInternalValue(value, units.defaultLengthUnits, True)
+        result.text += (
+            f'\n\n{tr("partner_group")}: {tr("external_thread" if other.is_external else "internal_thread")}'
+            f'\n{tr("thread_length")}: {length(section.length)}'
+            f'\n{tr("section_start")}: {point_text(section.axis_start)}'
+            f'\n{tr("section_end")}: {point_text(section.axis_end)}'
+            f'\n{tr("thread_depth")}: {length(partner.thread_depth)}'
+            f'\n{tr("major_diameter")}: {length(2 * (other.radius + partner.tolerance_radius_offset(other.is_external)))}'
+        )

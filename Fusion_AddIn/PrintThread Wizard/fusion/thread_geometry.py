@@ -158,6 +158,7 @@ def _create_parameter_note_sketch(cylinder, parameters):
         ('thread_depth', length(parameters.thread_depth)),
         ('fillet_radius', length(parameters.fillet_radius)),
         ('tolerance', length(parameters.tolerance)),
+        ('clearance_distribution', tr('distribution_' + parameters.clearance_distribution)),
         ('major_diameter', length(major_value)),
         ('pitch_diameter', length(pitch_value)),
         ('minor_diameter', length(minor_value)),

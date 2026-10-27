@@ -14,9 +14,9 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.2**
+Current development version: **0.9.3**
 
-0.9.2 adds **thread length and start offset**. **Full length** remains the default. For a partial thread, select a circular end edge as the start side and enter the offset and length. Right-hand and left-hand threads remain available. Fusion acceptance of partial threads is pending; see the [test record](doku/pruefprotokoll-0.9.2.md). The installer has not been built or published.
+0.9.3 adds **thread pairs and clearance distribution**. Create an external and an internal thread together with independent lengths and start sides. Balanced clearance remains the default; alternatively, apply the entire radial clearance to the internal or external thread only. Fusion and print acceptance of M3 are pending; see the [test record](doku/pruefprotokoll-0.9.3.md). The installer has not been built or published.
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -63,8 +63,8 @@ Current development version: **0.9.2**
 ## How clearance works
 
 The selected tolerance represents the total radial clearance of a mating
-thread pair. It is split equally between both parts when the same setting is
-used for the external and internal thread:
+thread pair. With the default **Balanced** distribution, it is split equally
+between both parts when the same value is used for the external and internal thread:
 
 - The external thread radius is reduced by half the selected tolerance.
 - The internal thread radius is increased by half the selected tolerance.
@@ -75,6 +75,37 @@ used for the external and internal thread:
 For example, a tolerance of 0.2 mm reduces the external radius by 0.1 mm and
 increases the internal radius by 0.1 mm. The best setting depends on printer,
 material, layer height, extrusion calibration, and part orientation.
+
+## Thread pairs and clearance distribution
+
+Enable **Create thread pair**. Select the first cylinder as usual and the
+second under **Second part**. A pair requires one external and one internal
+cylinder face with matching nominal diameters on two different bodies. The
+bodies may be side by side. Multiple instances of the same native body are
+rejected; no automatic resizing is performed.
+
+Pitch, direction, profile angle, fillet radius, additional chamfer size and
+total clearance are shared. Metric mode calculates internal and external
+profile depths separately; free mode uses the entered depth for both.
+Under **Second part**, choose chamfer edges and full length or start side,
+offset and thread length independently of the first part. Results show both
+sections. A failure during either creation aborts the complete pair through
+the Fusion command transaction; practical failure and undo testing is pending.
+
+**Clearance distribution** also applies when creating a single thread:
+
+| Distribution | External radius at 0.20 mm total clearance | Internal radius at 0.20 mm total clearance |
+| --- | --- | --- |
+| Balanced (default) | −0.10 mm | +0.10 mm |
+| Internal only | unchanged | +0.20 mm |
+| External only | −0.20 mm | unchanged |
+
+The radial difference is 0.20 mm in each case; these are radius corrections,
+not diameter changes. Presets and JSON store pair mode, clearance distribution
+and both length settings; select faces and edges on the target model. Legacy
+presets use single-thread mode, full length and balanced clearance. Use presets
+with pair mode or one-sided clearance only with **0.9.3 or later**: earlier
+versions ignore these fields.
 
 ## Additional chamfer size
 
@@ -115,7 +146,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.9.2.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.9.3.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:
@@ -192,9 +223,12 @@ The same end edge can be selected under both **Chamfer edges** and
 **Start side (end edge)**. An edge already selected for chamfering remains
 available as the start side; the selection inputs are independent.
 Set **Start offset to 0 mm** for a chamfer at the start end.
-The user confirmed in Fusion that selecting a chamfer edge first, then the same
-edge as the start side, works and produces an external partial thread with a
-chamfer. The remaining Fusion test matrix is still pending.
+The user confirmed these Fusion cases as passed: a 40 mm cylinder with a
+2 mm offset and 15 mm thread length; both start sides; the same edge for chamfer
+and start side in both selection orders; full length and legacy presets; zero
+offset, sections reaching the end and very short/long sections; chamfers with
+0/1/2 edges and additional chamfer size. The remaining cases in the
+[test record](doku/pruefprotokoll-0.9.2.md) are still pending.
 
 Length mode, offset and thread length are stored in presets and JSON. The start
 edge is a model reference and must be selected on each target part. Legacy
@@ -242,7 +276,7 @@ to the thread profile.
 
 - This is development software; validate generated geometry before production.
 - Only cylindrical faces are supported. Left-hand thread operation has been confirmed in Fusion; the complete test matrix remains pending.
-- Partial threads are implemented; Fusion testing of both start sides, internal/external threads and transformed components remains pending. Lead-in, runout and relief are outside this scope.
+- Partial threads are implemented; both start sides and the cases listed above have been confirmed in Fusion. Complete testing of internal/external threads and transformed components remains pending. Lead-in, runout and relief are outside this scope.
 - Pitch is entered manually; the add-in does not yet provide a standard thread
   size/pitch catalogue.
 - Clearance values are starting points and require calibration for the actual

@@ -38,7 +38,7 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M1 – Linksgewinde
 
-**Status 27.10.2026 / 0.9.1:** implementiert, vollständige Abnahme offen. Anwender bestätigt die Funktion in Fusion nach Korrektur der negativen Umdrehungszahl. Fehlerausgabe lokalisiert; 14 automatische Tests bestanden. Einzelne Prüffälle, insbesondere gedrehte Komponenten und der vollständige Innen-/Außenvergleich, sind nicht separat bestätigt; siehe [Prüfprotokoll](pruefprotokoll-0.9.1.md). Kein Commit/PR erstellt. M2 ist in 0.9.2 implementiert; M3–M7 bleiben geplant.
+**Status 27.10.2026 / 0.9.1:** implementiert, vollständige Abnahme offen. Anwender bestätigt die Funktion in Fusion nach Korrektur der negativen Umdrehungszahl. Fehlerausgabe lokalisiert; 14 automatische Tests bestanden. Einzelne Prüffälle, insbesondere gedrehte Komponenten und der vollständige Innen-/Außenvergleich, sind nicht separat bestätigt; siehe [Prüfprotokoll](pruefprotokoll-0.9.1.md). Kein Commit/PR erstellt. M2 ist in 0.9.2 implementiert; M3 ist in 0.9.3 implementiert; M4–M7 bleiben geplant.
 
 **Funktion:** Auswahl „Rechtsgewinde / Linksgewinde“, Standard rechts.
 
@@ -50,7 +50,7 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M2 – Gewindelänge und Startversatz
 
-**Status 27.10.2026 / 0.9.2:** implementiert, Abnahme offen. 19 automatische Tests bestanden. Ganze Länge bleibt Standard; bei Teilgewinden bestimmt eine ausgewählte kreisförmige Endkante die Startseite. Fusion-Prüfung beider Enden und der Abschnittsgeometrie offen, siehe [Prüfprotokoll](pruefprotokoll-0.9.2.md). Kein Commit/PR erstellt.
+**Status 27.10.2026 / 0.9.2:** implementiert, Abnahme offen. 19 automatische Tests bestanden. Ganze Länge bleibt Standard; bei Teilgewinden bestimmt eine ausgewählte kreisförmige Endkante die Startseite. Sechs Fusion-Prüffälle vom Anwender bestanden, darunter beide Startseiten, Abschnittsgrenzen, Fasen und alte Presets; restliche Matrix offen, siehe [Prüfprotokoll](pruefprotokoll-0.9.2.md). Kein Commit/PR erstellt.
 
 **Funktion:** „Ganze Länge“ bleibt Standard; alternativ Startseite, axialer Versatz und Gewindelänge wählen.
 
@@ -67,15 +67,17 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M3 – Gewindepaar gemeinsam erstellen
 
+**Status 27.10.2026 / 0.9.3:** implementiert, Fusion- und Druckabnahme offen. Siehe [Prüfprotokoll](pruefprotokoll-0.9.3.md). Kein Commit/PR und kein Installer erstellt.
+
 **Funktion:** Ein Außen- und ein Innengewinde in einem Auftrag mit gemeinsamen Parametern erzeugen. Die Körper dürfen nebeneinander liegen; Koaxialität ist keine Voraussetzung.
 
-- [ ] Zwei geeignete Flächen auswählen; Art und Nenndurchmesser prüfen.
-- [ ] Bei ungleichen Nenndurchmessern verständlich abbrechen; automatische Größenänderung zunächst nicht vorsehen.
-- [ ] Gemeinsame Teilung, Richtung, Profilvorgabe und Spiel verwenden. Innen-/Außentiefe im metrischen Modus weiterhin nach vorhandener Berechnung getrennt ableiten.
-- [ ] Längen und Startseiten pro Bauteil festlegen.
-- [ ] Spielverteilung anbieten: gleichmäßig / nur Innengewinde / nur Außengewinde.
-- [ ] Einseitig den vollen radialen Spielwert am gewählten Bauteil anwenden; die Gegenseite bleibt ohne Spielkorrektur. Nicht versehentlich doppeltes Gesamtspiel erzeugen.
-- [ ] Paarerstellung vollständig zurücknehmen, wenn ein Teil fehlschlägt.
+- [x] Zwei geeignete Flächen auswählen; Art und Nenndurchmesser prüfen.
+- [x] Bei ungleichen Nenndurchmessern verständlich abbrechen; automatische Größenänderung zunächst nicht vorsehen.
+- [x] Gemeinsame Teilung, Richtung, Profilvorgabe und Spiel verwenden. Innen-/Außentiefe im metrischen Modus weiterhin nach vorhandener Berechnung getrennt ableiten.
+- [x] Längen und Startseiten pro Bauteil festlegen.
+- [x] Spielverteilung anbieten: gleichmäßig / nur Innengewinde / nur Außengewinde.
+- [x] Einseitig den vollen radialen Spielwert am gewählten Bauteil anwenden; die Gegenseite bleibt ohne Spielkorrektur. Nicht versehentlich doppeltes Gesamtspiel erzeugen.
+- [x] Paarerstellung vollständig zurücknehmen, wenn ein Teil fehlschlägt.
 
 **Abnahme:** Gesamtspiel entspricht rechnerisch der Eingabe bei allen drei Verteilungen. Ein gemeinsam erzeugtes Paar besteht die Fusion-Prüfung und mindestens einen dokumentierten Druckversuch. „Gleiche Profilvorgabe“ darf nicht mit identischen Innen-/Außentiefen verwechselt werden.
 
@@ -152,4 +154,4 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## Fortschritt pflegen
 
-Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Nächster Schritt ist die Fusion-Abnahme von M2, danach M3 als separater Auftrag; noch offene M0-/M1-Prüffälle bleiben im jeweiligen Prüfprotokoll erfasst.
+Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Nächster Schritt ist die Fusion- und Druckabnahme von M3; übrige M2-Prüffälle bleiben offen. M4 benötigt einen eigenen Auftrag; noch offene M0-/M1-Prüffälle bleiben im jeweiligen Prüfprotokoll erfasst.

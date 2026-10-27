@@ -200,9 +200,18 @@ def _validate_settings(settings, name):
         if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in range_values):
             raise ValueError()
         if ThreadParameters(object(), (), *values, handedness=settings.get('handedness', 'right'),
+                            clearance_distribution=settings.get('clearance_distribution', 'balanced'),
                             full_length=settings.get('full_length', True),
                             start_offset=range_values[0], thread_length=range_values[1]).validation_errors():
             raise ValueError()
     except (KeyError, TypeError, ValueError, OverflowError):
         raise ValueError(tr('import_parameters', name=name)) from None
+    partner_values = (settings.get('partner_start_offset_cm', 0.0),
+                      settings.get('partner_thread_length_cm', 1.0))
+    if (type(settings.get('pair_mode', False)) is not bool
+            or type(settings.get('partner_full_length', True)) is not bool
+            or any(isinstance(v, bool) or not isinstance(v, (int, float))
+                   or not math.isfinite(v) for v in partner_values)
+            or partner_values[0] < 0 or partner_values[1] <= 0):
+        raise ValueError(tr('import_parameters', name=name))
     return dict(settings)

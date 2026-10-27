@@ -20,7 +20,7 @@ Neue portable Felder: `full_length` (Default true), `start_offset_cm` (Default 0
 
 ## Prüfungen
 
-Nachtrag zur Kantenauswahl: `Command.hasDistinctSelectionSets = True` aktiviert getrennte Auswahlsätze für Fasen-Kanten und Startseite. Der zuvor gesetzte Wert `False` behielt die gemeinsame Auswahl bei und löste den gemeldeten Fehler nicht. Die API-Referenz beschreibt die booleschen Werte umgekehrt zu den [Autodesk-Release-Hinweisen vom November 2024](https://www.autodesk.com/products/fusion-360/blog/november-2024-product-update-whats-new/). Prüfung beider Auswahlreihenfolgen direkt in Fusion weiterhin offen.
+Nachtrag zur Kantenauswahl: `Command.hasDistinctSelectionSets = True` aktiviert getrennte Auswahlsätze für Fasen-Kanten und Startseite. Der zuvor gesetzte Wert `False` behielt die gemeinsame Auswahl bei und löste den gemeldeten Fehler nicht. Die API-Referenz beschreibt die booleschen Werte umgekehrt zu den [Autodesk-Release-Hinweisen vom November 2024](https://www.autodesk.com/products/fusion-360/blog/november-2024-product-update-whats-new/). Beide Auswahlreihenfolgen wurden vom Anwender in Fusion als bestanden bestätigt.
 
 Windows, CPython 3.12.15 aus lokaler uv-Installation. Baseline: 14 Tests bestanden. Nach Umsetzung: 19 Tests bestanden mit `python -m unittest discover -s tests -v`.
 
@@ -28,24 +28,24 @@ Neue Regressionen: Bereiche von beiden Enden und unveränderte ganze Länge; ung
 
 API-Grundlage: [SweepFeatures.createInput](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/fusion_SweepFeatures_createInput.htm) und [CombineFeatureInput.operation](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/fusion_CombineFeatureInput_operation.htm).
 
-## Fusion-Prüfmatrix – offen
+## Fusion-Prüfmatrix – teilweise bestanden
 
-Keine Fusion- oder macOS-Prüfung dieser Version durch Codex. Fusion-Version/Build und Plattform: offen. Je Fall Eingaben, Modell, Messwerte und Ergebnis dokumentieren.
+Anwender-Rückmeldung vom 27.10.2026: Die sechs markierten Fälle haben in Fusion bestanden. Keine eigene Fusion- oder macOS-Prüfung durch Codex. Fusion-Version/Build, Plattform und einzelne Messwerte wurden nicht angegeben. Nicht bestätigte Fälle bleiben offen.
 
 | Fall | Erwartung | Ergebnis |
 | --- | --- | --- |
-| 40 mm Zylinder, Versatz 2 mm, Länge 15 mm | Exakt 15 mm Gewinde; übrige Fläche und Durchmesser unverändert | offen |
-| Andere Start-Endkante wählen | Entsprechender Abschnitt vom anderen Ende | offen |
-| Dieselbe Kante als Fasen-Kante und Startseite, beide Auswahlreihenfolgen | Beide Felder behalten ihre Auswahl; Wechsel und Abwahl bleiben unabhängig | offen |
+| 40 mm Zylinder, Versatz 2 mm, Länge 15 mm | Exakt 15 mm Gewinde; übrige Fläche und Durchmesser unverändert | bestanden (Anwender) |
+| Andere Start-Endkante wählen | Entsprechender Abschnitt vom anderen Ende | bestanden (Anwender) |
+| Dieselbe Kante als Fasen-Kante und Startseite, beide Auswahlreihenfolgen | Beide Felder behalten ihre Auswahl; Wechsel und Abwahl bleiben unabhängig | bestanden (Anwender) |
 | Innen/außen, rechts/links, metrisch/frei | Gültiger Körper und richtiger Bereich | offen |
-| Ganze Länge und alte Presets | Verhalten und Maße wie 0.9.1 | offen |
-| Offset 0, bis zum Ende, sehr kurze/lange Bereiche | Grenzen korrekt, keine Helixreste außerhalb des Abschnitts | offen |
+| Ganze Länge und alte Presets | Verhalten und Maße wie 0.9.1 | bestanden (Anwender) |
+| Offset 0, bis zum Ende, sehr kurze/lange Bereiche | Grenzen korrekt, keine Helixreste außerhalb des Abschnitts | bestanden (Anwender) |
 | Spiel 0 und 0,15 mm | Spiel nur im Gewindeabschnitt, keine Änderung außerhalb | offen |
-| Fasen 0/1/2, Zusatzfase | Nur erreichte echte Enden; unzulässige Fasen vor Modelländerung abweisen | offen |
+| Fasen 0/1/2, Zusatzfase | Nur erreichte echte Enden; unzulässige Fasen vor Modelländerung abweisen | bestanden (Anwender) |
 | Fremde/innere/ungeeignete Endkante | Verständliche Validierung, kein Modellrest | offen |
 | Gedrehte/verschobene Komponenteninstanz | Richtige Seite und Lage; lokale Koordinaten plausibel | offen |
 | Fehler bei Sweep/Beschneidung/Combine | Gesamte Befehlstransaktion zurückgenommen | offen |
 | Abbruch, Undo/Redo, Speichern/Öffnen | Modellzustand und Parameter nachvollziehbar | offen |
 | Teilgewinde-Preset exportieren/importieren | Maße bleiben erhalten; Startkante am Zielbauteil wählen | offen |
 
-Status: implementiert, Abnahme offen. Druckprüfung für M2 nicht gefordert. Einlauf, Auslauf und Freistich sind nicht Teil dieser Umsetzung. Kein Commit/Push/Release, kein Installer gebaut. Nächster Schritt: Fusion-Abnahme von M2; danach M3 als eigener Auftrag.
+Status: implementiert, sechs Fusion-Prüffälle durch den Anwender bestanden; übrige Abnahme offen. Druckprüfung für M2 nicht gefordert. Einlauf, Auslauf und Freistich sind nicht Teil dieser Umsetzung. Kein Commit/Push/Release, kein Installer gebaut. Nächster Schritt: Fusion-Abnahme von M2; danach M3 als eigener Auftrag.
