@@ -24,13 +24,15 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M0 – Ausgangsbasis absichern
 
+**Status 27.10.2026 / 0.9.0:** implementiert, Abnahme offen. 11 automatische Tests bestanden; Fusion-Prüfung steht aus. Siehe [Prüfprotokoll](pruefprotokoll-0.9.0.md). Kein Commit/PR erstellt. M1–M7 bleiben geplant.
+
 **Ziel:** Bestehendes Verhalten verstehen, bevor neue Geometrie hinzukommt.
 
-- [ ] Aktuellen Stand und bestehende Regeln mit der Planung abgleichen.
-- [ ] Tests ausführen; vorhandene Parameter-/Preset-Prüfungen erfassen.
-- [ ] Fehlende Prüfungen für Spielverteilung, metrische Berechnung, ungültige Zahlen und Preset-Kompatibilität ergänzen.
-- [ ] Fehler- und Abbruchpfade einschließlich Änderungen am ursprünglichen Körper überprüfen und nötigenfalls korrigieren.
-- [ ] Wiederverwendbare Fusion-Prüffälle und kurzes Prüfprotokoll dokumentieren.
+- [x] Aktuellen Stand und bestehende Regeln mit der Planung abgleichen.
+- [x] Tests ausführen; vorhandene Parameter-/Preset-Prüfungen erfassen.
+- [x] Fehlende Prüfungen für Spielverteilung, metrische Berechnung, ungültige Zahlen und Preset-Kompatibilität ergänzen.
+- [x] Fehler- und Abbruchpfade einschließlich Änderungen am ursprünglichen Körper überprüfen und nötigenfalls korrigieren.
+- [x] Wiederverwendbare Fusion-Prüffälle und kurzes Prüfprotokoll dokumentieren.
 
 **Abnahme:** Baseline und bekannte Grenzen sind dokumentiert; relevante automatische Prüfungen bestehen. Erfolgreiche Erzeugung sowie ein gezielt ausgelöster Fehler wurden in Fusion geprüft oder ausdrücklich als noch offen markiert.
 

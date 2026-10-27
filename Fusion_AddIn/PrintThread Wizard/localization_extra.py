@@ -4,6 +4,7 @@ LOCALES = ('de', 'en', 'es', 'fr', 'it', 'pl')
 
 # One complete row per key; technical symbols and product names stay unchanged.
 _ROWS = """
+numeric_finite|Alle Zahlen müssen endlich sein.|All numbers must be finite.|Todos los números deben ser finitos.|Tous les nombres doivent être finis.|Tutti i numeri devono essere finiti.|Wszystkie liczby muszą być skończone.
 result|Ergebnis|Result|Resultado|Résultat|Risultato|Wynik
 thread_created|Gewinde erfolgreich erzeugt.|Thread created successfully.|Rosca creada correctamente.|Filetage créé avec succès.|Filettatura creata correttamente.|Gwint utworzono pomyślnie.
 thread_type|Gewindeart|Thread type|Tipo de rosca|Type de filetage|Tipo di filettatura|Typ gwintu

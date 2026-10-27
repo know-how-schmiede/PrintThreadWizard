@@ -14,7 +14,9 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.8.4**
+Current development version: **0.9.0**
+
+M0 for 0.9.0 strengthens numeric validation, preset imports and failure handling. Invalid parameter sets are rejected before saving; complete legacy schema-1 presets remain compatible. Missing optional clearance/chamfer values still default to zero. Fusion acceptance remains pending; see the [test record](doku/pruefprotokoll-0.9.0.md). The installer has not been built or published.
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -112,7 +114,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.8.4.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.9.0.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:

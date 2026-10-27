@@ -317,6 +317,9 @@ def command_execute(args: adsk.core.CommandEventArgs):
         create_thread(parameters)
         futil.log(f"{CMD_NAME}: {tr('thread_created')}")
     except Exception as error:
+        # Abort the entire Fusion command transaction, including target-body edits.
+        args.executeFailed = True
+        args.executeFailedMessage = str(error)
         futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
         ui.messageBox(f'PrintThread Wizard:\n{error}')
 

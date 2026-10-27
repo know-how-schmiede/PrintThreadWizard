@@ -90,7 +90,10 @@ class LocalizationTests(unittest.TestCase):
                     with self.assertRaises(ValueError) as error:
                         presets.import_thread_presets(str(source))
                     self.assertTrue(str(error.exception).startswith(loc.translate('import_unreadable', error='')))
-                saved = presets.save_thread_preset('M6 – Test', 'Notiz', {'chamfer_extra_cm': 0.04})
+                saved = presets.save_thread_preset('M6 – Test', 'Notiz', {
+                    'calculation_mode': 'free', 'flank_angle_rad': math.pi / 3,
+                    'thread_depth_cm': 0.06, 'pitch_cm': 0.2,
+                    'fillet_radius_cm': 0, 'chamfer_extra_cm': 0.04})
                 export = folder / 'export.json'
                 self.assertEqual(presets.export_thread_presets(str(export)), 1)
                 presets.delete_thread_preset(saved['id'])
@@ -99,7 +102,7 @@ class LocalizationTests(unittest.TestCase):
 
     def test_version_consistency(self):
         version = importlib.import_module('printthread_test.version').VERSION
-        self.assertEqual(version, '0.8.4')
+        self.assertEqual(version, '0.9.0')
         manifest = json.loads((ADDIN / 'PrintThread Wizard.manifest').read_text(encoding='utf-8'))
         self.assertEqual(manifest['version'], version)
         self.assertIn(f'#define MyAppVersion "{version}"', (ROOT / 'installer/PrintThreadWizard.iss').read_text(encoding='utf-8'))

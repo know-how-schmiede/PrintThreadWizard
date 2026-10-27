@@ -14,7 +14,9 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.8.4**
+Aktuelle Entwicklungsversion: **0.9.0**
+
+M0 für 0.9.0 sichert Zahlenvalidierung, Preset-Import und Fehlerbehandlung ab. Ungültige Parametersätze werden vor dem Speichern abgewiesen; alte vollständige Schema-1-Presets bleiben kompatibel. Fehlende optionale Spiel-/Fasenwerte verwenden weiterhin 0. Die Fusion-Abnahme steht aus; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.0.md). Der Installer ist noch nicht gebaut/veröffentlicht.
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -115,7 +117,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.8.4.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.9.0.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion

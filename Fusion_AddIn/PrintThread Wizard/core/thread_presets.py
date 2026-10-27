@@ -1,6 +1,7 @@
 from ..localization import translate as tr
 
 import json
+import math
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,6 +31,7 @@ def save_thread_preset(name: str, note: str, settings: dict) -> dict:
         raise ValueError(tr('name_long'))
     if len(clean_note) > 500:
         raise ValueError(tr('note_long'))
+    settings = _validate_settings(settings, clean_name)
 
     path = preset_file_path()
     data = _read_storage(path)
@@ -68,7 +70,7 @@ def load_default_tolerance() -> float:
 
 
 def save_default_tolerance(value: float) -> None:
-    if value < 0:
+    if not math.isfinite(value) or value < 0:
         raise ValueError(tr('default_negative'))
     path = preset_file_path()
     data = _read_storage(path)
@@ -108,7 +110,7 @@ def import_thread_presets(path: str) -> int:
         imported = json.loads(Path(path).read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(tr('import_unreadable', error=error)) from error
-    if imported.get('schema_version') != SCHEMA_VERSION:
+    if not isinstance(imported, dict) or imported.get('schema_version') != SCHEMA_VERSION:
         raise ValueError(tr('import_version'))
     presets = imported.get('presets')
     if not isinstance(presets, list):
@@ -121,13 +123,20 @@ def import_thread_presets(path: str) -> int:
         if not isinstance(preset.get('settings'), dict):
             raise ValueError(tr("import_parameters", name=preset.get("name", "")))
         entry = dict(preset)
+        entry['settings'] = _validate_settings(preset['settings'], preset['name'])
         entry['id'] = str(entry.get('id') or uuid4())
         entry['name'] = str(entry['name']).strip()
         entry['note'] = str(entry.get('note', '')).strip()
+        if len(entry['name']) > 100:
+            raise ValueError(tr('name_long'))
+        if len(entry['note']) > 500:
+            raise ValueError(tr('note_long'))
         entry['created_at'] = str(
             entry.get('created_at') or datetime.now(timezone.utc).isoformat()
         )
         normalized.append(entry)
+
+    _validate_preferences(imported.get('preferences', {}))
 
     storage_path = preset_file_path()
     data = _read_storage(storage_path)
@@ -145,7 +154,7 @@ def _write_storage(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = path.with_suffix('.tmp')
     temporary_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+        json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False) + '\n', encoding='utf-8'
     )
     temporary_path.replace(path)
 
@@ -158,6 +167,37 @@ def _read_storage(path: Path) -> dict:
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(tr('storage_unreadable', error=error)) from error
 
-    if data.get('schema_version') != SCHEMA_VERSION or not isinstance(data.get('presets'), list):
+    if not isinstance(data, dict) or data.get('schema_version') != SCHEMA_VERSION or not isinstance(data.get('presets'), list):
         raise ValueError(tr('storage_format'))
+    _validate_preferences(data.get('preferences', {}))
+    for preset in data['presets']:
+        if not isinstance(preset, dict) or not isinstance(preset.get('name'), str):
+            raise ValueError(tr('storage_format'))
+        _validate_settings(preset.get('settings'), preset['name'])
     return data
+
+
+def _validate_preferences(preferences):
+    if not isinstance(preferences, dict):
+        raise ValueError(tr('storage_format'))
+    value = preferences.get('default_tolerance_cm', DEFAULT_TOLERANCE_CM)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+        raise ValueError(tr('default_negative'))
+
+
+def _validate_settings(settings, name):
+    """Validate portable schema-1 settings; absent legacy options retain defaults."""
+    from .thread_parameters import ThreadParameters
+    try:
+        if settings['calculation_mode'] not in ('iso_metric', 'free'):
+            raise ValueError()
+        values = [settings[key] for key in (
+            'flank_angle_rad', 'thread_depth_cm', 'pitch_cm', 'fillet_radius_cm')]
+        values += [settings.get('tolerance_cm', 0.0), settings.get('chamfer_extra_cm', 0.0)]
+        if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in values):
+            raise ValueError()
+        if ThreadParameters(object(), (), *values).validation_errors():
+            raise ValueError()
+    except (KeyError, TypeError, ValueError, OverflowError):
+        raise ValueError(tr('import_parameters', name=name)) from None
+    return dict(settings)

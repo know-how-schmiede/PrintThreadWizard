@@ -1,5 +1,14 @@
 # Version Timeline
 
+## 0.9.0 - 2026-10-27
+
+- M0 implementiert; Fusion-Abnahme offen (siehe Prüfprotokoll).
+- Endliche Parameterwerte und vollständige Preset-Parameter vor Speicherung/Import prüfen; unbekannte Berechnungsmodi und Schemas ablehnen.
+- Fehler beim Erstellen brechen die gesamte Fusion-Befehlstransaktion ab, einschließlich Änderungen am Zielkörper.
+- Schema 1 und bisherige Defaults für fehlendes Spiel bzw. zusätzliche Fase erhalten.
+- 11 automatische Tests erfolgreich; Version in Add-in, Manifest, Installer-Konfiguration und aktueller Dokumentation auf 0.9.0 gesetzt.
+- Kein Installer gebaut und keine Veröffentlichung durchgeführt.
+
 ## 0.8.4 - 2026-10-01
 
 - Fehlende Übersetzungen für Dialogtexte, Dateidialoge und Preset-Meldungen in allen sechs unterstützten Sprachen ergänzt.
