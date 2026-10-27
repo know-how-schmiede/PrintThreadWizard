@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from test_localization import parameters, presets, ADDIN
 
 iso = importlib.import_module('printthread_test.core.iso_metric')
@@ -26,6 +26,69 @@ class CoreTests(unittest.TestCase):
             self.assertAlmostEqual(inside - outside, clearance)
             self.assertAlmostEqual(outside * 2, -clearance)
             self.assertAlmostEqual(inside * 2, clearance)
+
+    def test_handedness_preserves_extent_and_reverses_rotation(self):
+        self.assertEqual(self.params.handedness, 'right')
+        for direction, axis_sign in (('right', 1), ('left', -1)):
+            p = replace(self.params, handedness=direction)
+            self.assertEqual(p.validation_errors(), [])
+            self.assertAlmostEqual(p.helix_turns(2), 10)
+            self.assertAlmostEqual(axis_sign * p.signed_pitch * p.helix_turns(2), 2)
+            # At a quarter turn, identical rise but mirrored angular position.
+            self.assertAlmostEqual(axis_sign * p.signed_pitch / 4, .05)
+        self.assertTrue(replace(self.params, handedness='unknown').validation_errors())
+
+    def test_direction_preset_roundtrip_and_unknown_import(self):
+        with tempfile.TemporaryDirectory() as directory:
+            storage = Path(directory) / 'storage.json'
+            source = Path(directory) / 'transfer.json'
+            with patch.object(presets, 'preset_file_path', return_value=storage):
+                for direction in ('right', 'left'):
+                    saved = presets.save_thread_preset(direction, '', dict(self.settings, handedness=direction))
+                    presets.export_thread_presets(str(source))
+                    presets.delete_thread_preset(saved['id'])
+                    presets.import_thread_presets(str(source))
+                    actual = next(p for p in presets.load_thread_presets() if p['id'] == saved['id'])
+                    self.assertEqual(actual['settings']['handedness'], direction)
+                original = storage.read_bytes()
+                payload = json.loads(source.read_text(encoding='utf-8'))
+                payload['presets'][0]['settings']['handedness'] = 'unknown'
+                source.write_text(json.dumps(payload), encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    presets.import_thread_presets(str(source))
+                self.assertEqual(storage.read_bytes(), original)
+
+    def test_helix_api_positive_turns_and_localized_failure(self):
+        # Run the actual API boundary up to the injected kernel failure.
+        # No B-Rep geometry is simulated by this test.
+        tree = ast.parse((ADDIN / 'fusion/thread_geometry.py').read_text(encoding='utf-8'))
+        handler = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_create_persistent_helix')
+        for arg in handler.args.args:
+            arg.annotation = None
+        from test_localization import loc
+        for locale in loc.SUPPORTED_LOCALES:
+            for direction in ('right', 'left'):
+                axis = Mock()
+                helix_axis = axis.copy.return_value
+                cylinder = types.SimpleNamespace(axis=axis, axis_start=object(), radial=object(), radius=1, length=2)
+                manager = Mock()
+                manager.createHelixWire.side_effect = RuntimeError('ASM_HELIX_NR_TURNS_TOO_SMALL')
+                ns = dict(tr=loc.translator(locale), _translated_point=lambda *a:object(),
+                          adsk=types.SimpleNamespace(fusion=types.SimpleNamespace(
+                              TemporaryBRepManager=types.SimpleNamespace(get=lambda:manager))))
+                exec(compile(ast.Module(body=[handler], type_ignores=[]), '<helix>', 'exec'), ns)
+                with self.assertRaises(RuntimeError) as caught:
+                    ns['_create_persistent_helix'](cylinder, replace(self.params, handedness=direction))
+                self.assertEqual(str(caught.exception), loc.translator(locale)('helix_failed'))
+                args = manager.createHelixWire.call_args.args
+                self.assertIs(args[1], helix_axis)
+                self.assertEqual(args[4], 10)
+                self.assertEqual(args[3], -.2 if direction == 'left' else .2)
+                if direction == 'left':
+                    helix_axis.scaleBy.assert_called_once_with(-1)
+                else:
+                    helix_axis.scaleBy.assert_not_called()
+                axis.scaleBy.assert_not_called()
 
     def test_metric_depth_and_diameter(self):
         # P=2 mm, results in Fusion cm; distinct external/internal depths.

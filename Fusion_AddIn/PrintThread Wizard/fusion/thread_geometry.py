@@ -56,7 +56,7 @@ def create_thread(parameters: ThreadParameters):
         cylinder = _extend_helix(cylinder, trim_reference, parameters.pitch)
 
         helix_feature, helix_edge, guide_face = _create_persistent_helix(
-            cylinder, parameters.pitch
+            cylinder, parameters
         )
         profile_plane = _create_profile_plane(cylinder.component, helix_edge)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
@@ -114,6 +114,7 @@ def _create_parameter_note_sketch(cylinder, parameters):
     bore_value = '–' if cylinder.is_external else length(minor_value)
     fields = (
         ('thread_type', thread_type),
+        ('thread_direction', tr('right_hand' if parameters.handedness == 'right' else 'left_hand')),
         ('nominal_diameter', length(cylinder.radius * 2)),
         ('pitch', length(parameters.pitch)),
         ('profile_angle', angle),
@@ -215,16 +216,24 @@ def _apply_radial_tolerance(cylinder, trim_reference, radial_offset):
     ), tolerance_cut
 
 
-def _create_persistent_helix(cylinder: CylinderGeometry, pitch: float):
+def _create_persistent_helix(cylinder: CylinderGeometry, parameters: ThreadParameters):
     start_point = _translated_point(cylinder.axis_start, cylinder.radial, cylinder.radius)
-    turns = cylinder.length / pitch
-    if turns <= 0:
+    turns = parameters.helix_turns(cylinder.length)
+    if cylinder.length <= 0:
         raise ValueError(tr('no_turns'))
 
     temp_manager = adsk.fusion.TemporaryBRepManager.get()
-    temporary_wire = temp_manager.createHelixWire(
-        cylinder.axis_start, cylinder.axis, start_point, pitch, turns, 0.0
-    )
+    helix_axis = cylinder.axis.copy()
+    if parameters.handedness == 'left':
+        # Reverse rotation while negative pitch preserves the original axial rise.
+        # Negative turn counts are rejected by the Fusion kernel.
+        helix_axis.scaleBy(-1)
+    try:
+        temporary_wire = temp_manager.createHelixWire(
+            cylinder.axis_start, helix_axis, start_point, parameters.signed_pitch, turns, 0.0
+        )
+    except RuntimeError as error:
+        raise RuntimeError(tr('helix_failed')) from error
     if temporary_wire is None or temporary_wire.edges.count == 0:
         raise RuntimeError(tr('helix_failed'))
 
@@ -300,7 +309,7 @@ def _create_cut_profile(plane, cylinder: CylinderGeometry, parameters: ThreadPar
         cylinder.radius - parameters.sharp_profile_depth,
     )
 
-    base_direction = _profile_base_direction(cylinder, parameters.pitch)
+    base_direction = _profile_base_direction(cylinder, parameters.signed_pitch)
 
     effective_depth = parameters.sharp_profile_depth + PROFILE_OVERLAP
     half_width = effective_depth * math.tan(parameters.flank_angle / 2)

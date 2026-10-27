@@ -14,9 +14,9 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.0**
+Aktuelle Entwicklungsversion: **0.9.1**
 
-M0 für 0.9.0 sichert Zahlenvalidierung, Preset-Import und Fehlerbehandlung ab. Ungültige Parametersätze werden vor dem Speichern abgewiesen; alte vollständige Schema-1-Presets bleiben kompatibel. Fehlende optionale Spiel-/Fasenwerte verwenden weiterhin 0. Die Fusion-Abnahme steht aus; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.0.md). Der Installer ist noch nicht gebaut/veröffentlicht.
+0.9.1 ergänzt die Auswahl **Gewinderichtung** mit Rechtsgewinde als Standard und optionalem Linksgewinde. Die Richtung wird in Presets, Ergebnisanzeige und Dokumentationsskizze übernommen. Alte Presets ohne Richtung erzeugen weiterhin Rechtsgewinde. Die Funktion nach Korrektur des Linksgewinde-Helixfehlers wurde vom Anwender in Fusion bestätigt. Weitere Prüffälle sind im [Prüfprotokoll](doku/pruefprotokoll-0.9.1.md) dokumentiert. Der Installer ist noch nicht gebaut/veröffentlicht.
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -30,7 +30,7 @@ M0 für 0.9.0 sichert Zahlenvalidierung, Preset-Import und Fehlerbehandlung ab. 
   und Dokumentation der Gewindeparameter
 
 - Automatische Erkennung von Außenzylindern und Innenbohrungen
-- Modellierte Rechtsgewinde mit exakter B-Rep-Helix und Sweep
+- Modellierte Rechts- und Linksgewinde mit exakter B-Rep-Helix und Sweep
 - Automatischer ISO-Metrisch-Modus mit 60° Flankenwinkel und berechneter
   radialer Gewindetiefe
 - Freier Geometriemodus zur manuellen Eingabe von Flankenwinkel und
@@ -117,7 +117,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.9.0.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.9.1.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion
@@ -189,6 +189,7 @@ Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
 | Fase zusätzlich vergrößern | Zusätzliche radiale Vergrößerung an den ausgewählten Kanten: 0,0–1,0 mm in 0,1-mm-Schritten; Standard 0,0 mm |
 | Gespeicherte Einstellung | Alphabetisch sortierte Preset-Auswahl; übernimmt alle Parameter |
 | Berechnung | ISO metrisch automatisch oder freie Geometrie |
+| Gewinderichtung | Rechtsgewinde (Standard) oder Linksgewinde; beide Partner müssen dieselbe Richtung verwenden |
 | Profilwinkel (α) | Eingeschlossener Profilwinkel; im ISO-Modus fest 60° |
 | Gewindetiefe (h) | Radiale Profiltiefe; im ISO-Modus automatisch berechnet |
 | Gewindesteigung (P) | Axialer Weg pro Umdrehung |
@@ -220,7 +221,7 @@ Kurzzeichen dem Gewindeprofil zu.
 
 - Das Add-in befindet sich in Entwicklung; die erzeugte Geometrie muss vor der
   produktiven Verwendung geprüft werden.
-- Derzeit werden nur Zylinderflächen und Rechtsgewinde unterstützt.
+- Derzeit werden nur Zylinderflächen unterstützt. Die Funktion der Linksgewinde wurde in Fusion bestätigt; die vollständige Prüfmatrix ist noch offen.
 - Die Steigung wird manuell eingegeben; eine Tabelle genormter
   Gewindegrößen und Steigungen ist noch nicht enthalten.
 - Toleranzwerte sind Ausgangswerte und müssen für Drucker und Material

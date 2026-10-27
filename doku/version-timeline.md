@@ -1,5 +1,15 @@
 # Version Timeline
 
+## 0.9.1 - 2026-10-27
+
+- M1 implementiert: Auswahl Rechts-/Linksgewinde, Standard rechts.
+- Helix und Profilführung berücksichtigen die Richtung bei gleicher axialer Länge und positiver Eingabesteigung.
+- Richtung in Presets, JSON-Transfer, Ergebnisanzeige und Dokumentationsskizze ergänzt; alte Presets bleiben rechtsgängig. Schema bleibt 1.
+- Neue Texte einschließlich Tooltip und Validierung in allen sechs Sprachen ergänzt.
+- Anwenderfehler `ASM_HELIX_NR_TURNS_TOO_SMALL` korrigiert: positive Umdrehungszahl auch links, dafür Helixachse und Steigung umkehren. Helix-API-Fehler werden lokalisiert angezeigt.
+- 14 automatische Tests bestanden. Anwender bestätigt die Funktion in Fusion nach der Linksgewinde-Korrektur. Vollständige Prüfmatrix noch offen; siehe Prüfprotokoll 0.9.1.
+- Version in Add-in, Manifest, Installer-Konfiguration und Dokumentation auf 0.9.1 gesetzt; kein Installer gebaut oder veröffentlicht.
+
 ## 0.9.0 - 2026-10-27
 
 - M0 implementiert; Fusion-Abnahme offen (siehe Prüfprotokoll).

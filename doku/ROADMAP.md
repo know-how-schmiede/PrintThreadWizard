@@ -24,7 +24,7 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M0 – Ausgangsbasis absichern
 
-**Status 27.10.2026 / 0.9.0:** implementiert, Abnahme offen. 11 automatische Tests bestanden; Fusion-Prüfung steht aus. Siehe [Prüfprotokoll](pruefprotokoll-0.9.0.md). Kein Commit/PR erstellt. M1–M7 bleiben geplant.
+**Status 27.10.2026 / 0.9.0:** implementiert. Anwender bestätigt, dass das Plugin in Fusion läuft. Detaillierte Fehler-/Undo-Prüfung nicht bestätigt, siehe [Prüfprotokoll](pruefprotokoll-0.9.0.md). M1 wurde als nächster Schritt beauftragt.
 
 **Ziel:** Bestehendes Verhalten verstehen, bevor neue Geometrie hinzukommt.
 
@@ -38,10 +38,12 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M1 – Linksgewinde
 
+**Status 27.10.2026 / 0.9.1:** implementiert, vollständige Abnahme offen. Anwender bestätigt die Funktion in Fusion nach Korrektur der negativen Umdrehungszahl. Fehlerausgabe lokalisiert; 14 automatische Tests bestanden. Einzelne Prüffälle, insbesondere gedrehte Komponenten und der vollständige Innen-/Außenvergleich, sind nicht separat bestätigt; siehe [Prüfprotokoll](pruefprotokoll-0.9.1.md). Kein Commit/PR erstellt. Nächster Entwicklungsschritt: M2. M2–M7 bleiben geplant.
+
 **Funktion:** Auswahl „Rechtsgewinde / Linksgewinde“, Standard rechts.
 
-- [ ] Gewinderichtung in Parameterdaten, Helix, Profilführung und Dokumentation konsistent berücksichtigen.
-- [ ] Auswahl in Presets speichern; ältere Datensätze ergeben rechts.
+- [x] Gewinderichtung in Parameterdaten, Helix, Profilführung und Dokumentation konsistent berücksichtigen.
+- [x] Auswahl in Presets speichern; ältere Datensätze ergeben rechts.
 - [ ] Rechte und linke Innen-/Außengewinde testen, auch in gedrehten Komponenten.
 
 **Abnahme:** Passende Linksgewindepaare lassen sich in Fusion erzeugen. Rechtsgewinde bleiben geometrisch unverändert. Richtung steht im Dialog und in der Dokumentationsskizze.
@@ -148,4 +150,4 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## Fortschritt pflegen
 
-Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Der nächste konkrete Codex-Auftrag ist M0.
+Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Nächster Entwicklungsschritt ist M2; noch offene M0-/M1-Prüffälle bleiben im jeweiligen Prüfprotokoll erfasst.

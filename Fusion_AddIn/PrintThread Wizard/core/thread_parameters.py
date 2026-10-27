@@ -17,6 +17,16 @@ class ThreadParameters:
     fillet_radius: float
     tolerance: float = 0.0
     chamfer_extra: float = 0.0
+    handedness: str = 'right'
+
+    @property
+    def signed_pitch(self) -> float:
+        """Signed helix pitch; public pitch remains a positive axial distance."""
+        return -self.pitch if self.handedness == 'left' else self.pitch
+
+    def helix_turns(self, length: float) -> float:
+        """Fusion requires a positive turn count for either handedness."""
+        return length / self.pitch
 
     def tolerance_radius_offset(self, is_external: bool) -> float:
         """Versetzt das gesamte Gewinde um das halbe gewünschte Gesamtspiel."""
@@ -33,6 +43,8 @@ class ThreadParameters:
 
     def validation_errors(self) -> list[str]:
         errors = []
+        if self.handedness not in ('right', 'left'):
+            errors.append(tr('direction_invalid'))
         if not all(math.isfinite(value) for value in (
             self.flank_angle, self.thread_depth, self.pitch, self.fillet_radius,
             self.tolerance, self.chamfer_extra

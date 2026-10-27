@@ -4,6 +4,11 @@ LOCALES = ('de', 'en', 'es', 'fr', 'it', 'pl')
 
 # One complete row per key; technical symbols and product names stay unchanged.
 _ROWS = """
+thread_direction|Gewinderichtung|Thread direction|Sentido de rosca|Sens du filetage|Direzione della filettatura|Kierunek gwintu
+right_hand|Rechtsgewinde|Right-hand thread|Rosca derecha|Filetage à droite|Filettatura destrorsa|Gwint prawy
+left_hand|Linksgewinde|Left-hand thread|Rosca izquierda|Filetage à gauche|Filettatura sinistrorsa|Gwint lewy
+direction_help|Rechtsgewinde wird im Uhrzeigersinn eingeschraubt, Linksgewinde gegen den Uhrzeigersinn.|Right-hand threads tighten clockwise; left-hand threads counterclockwise.|La rosca derecha se aprieta en sentido horario; la izquierda, en sentido antihorario.|Le filetage à droite se serre dans le sens horaire ; celui à gauche dans le sens antihoraire.|La filettatura destrorsa si avvita in senso orario; quella sinistrorsa in senso antiorario.|Gwint prawy dokręca się zgodnie z ruchem wskazówek zegara, a lewy przeciwnie.
+direction_invalid|Unbekannte Gewinderichtung.|Unknown thread direction.|Sentido de rosca desconocido.|Sens du filetage inconnu.|Direzione della filettatura sconosciuta.|Nieznany kierunek gwintu.
 numeric_finite|Alle Zahlen müssen endlich sein.|All numbers must be finite.|Todos los números deben ser finitos.|Tous les nombres doivent être finis.|Tutti i numeri devono essere finiti.|Wszystkie liczby muszą być skończone.
 result|Ergebnis|Result|Resultado|Résultat|Risultato|Wynik
 thread_created|Gewinde erfolgreich erzeugt.|Thread created successfully.|Rosca creada correctamente.|Filetage créé avec succès.|Filettatura creata correttamente.|Gwint utworzono pomyślnie.

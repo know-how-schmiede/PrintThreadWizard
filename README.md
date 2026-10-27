@@ -14,9 +14,9 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.0**
+Current development version: **0.9.1**
 
-M0 for 0.9.0 strengthens numeric validation, preset imports and failure handling. Invalid parameter sets are rejected before saving; complete legacy schema-1 presets remain compatible. Missing optional clearance/chamfer values still default to zero. Fusion acceptance remains pending; see the [test record](doku/pruefprotokoll-0.9.0.md). The installer has not been built or published.
+0.9.1 adds **Thread direction**, defaulting to right-hand threads with optional left-hand threads. Direction is included in presets, results and the parameter sketch. Legacy presets without a direction remain right-handed. The user confirmed operation in Fusion after the left-hand helix fix. Additional test cases are documented in the [test record](doku/pruefprotokoll-0.9.1.md). The installer has not been built or published.
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -30,7 +30,7 @@ M0 for 0.9.0 strengthens numeric validation, preset imports and failure handling
   and thread parameter documentation
 
 - Automatic detection of external cylinders and internal bores
-- Modeled right-hand thread geometry using an exact B-Rep helix and sweep
+- Modeled right-hand and left-hand threads using an exact B-Rep helix and sweep
 - ISO metric calculation mode with a 60° flank angle and automatically
   calculated radial thread depth
 - Free geometry mode for manually setting flank angle and thread depth
@@ -114,7 +114,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.9.0.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.9.1.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:
@@ -182,6 +182,7 @@ tolerance for both parts.
 | Additional chamfer size | Additional radial enlargement at the selected edges: 0.0–1.0 mm in 0.1 mm steps; default 0.0 mm |
 | Saved setting | Alphabetically sorted preset list; restores all parameters |
 | Calculation | ISO metric automatic or free geometry |
+| Thread direction | Right-hand (default) or left-hand; mating parts must use the same direction |
 | Included angle (α) | Thread included angle; fixed at 60° in ISO mode |
 | Thread depth (h) | Radial profile depth; calculated in ISO mode |
 | Pitch (P) | Axial distance per revolution |
@@ -210,7 +211,7 @@ to the thread profile.
 ## Known limitations
 
 - This is development software; validate generated geometry before production.
-- Only cylindrical faces and right-hand threads are currently supported.
+- Only cylindrical faces are supported. Left-hand thread operation has been confirmed in Fusion; the complete test matrix remains pending.
 - Pitch is entered manually; the add-in does not yet provide a standard thread
   size/pitch catalogue.
 - Clearance values are starting points and require calibration for the actual

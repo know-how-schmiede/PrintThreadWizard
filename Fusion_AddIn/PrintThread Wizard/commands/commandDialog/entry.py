@@ -186,6 +186,13 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     mode_input.listItems.add(ISO_MODE_NAME, True)
     mode_input.listItems.add(FREE_MODE_NAME, False)
 
+    direction_input = create_inputs.addDropDownCommandInput(
+        'handedness', tr('thread_direction'), adsk.core.DropDownStyles.TextListDropDownStyle
+    )
+    direction_input.tooltip = tr('direction_help')
+    direction_input.listItems.add(tr('right_hand'), True)
+    direction_input.listItems.add(tr('left_hand'), False)
+
     create_inputs.addValueInput(
         'flank_angle', tr('profile_angle'), 'deg', adsk.core.ValueInput.createByString('60 deg')
     )
@@ -320,7 +327,7 @@ def command_execute(args: adsk.core.CommandEventArgs):
         # Abort the entire Fusion command transaction, including target-body edits.
         args.executeFailed = True
         args.executeFailedMessage = str(error)
-        futil.log(f'{CMD_NAME}: {error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
+        futil.log(f'{CMD_NAME}: {error}; {error.__cause__ or error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
         ui.messageBox(f'PrintThread Wizard:\n{error}')
 
 
@@ -363,6 +370,7 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
         'target_face',
         'pitch',
         'calculation_mode',
+        'handedness',
         'flank_angle',
         'thread_depth',
         'fillet_radius',
@@ -514,6 +522,10 @@ def _load_selected_preset(inputs, selector_id):
     loading_preset = True
     try:
         settings = preset['settings']
+        _select_dropdown_item(
+            _input_by_id(inputs, 'handedness'),
+            tr('left_hand' if settings.get('handedness', 'right') == 'left' else 'right_hand'),
+        )
         mode_name = (
             ISO_MODE_NAME if settings['calculation_mode'] == 'iso_metric' else FREE_MODE_NAME
         )
@@ -570,6 +582,7 @@ def _show_selected_table_details(inputs):
         f'{tr("details_name")}: {preset.get("name", "")}\n'
         f'{tr("note")}: {preset.get("note", "–") or "–"}\n'
         f'{tr("mode")}: {mode}\n'
+        f'{tr("thread_direction")}: {tr("left_hand" if settings.get("handedness", "right") == "left" else "right_hand")}\n'
         f'{tr("profile_angle")}: {_format_table_value(units, settings.get("flank_angle_rad"), "deg")}\n'
         f'{tr("thread_depth")}: {_format_table_value(units, settings.get("thread_depth_cm"), length_units)}\n'
         f'{tr("pitch")}: {_format_table_value(units, settings.get("pitch_cm"), length_units)}\n'
@@ -680,6 +693,7 @@ def _read_parameters(inputs):
         pitch=_input_by_id(inputs, 'pitch').value,
         fillet_radius=_input_by_id(inputs, 'fillet_radius').value,
         tolerance=_selected_tolerance(inputs),
+        handedness='left' if _input_by_id(inputs, 'handedness').selectedItem.index == 1 else 'right',
         chamfer_extra=dict(CHAMFER_EXTRA_OPTIONS)[
             _input_by_id(inputs, 'chamfer_extra').selectedItem.name
         ],
@@ -721,6 +735,7 @@ def _save_current_preset(inputs):
             'fillet_radius_cm': parameters.fillet_radius,
             'tolerance_cm': parameters.tolerance,
             'chamfer_extra_cm': parameters.chamfer_extra,
+            'handedness': parameters.handedness,
             'display_length_units': app.activeProduct.unitsManager.defaultLengthUnits,
             **context,
         }
@@ -849,6 +864,7 @@ def _set_result_text(inputs, errors):
     thread_type = tr('external_thread') if cylinder.is_external else tr('internal_thread')
     bore_diameter = tr('internal_only') if cylinder.is_external else core_diameter
     result.text = (
+        f'{tr("thread_direction")}: {tr("left_hand" if parameters.handedness == "left" else "right_hand")}\n'
         f'{thread_type} – {tr("nominal_diameter")}: {nominal_diameter}\n'
         f'{tr("pitch")}: {pitch_value}\n'
         f'{tr("major_diameter")}: {diameter}\n'
