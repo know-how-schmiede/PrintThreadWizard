@@ -14,9 +14,9 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.1**
+Current development version: **0.9.2**
 
-0.9.1 adds **Thread direction**, defaulting to right-hand threads with optional left-hand threads. Direction is included in presets, results and the parameter sketch. Legacy presets without a direction remain right-handed. The user confirmed operation in Fusion after the left-hand helix fix. Additional test cases are documented in the [test record](doku/pruefprotokoll-0.9.1.md). The installer has not been built or published.
+0.9.2 adds **thread length and start offset**. **Full length** remains the default. For a partial thread, select a circular end edge as the start side and enter the offset and length. Right-hand and left-hand threads remain available. Fusion acceptance of partial threads is pending; see the [test record](doku/pruefprotokoll-0.9.2.md). The installer has not been built or published.
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -31,6 +31,7 @@ Current development version: **0.9.1**
 
 - Automatic detection of external cylinders and internal bores
 - Modeled right-hand and left-hand threads using an exact B-Rep helix and sweep
+- Full cylinder length or a bounded thread section with a selected start side and axial offset
 - ISO metric calculation mode with a 60° flank angle and automatically
   calculated radial thread depth
 - Free geometry mode for manually setting flank angle and thread depth
@@ -114,7 +115,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.9.1.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.9.2.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:
@@ -175,6 +176,31 @@ tolerance for both parts.
 
 ## Dialog parameters
 
+For a partial thread, disable **Full length** and select a circular end edge of
+the selected cylinder under **Start side (end edge)**. Select the opposite end
+edge to reverse the start side. For example, use a **2 mm start offset** and
+**15 mm thread length** on a 40 mm cylinder. Offset is measured inward from
+the selected end. Results show the section length and boundaries in local
+component coordinates.
+
+Clearance correction and thread geometry are bounded to the selected section;
+the remaining cylinder surface is preserved. Chamfers require selected physical
+end edges reached by the section, and must fit within it. A 2 mm offset therefore
+prevents chamfering that start end. Artificial section boundaries are not chamfered.
+
+The same end edge can be selected under both **Chamfer edges** and
+**Start side (end edge)**. An edge already selected for chamfering remains
+available as the start side; the selection inputs are independent.
+Set **Start offset to 0 mm** for a chamfer at the start end.
+The user confirmed in Fusion that selecting a chamfer edge first, then the same
+edge as the start side, works and produces an external partial thread with a
+chamfer. The remaining Fusion test matrix is still pending.
+
+Length mode, offset and thread length are stored in presets and JSON. The start
+edge is a model reference and must be selected on each target part. Legacy
+presets without these fields still use full length. Use partial-thread presets
+only with version 0.9.2 or later.
+
 | Parameter | Description |
 | --- | --- |
 | Cylindrical face | Target face; internal/external type is detected automatically |
@@ -183,6 +209,10 @@ tolerance for both parts.
 | Saved setting | Alphabetically sorted preset list; restores all parameters |
 | Calculation | ISO metric automatic or free geometry |
 | Thread direction | Right-hand (default) or left-hand; mating parts must use the same direction |
+| Full length | Default: thread the entire selected cylinder face |
+| Start side (end edge) | Circular end edge of the target face, required for partial threads |
+| Start offset | Nonnegative distance inward from the selected end |
+| Thread length | Positive section length; offset plus length must not exceed cylinder length |
 | Included angle (α) | Thread included angle; fixed at 60° in ISO mode |
 | Thread depth (h) | Radial profile depth; calculated in ISO mode |
 | Pitch (P) | Axial distance per revolution |
@@ -212,6 +242,7 @@ to the thread profile.
 
 - This is development software; validate generated geometry before production.
 - Only cylindrical faces are supported. Left-hand thread operation has been confirmed in Fusion; the complete test matrix remains pending.
+- Partial threads are implemented; Fusion testing of both start sides, internal/external threads and transformed components remains pending. Lead-in, runout and relief are outside this scope.
 - Pitch is entered manually; the add-in does not yet provide a standard thread
   size/pitch catalogue.
 - Clearance values are starting points and require calibration for the actual

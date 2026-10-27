@@ -38,7 +38,7 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M1 – Linksgewinde
 
-**Status 27.10.2026 / 0.9.1:** implementiert, vollständige Abnahme offen. Anwender bestätigt die Funktion in Fusion nach Korrektur der negativen Umdrehungszahl. Fehlerausgabe lokalisiert; 14 automatische Tests bestanden. Einzelne Prüffälle, insbesondere gedrehte Komponenten und der vollständige Innen-/Außenvergleich, sind nicht separat bestätigt; siehe [Prüfprotokoll](pruefprotokoll-0.9.1.md). Kein Commit/PR erstellt. Nächster Entwicklungsschritt: M2. M2–M7 bleiben geplant.
+**Status 27.10.2026 / 0.9.1:** implementiert, vollständige Abnahme offen. Anwender bestätigt die Funktion in Fusion nach Korrektur der negativen Umdrehungszahl. Fehlerausgabe lokalisiert; 14 automatische Tests bestanden. Einzelne Prüffälle, insbesondere gedrehte Komponenten und der vollständige Innen-/Außenvergleich, sind nicht separat bestätigt; siehe [Prüfprotokoll](pruefprotokoll-0.9.1.md). Kein Commit/PR erstellt. M2 ist in 0.9.2 implementiert; M3–M7 bleiben geplant.
 
 **Funktion:** Auswahl „Rechtsgewinde / Linksgewinde“, Standard rechts.
 
@@ -50,14 +50,16 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M2 – Gewindelänge und Startversatz
 
+**Status 27.10.2026 / 0.9.2:** implementiert, Abnahme offen. 19 automatische Tests bestanden. Ganze Länge bleibt Standard; bei Teilgewinden bestimmt eine ausgewählte kreisförmige Endkante die Startseite. Fusion-Prüfung beider Enden und der Abschnittsgeometrie offen, siehe [Prüfprotokoll](pruefprotokoll-0.9.2.md). Kein Commit/PR erstellt.
+
 **Funktion:** „Ganze Länge“ bleibt Standard; alternativ Startseite, axialer Versatz und Gewindelänge wählen.
 
-- [ ] Startseite eindeutig über Stirnseite/Endkante wählen oder sichtbar umkehren.
-- [ ] Achsrichtung unabhängig von interner Flächenorientierung festlegen.
-- [ ] Gewinde auf den gewählten Abschnitt begrenzen; übrige Oberfläche erhalten.
-- [ ] Negativen Versatz, Länge ≤ 0 und Überschreitung der verfügbaren Länge abfangen.
-- [ ] Fasen nur an tatsächlich geeigneten Endkanten zulassen; künstliche Abschnittsgrenzen nicht automatisch als Stirnkanten behandeln.
-- [ ] Bestehenden Helixüberlauf von der sichtbaren Gewindelänge trennen.
+- [x] Startseite eindeutig über Stirnseite/Endkante wählen oder sichtbar umkehren.
+- [x] Achsrichtung unabhängig von interner Flächenorientierung festlegen.
+- [x] Gewinde auf den gewählten Abschnitt begrenzen; übrige Oberfläche erhalten (Fusion-Abnahme offen).
+- [x] Negativen Versatz, Länge ≤ 0 und Überschreitung der verfügbaren Länge abfangen.
+- [x] Fasen nur an tatsächlich geeigneten Endkanten zulassen; künstliche Abschnittsgrenzen nicht automatisch als Stirnkanten behandeln.
+- [x] Bestehenden Helixüberlauf von der sichtbaren Gewindelänge trennen.
 
 **Abnahme:** Beispielsweise nur 15 mm Gewinde ab 2 mm Versatz auf einem längeren Zylinder. Beide Startseiten funktionieren. Innen- und Außengewinde, Fasen und Dokumentation stimmen mit dem gewählten Bereich überein.
 
@@ -150,4 +152,4 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## Fortschritt pflegen
 
-Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Nächster Entwicklungsschritt ist M2; noch offene M0-/M1-Prüffälle bleiben im jeweiligen Prüfprotokoll erfasst.
+Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Nächster Schritt ist die Fusion-Abnahme von M2, danach M3 als separater Auftrag; noch offene M0-/M1-Prüffälle bleiben im jeweiligen Prüfprotokoll erfasst.

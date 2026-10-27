@@ -1,5 +1,5 @@
 """M0 regressions without Fusion."""
-from dataclasses import replace
+from dataclasses import replace, make_dataclass
 import ast
 import importlib
 import json
@@ -37,6 +37,87 @@ class CoreTests(unittest.TestCase):
             # At a quarter turn, identical rise but mirrored angular position.
             self.assertAlmostEqual(axis_sign * p.signed_pitch / 4, .05)
         self.assertTrue(replace(self.params, handedness='unknown').validation_errors())
+
+    def test_partial_range_from_both_ends_in_centimeters(self):
+        p = replace(self.params, full_length=False, start_offset=.2, thread_length=1.5)
+        # A 40 mm cylinder, 2 mm offset and 15 mm length.
+        self.assertEqual(p.axial_range(4), (.2, 1.7))
+        self.assertEqual(p.axial_range(4, from_end=True), (2.3, 3.8))
+        self.assertEqual(self.params.axial_range(4), (0, 4))
+        self.assertEqual(self.params.axial_range(4, from_end=True), (0, 4))
+        for direction in ('right', 'left'):
+            self.assertEqual(replace(p, handedness=direction).axial_range(4), (.2, 1.7))
+
+    def test_invalid_section_values_and_bounds(self):
+        p = replace(self.params, full_length=False)
+        for changes in (dict(start_offset=-.1), dict(thread_length=0),
+                        dict(thread_length=-1), dict(start_offset=float('nan')),
+                        dict(thread_length=float('inf')), dict(start_offset=3.5)):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                replace(p, **changes).axial_range(4)
+        for available in (0, -1, float('nan'), float('inf')):
+            with self.assertRaises(ValueError):
+                p.axial_range(available)
+        self.assertTrue(replace(p, full_length='false').validation_errors())
+
+    def test_section_preset_roundtrip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            storage = Path(directory) / 'storage.json'
+            source = Path(directory) / 'transfer.json'
+            with patch.object(presets, 'preset_file_path', return_value=storage):
+                settings = dict(self.settings, full_length=False, start_offset_cm=.2, thread_length_cm=1.5)
+                saved = presets.save_thread_preset('15 mm', '', settings)
+                presets.export_thread_presets(str(source))
+                presets.delete_thread_preset(saved['id'])
+                presets.import_thread_presets(str(source))
+                self.assertEqual(presets.load_thread_presets()[0]['settings'], settings)
+                original = storage.read_bytes()
+                for key, value in (('full_length', 'false'), ('start_offset_cm', -.1),
+                                   ('thread_length_cm', float('nan')), ('thread_length_cm', 0)):
+                    with self.assertRaises(ValueError):
+                        presets.save_thread_preset('bad', '', dict(settings, **{key:value}))
+                    self.assertEqual(storage.read_bytes(), original)
+
+    def test_section_resolution_and_chamfer_limits(self):
+        tree = ast.parse((ADDIN / 'fusion/thread_geometry.py').read_text(encoding='utf-8'))
+        function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'thread_section')
+        cylinder_type = make_dataclass('Section', ['axis_start', 'axis_end', 'axis', 'length'])
+        cylinder = cylinder_type(0, 4, 'axis', 4)
+        ns = dict(replace=replace, math=math, tr=lambda key:key,
+                  _translated_point=lambda point, axis, amount:point + amount,
+                  _trim_reference_from_selected_circles=lambda cylinder, ends:cylinder,
+                  capture_chamfer_ends=lambda cylinder, edges:[types.SimpleNamespace(is_start=edges[0] == 'first')])
+        exec(compile(ast.Module(body=[function], type_ignores=[]), '<section>', 'exec'), ns)
+        p = replace(self.params, full_length=False, start_offset=.2, thread_length=1.5, start_edge='first')
+        section = ns['thread_section'](cylinder, p, ())
+        self.assertEqual((section.axis_start, section.axis_end, section.length), (.2, 1.7, 1.5))
+        section = ns['thread_section'](cylinder, replace(p, start_edge='last'), ())
+        self.assertAlmostEqual(section.axis_start, 2.3)
+        self.assertAlmostEqual(section.axis_end, 3.8)
+        with self.assertRaises(ValueError):
+            ns['thread_section'](cylinder, replace(p, start_edge=None), ())
+        for is_start in (True, False):
+            with self.assertRaises(ValueError):
+                ns['thread_section'](cylinder, p, (types.SimpleNamespace(is_start=is_start),))
+        end = types.SimpleNamespace(is_start=True)
+        self.assertEqual(ns['thread_section'](cylinder, replace(p, start_offset=0), (end,)).axis_start, 0)
+        with self.assertRaises(ValueError):
+            ns['thread_section'](cylinder, replace(p, start_offset=0, thread_length=.01), (end,))
+
+    def test_external_partial_sweep_is_a_tool_not_a_direct_cut(self):
+        tree = ast.parse((ADDIN / 'fusion/thread_geometry.py').read_text(encoding='utf-8'))
+        function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_create_thread_sweep')
+        ops = types.SimpleNamespace(CutFeatureOperation='cut', NewBodyFeatureOperation='new')
+        for external, bounded, expected in ((True, False, 'cut'), (True, True, 'new'), (False, False, 'new')):
+            sweeps = Mock()
+            cylinder = types.SimpleNamespace(is_external=external, body=object(),
+                         component=types.SimpleNamespace(features=types.SimpleNamespace(sweepFeatures=sweeps)))
+            ns = dict(tr=lambda key:key, adsk=types.SimpleNamespace(fusion=types.SimpleNamespace(
+                Path=types.SimpleNamespace(create=lambda *a:object()),
+                ChainedCurveOptions=types.SimpleNamespace(noChainedCurves=0), FeatureOperations=ops)))
+            exec(compile(ast.Module(body=[function], type_ignores=[]), '<sweep>', 'exec'), ns)
+            ns['_create_thread_sweep'](cylinder, object(), object(), object(), bounded_external=bounded)
+            self.assertEqual(sweeps.createInput.call_args.args[2], expected)
 
     def test_direction_preset_roundtrip_and_unknown_import(self):
         with tempfile.TemporaryDirectory() as directory:

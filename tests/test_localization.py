@@ -102,7 +102,7 @@ class LocalizationTests(unittest.TestCase):
 
     def test_version_consistency(self):
         version = importlib.import_module('printthread_test.version').VERSION
-        self.assertEqual(version, '0.9.1')
+        self.assertEqual(version, '0.9.2')
         manifest = json.loads((ADDIN / 'PrintThread Wizard.manifest').read_text(encoding='utf-8'))
         self.assertEqual(manifest['version'], version)
         self.assertIn(f'#define MyAppVersion "{version}"', (ROOT / 'installer/PrintThreadWizard.iss').read_text(encoding='utf-8'))

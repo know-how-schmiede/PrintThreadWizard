@@ -16,7 +16,7 @@ from ...core.thread_presets import (
     save_thread_preset,
 )
 from ...fusion.face_analysis import analyze_cylinder
-from ...fusion.thread_geometry import create_thread
+from ...fusion.thread_geometry import create_thread, thread_section
 from ...lib import fusionAddInUtils as futil
 from ...localization import detect_locale, set_locale, translate as tr
 from ...version import VERSION
@@ -96,6 +96,10 @@ def stop():
 
 def command_created(args: adsk.core.CommandCreatedEventArgs):
     global active_command_inputs
+    # Enable independent selection sets so an end edge can be selected for
+    # both chamfer and start side. The API reference reverses these boolean
+    # meanings; Autodesk's November 2024 release notes describe this behavior.
+    args.command.hasDistinctSelectionSets = True
     inputs = args.command.commandInputs
     active_command_inputs = inputs
 
@@ -180,6 +184,16 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
 
     default_units = app.activeProduct.unitsManager.defaultLengthUnits
+    create_inputs.addBoolValueInput('full_length', tr('full_length'), True, '', True)
+    start_edge = create_inputs.addSelectionInput('start_edge', tr('start_edge'), tr('start_edge_help'))
+    start_edge.addSelectionFilter('CircularEdges')
+    start_edge.setSelectionLimits(0, 1)
+    start_edge.isVisible = False
+    for input_id, label, initial in (('start_offset', 'start_offset', '0 mm'),
+                                      ('thread_length', 'thread_length', '15 mm')):
+        field = create_inputs.addValueInput(input_id, tr(label), default_units,
+                                           adsk.core.ValueInput.createByString(initial))
+        field.isVisible = False
     mode_input = create_inputs.addDropDownCommandInput(
         'calculation_mode', tr('calculation'), adsk.core.DropDownStyles.TextListDropDownStyle
     )
@@ -335,6 +349,9 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
         return
+    if args.input.id == 'full_length':
+        for input_id in ('start_edge', 'start_offset', 'thread_length'):
+            _input_by_id(active_command_inputs, input_id).isVisible = not args.input.value
     if args.input.id == 'preset_selector':
         _load_selected_preset(active_command_inputs, 'preset_selector')
         return
@@ -371,6 +388,7 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
         'pitch',
         'calculation_mode',
         'handedness',
+        'full_length', 'start_edge', 'start_offset', 'thread_length', 'chamfer_edges',
         'flank_angle',
         'thread_depth',
         'fillet_radius',
@@ -522,6 +540,11 @@ def _load_selected_preset(inputs, selector_id):
     loading_preset = True
     try:
         settings = preset['settings']
+        _input_by_id(inputs, 'full_length').value = settings.get('full_length', True)
+        _input_by_id(inputs, 'start_offset').value = settings.get('start_offset_cm', 0.0)
+        _input_by_id(inputs, 'thread_length').value = settings.get('thread_length_cm', 1.0)
+        for input_id in ('start_edge', 'start_offset', 'thread_length'):
+            _input_by_id(inputs, input_id).isVisible = not settings.get('full_length', True)
         _select_dropdown_item(
             _input_by_id(inputs, 'handedness'),
             tr('left_hand' if settings.get('handedness', 'right') == 'left' else 'right_hand'),
@@ -583,6 +606,9 @@ def _show_selected_table_details(inputs):
         f'{tr("note")}: {preset.get("note", "–") or "–"}\n'
         f'{tr("mode")}: {mode}\n'
         f'{tr("thread_direction")}: {tr("left_hand" if settings.get("handedness", "right") == "left" else "right_hand")}\n'
+        f'{tr("full_length")}: {tr("yes" if settings.get("full_length", True) else "no")}\n'
+        f'{tr("start_offset")}: {_format_table_value(units, settings.get("start_offset_cm", 0.0), length_units)}\n'
+        f'{tr("thread_length")}: {_format_table_value(units, settings.get("thread_length_cm", 1.0), length_units)}\n'
         f'{tr("profile_angle")}: {_format_table_value(units, settings.get("flank_angle_rad"), "deg")}\n'
         f'{tr("thread_depth")}: {_format_table_value(units, settings.get("thread_depth_cm"), length_units)}\n'
         f'{tr("pitch")}: {_format_table_value(units, settings.get("pitch_cm"), length_units)}\n'
@@ -694,6 +720,11 @@ def _read_parameters(inputs):
         fillet_radius=_input_by_id(inputs, 'fillet_radius').value,
         tolerance=_selected_tolerance(inputs),
         handedness='left' if _input_by_id(inputs, 'handedness').selectedItem.index == 1 else 'right',
+        full_length=_input_by_id(inputs, 'full_length').value,
+        start_offset=_input_by_id(inputs, 'start_offset').value,
+        thread_length=_input_by_id(inputs, 'thread_length').value,
+        start_edge=(_input_by_id(inputs, 'start_edge').selection(0).entity
+                    if _input_by_id(inputs, 'start_edge').selectionCount else None),
         chamfer_extra=dict(CHAMFER_EXTRA_OPTIONS)[
             _input_by_id(inputs, 'chamfer_extra').selectedItem.name
         ],
@@ -736,6 +767,9 @@ def _save_current_preset(inputs):
             'tolerance_cm': parameters.tolerance,
             'chamfer_extra_cm': parameters.chamfer_extra,
             'handedness': parameters.handedness,
+            'full_length': parameters.full_length,
+            'start_offset_cm': parameters.start_offset,
+            'thread_length_cm': parameters.thread_length,
             'display_length_units': app.activeProduct.unitsManager.defaultLengthUnits,
             **context,
         }
@@ -805,6 +839,8 @@ def _validation_errors(parameters):
     if parameters.face is not None:
         try:
             cylinder = analyze_cylinder(parameters.face)
+            if not errors:
+                thread_section(cylinder, parameters)
             effective_radius = (
                 cylinder.radius
                 + parameters.tolerance_radius_offset(cylinder.is_external)
@@ -863,7 +899,15 @@ def _set_result_text(inputs, errors):
     )
     thread_type = tr('external_thread') if cylinder.is_external else tr('internal_thread')
     bore_diameter = tr('internal_only') if cylinder.is_external else core_diameter
+    section = thread_section(cylinder, parameters)
+    def point_text(point):
+        return ', '.join(units.formatInternalValue(value, units.defaultLengthUnits, True)
+                         for value in (point.x, point.y, point.z))
+    section_length = units.formatInternalValue(section.length, units.defaultLengthUnits, True)
     result.text = (
+        f'{tr("thread_length")}: {section_length}\n'
+        f'{tr("section_start")}: {point_text(section.axis_start)}\n'
+        f'{tr("section_end")}: {point_text(section.axis_end)}\n'
         f'{tr("thread_direction")}: {tr("left_hand" if parameters.handedness == "left" else "right_hand")}\n'
         f'{thread_type} – {tr("nominal_diameter")}: {nominal_diameter}\n'
         f'{tr("pitch")}: {pitch_value}\n'

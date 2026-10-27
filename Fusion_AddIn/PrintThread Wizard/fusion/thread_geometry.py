@@ -18,19 +18,43 @@ PROFILE_OVERLAP = 0.01  # 0,1 mm in Fusion-internen Zentimetern
 HELIX_OVERRUN_TURNS = 1.0
 
 
+def thread_section(cylinder, parameters, chamfer_ends=None):
+    """Resolve the chosen physical end before any model changes."""
+    if chamfer_ends is None:
+        chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
+    physical = _trim_reference_from_selected_circles(cylinder, chamfer_ends)
+    if parameters.full_length:
+        return physical
+    if parameters.start_edge is None:
+        raise ValueError(tr('start_edge_required'))
+    start_end = capture_chamfer_ends(cylinder, (parameters.start_edge,))[0]
+    low, high = parameters.axial_range(physical.length, from_end=not start_end.is_start)
+    for end in chamfer_ends:
+        if (end.is_start and low > 1e-7) or (not end.is_start and high < physical.length - 1e-7):
+            raise ValueError(tr('chamfer_outside_range'))
+        axial_size = ((parameters.thread_depth + parameters.chamfer_extra)
+                      * math.tan(parameters.flank_angle / 2) + 0.01)
+        if axial_size > high - low:
+            raise ValueError(tr('chamfer_outside_range'))
+    return replace(physical,
+                   axis_start=_translated_point(physical.axis_start, physical.axis, low),
+                   axis_end=_translated_point(physical.axis_start, physical.axis, high),
+                   length=high - low)
+
+
 def create_thread(parameters: ThreadParameters):
     errors = parameters.validation_errors()
     if errors:
         raise ValueError('\n'.join(errors))
 
     cylinder = analyze_cylinder(parameters.face)
+    chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
+    trim_reference = thread_section(cylinder, parameters, chamfer_ends)
     timeline = cylinder.component.parentDesign.timeline
     timeline_start = timeline.count
     parameter_sketch = _create_parameter_note_sketch(cylinder, parameters)
     tolerance_feature = None
     try:
-        chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
-        trim_reference = _trim_reference_from_selected_circles(cylinder, chamfer_ends)
         radial_offset = parameters.tolerance_radius_offset(cylinder.is_external)
         cylinder, tolerance_feature = _apply_radial_tolerance(
             cylinder, trim_reference, radial_offset
@@ -61,11 +85,12 @@ def create_thread(parameters: ThreadParameters):
         profile_plane = _create_profile_plane(cylinder.component, helix_edge)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
         profile_sketch = profile.parentSketch
-        sweep = _create_thread_sweep(cylinder, profile, helix_edge, guide_face)
+        sweep = _create_thread_sweep(cylinder, profile, helix_edge, guide_face,
+                                     bounded_external=not parameters.full_length)
         result_feature = (
             sweep
-            if cylinder.is_external
-            else _trim_and_join_internal_thread(
+            if cylinder.is_external and parameters.full_length
+            else _trim_and_combine_thread(
                 cylinder,
                 sweep,
                 trim_reference.axis_start,
@@ -112,9 +137,21 @@ def _create_parameter_note_sketch(cylinder, parameters):
 
     angle = units.formatInternalValue(parameters.flank_angle, 'deg', True)
     bore_value = '–' if cylinder.is_external else length(minor_value)
+    section = thread_section(cylinder, parameters)
+
+    def point_text(point):
+        return ', '.join(length(value) for value in (point.x, point.y, point.z))
+
     fields = (
         ('thread_type', thread_type),
         ('thread_direction', tr('right_hand' if parameters.handedness == 'right' else 'left_hand')),
+        ('full_length', tr('yes') if parameters.full_length else tr('no')),
+        ('start_edge', tr('full_length') if parameters.full_length else point_text(
+            capture_chamfer_ends(cylinder, (parameters.start_edge,))[0].center)),
+        ('start_offset', length(0.0 if parameters.full_length else parameters.start_offset)),
+        ('thread_length', length(cylinder.length if parameters.full_length else parameters.thread_length)),
+        ('section_start', point_text(section.axis_start)),
+        ('section_end', point_text(section.axis_end)),
         ('nominal_diameter', length(cylinder.radius * 2)),
         ('pitch', length(parameters.pitch)),
         ('profile_angle', angle),
@@ -384,7 +421,7 @@ def _profile_base_direction(cylinder: CylinderGeometry, pitch: float):
     return base_direction
 
 
-def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
+def _create_thread_sweep(cylinder, profile, helix_edge, guide_face, bounded_external=False):
     path = adsk.fusion.Path.create(
         helix_edge, adsk.fusion.ChainedCurveOptions.noChainedCurves
     )
@@ -394,7 +431,7 @@ def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
     sweeps = cylinder.component.features.sweepFeatures
     operation = (
         adsk.fusion.FeatureOperations.CutFeatureOperation
-        if cylinder.is_external
+        if cylinder.is_external and not bounded_external
         else adsk.fusion.FeatureOperations.NewBodyFeatureOperation
     )
     sweep_input = sweeps.createInput(
@@ -406,7 +443,7 @@ def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
     # abschnittsweise überlappt.
     sweep_input.guideSurfaces = [guide_face]
     sweep_input.isChainSelection = False
-    if cylinder.is_external:
+    if cylinder.is_external and not bounded_external:
         sweep_input.participantBodies = [cylinder.body]
     sweep = sweeps.add(sweep_input)
     if sweep is None:
@@ -416,7 +453,7 @@ def _create_thread_sweep(cylinder, profile, helix_edge, guide_face):
     return sweep
 
 
-def _trim_and_join_internal_thread(
+def _trim_and_combine_thread(
     cylinder, sweep, trim_start, trim_end
 ):
     if sweep.bodies.count == 0:
@@ -444,17 +481,19 @@ def _trim_and_join_internal_thread(
             raise RuntimeError(tr('trim_failed'))
         trim_feature_result.name = "PrintThread Wizard – " + tr('trim_thread')
         created_features.append(trim_feature_result)
-        thread_body = trim_feature_result.bodies.item(0)
-
         tools = adsk.core.ObjectCollection.create()
-        tools.add(thread_body)
+        for index in range(trim_feature_result.bodies.count):
+            tools.add(trim_feature_result.bodies.item(index))
         combine_input = combines.createInput(cylinder.body, tools)
-        combine_input.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+        combine_input.operation = (
+            adsk.fusion.FeatureOperations.CutFeatureOperation if cylinder.is_external
+            else adsk.fusion.FeatureOperations.JoinFeatureOperation
+        )
         combine_input.isKeepToolBodies = False
         combine = combines.add(combine_input)
         if combine is None:
             raise RuntimeError(tr('join_failed'))
-        combine.name = "PrintThread Wizard – " + tr('internal_thread')
+        combine.name = "PrintThread Wizard – " + tr('external_thread' if cylinder.is_external else 'internal_thread')
         return combine
     except Exception:
         for feature in reversed(created_features):

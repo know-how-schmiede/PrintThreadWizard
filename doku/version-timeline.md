@@ -1,5 +1,15 @@
 # Version Timeline
 
+## 0.9.2 - 2026-10-27
+
+- M2 implementiert: Ganze Länge bleibt Standard; Teilgewinde mit gewählter Start-Endkante, axialem Versatz und Gewindelänge.
+- Andere Endkante wählen, um die Startseite unabhängig von der Flächenorientierung umzukehren. Abschnittsgrenzen in Ergebnis und Dokumentationsskizze als lokale Koordinaten anzeigen.
+- Spielkorrektur auf den Abschnitt beschränken. Bei Außen-Teilgewinden Sweep als Werkzeugkörper erzeugen, axial beschneiden und erst danach vom Zielkörper abziehen. Innengewinde weiterhin nach axialer Beschneidung verbinden.
+- Fasen nur an erreichten echten Endkanten zulassen; unpassende Kanten, negative/ungültige Werte und Überschreitungen vor Modelländerungen abweisen.
+- Längenmodus, Versatz und Länge in Schema-1-Presets und JSON ergänzen; Modellkanten nicht exportieren. Alte Presets bleiben auf ganzer Länge.
+- Texte in allen sechs Sprachen ergänzt, README DE/EN und Installer-Konfiguration auf 0.9.2 aktualisiert.
+- 19 automatische Tests bestanden. Fusion-Abnahme offen; kein Installer gebaut oder veröffentlicht.
+
 ## 0.9.1 - 2026-10-27
 
 - M1 implementiert: Auswahl Rechts-/Linksgewinde, Standard rechts.

@@ -18,6 +18,24 @@ class ThreadParameters:
     tolerance: float = 0.0
     chamfer_extra: float = 0.0
     handedness: str = 'right'
+    full_length: bool = True
+    start_offset: float = 0.0
+    thread_length: float = 1.0
+    start_edge: Any = None
+
+    def axial_range(self, available_length: float, from_end: bool = False) -> tuple[float, float]:
+        """Visible bounds in cm, independent of cylinder surface orientation."""
+        if not math.isfinite(available_length) or available_length <= 0:
+            raise ValueError(tr('range_invalid'))
+        if self.full_length:
+            return 0.0, available_length
+        if (not math.isfinite(self.start_offset) or not math.isfinite(self.thread_length)
+                or self.start_offset < 0 or self.thread_length <= 0
+                or self.start_offset + self.thread_length > available_length + 1e-7):
+            raise ValueError(tr('range_invalid'))
+        end = min(self.start_offset + self.thread_length, available_length)
+        return ((available_length - end, available_length - self.start_offset)
+                if from_end else (self.start_offset, end))
 
     @property
     def signed_pitch(self) -> float:
@@ -45,6 +63,11 @@ class ThreadParameters:
         errors = []
         if self.handedness not in ('right', 'left'):
             errors.append(tr('direction_invalid'))
+        if type(self.full_length) is not bool:
+            errors.append(tr('range_invalid'))
+        if (not math.isfinite(self.start_offset) or not math.isfinite(self.thread_length)
+                or self.start_offset < 0 or self.thread_length <= 0):
+            errors.append(tr('range_invalid'))
         if not all(math.isfinite(value) for value in (
             self.flank_angle, self.thread_depth, self.pitch, self.fillet_radius,
             self.tolerance, self.chamfer_extra

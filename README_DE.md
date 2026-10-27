@@ -14,9 +14,9 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.1**
+Aktuelle Entwicklungsversion: **0.9.2**
 
-0.9.1 ergänzt die Auswahl **Gewinderichtung** mit Rechtsgewinde als Standard und optionalem Linksgewinde. Die Richtung wird in Presets, Ergebnisanzeige und Dokumentationsskizze übernommen. Alte Presets ohne Richtung erzeugen weiterhin Rechtsgewinde. Die Funktion nach Korrektur des Linksgewinde-Helixfehlers wurde vom Anwender in Fusion bestätigt. Weitere Prüffälle sind im [Prüfprotokoll](doku/pruefprotokoll-0.9.1.md) dokumentiert. Der Installer ist noch nicht gebaut/veröffentlicht.
+0.9.2 ergänzt **Gewindelänge und Startversatz**. Standard bleibt **Ganze Länge**. Für ein Teilgewinde die Startseite über eine kreisförmige Endkante wählen, Versatz und Länge eingeben. Rechts- und Linksgewinde bleiben verfügbar. Die Fusion-Abnahme der Teilgewinde ist offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.2.md). Der Installer ist noch nicht gebaut/veröffentlicht.
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -31,6 +31,7 @@ Aktuelle Entwicklungsversion: **0.9.1**
 
 - Automatische Erkennung von Außenzylindern und Innenbohrungen
 - Modellierte Rechts- und Linksgewinde mit exakter B-Rep-Helix und Sweep
+- Ganze Zylinderlänge oder begrenzter Gewindeabschnitt mit wählbarer Startseite und axialem Versatz
 - Automatischer ISO-Metrisch-Modus mit 60° Flankenwinkel und berechneter
   radialer Gewindetiefe
 - Freier Geometriemodus zur manuellen Eingabe von Flankenwinkel und
@@ -117,7 +118,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.9.1.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.9.2.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion
@@ -182,6 +183,32 @@ Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
 
 ## Dialogparameter
 
+Für ein Teilgewinde **Ganze Länge** deaktivieren. Unter **Startseite (Endkante)**
+eine kreisförmige Endkante der ausgewählten Zylinderfläche wählen. Die andere
+Endkante kehrt die Startseite um. Beispiel: Auf einem 40 mm langen Zylinder
+**2 mm Startversatz** und **15 mm Gewindelänge** einstellen. Der Versatz wird
+von der gewählten Seite in den Zylinder hinein gemessen. Die Ergebnisanzeige
+zeigt Länge und Abschnittsgrenzen in lokalen Komponentenkoordinaten.
+
+Spielkorrektur und Gewinde werden auf diesen Abschnitt begrenzt. Die übrige
+Zylinderfläche bleibt erhalten. Fasen sind nur an ausgewählten echten Endkanten
+zulässig, die der Gewindeabschnitt erreicht; sie müssen in den Abschnitt passen.
+Bei 2 mm Abstand vom Startende kann dort daher keine Fase gewählt werden.
+Künstliche Abschnittsgrenzen erhalten keine automatische Fase.
+
+Dieselbe Endkante kann sowohl unter **Fasen-Kanten** als auch unter
+**Startseite (Endkante)** ausgewählt werden. Eine zuvor für die Fase gewählte
+Kante bleibt als Startseite auswählbar; die Auswahlfelder sind unabhängig.
+Für eine Fase am Startende den **Startversatz auf 0 mm** setzen.
+Die Auswahlfolge „Fasen-Kante, danach dieselbe Kante als Startseite“ und die
+Erstellung eines Außen-Teilgewindes mit Fase wurden in Fusion vom Anwender
+bestätigt. Die übrige Fusion-Prüfmatrix bleibt offen.
+
+Längenmodus, Versatz und Gewindelänge werden in Presets und JSON gespeichert.
+Die Startkante ist ein Modellbezug und muss am jeweiligen Bauteil gewählt werden.
+Alte Presets ohne diese Felder verwenden weiterhin die ganze Länge. Teilgewinde-
+Presets nur mit Version 0.9.2 oder neuer verwenden.
+
 | Parameter | Beschreibung |
 | --- | --- |
 | Zylinderfläche | Zielfläche; Innen-/Außengewinde wird automatisch erkannt |
@@ -190,6 +217,10 @@ Flankengeometrie und Toleranz bei beiden Bauteilen gleich eingestellt werden.
 | Gespeicherte Einstellung | Alphabetisch sortierte Preset-Auswahl; übernimmt alle Parameter |
 | Berechnung | ISO metrisch automatisch oder freie Geometrie |
 | Gewinderichtung | Rechtsgewinde (Standard) oder Linksgewinde; beide Partner müssen dieselbe Richtung verwenden |
+| Ganze Länge | Standard: gesamte ausgewählte Zylinderfläche bearbeiten |
+| Startseite (Endkante) | Bei Teilgewinden erforderliche kreisförmige Endkante der Zielfläche |
+| Startversatz | Abstand vom gewählten Ende in den Zylinder, mindestens 0 |
+| Gewindelänge | Positive Abschnittslänge; Versatz plus Länge darf die Zylinderlänge nicht überschreiten |
 | Profilwinkel (α) | Eingeschlossener Profilwinkel; im ISO-Modus fest 60° |
 | Gewindetiefe (h) | Radiale Profiltiefe; im ISO-Modus automatisch berechnet |
 | Gewindesteigung (P) | Axialer Weg pro Umdrehung |
@@ -222,6 +253,7 @@ Kurzzeichen dem Gewindeprofil zu.
 - Das Add-in befindet sich in Entwicklung; die erzeugte Geometrie muss vor der
   produktiven Verwendung geprüft werden.
 - Derzeit werden nur Zylinderflächen unterstützt. Die Funktion der Linksgewinde wurde in Fusion bestätigt; die vollständige Prüfmatrix ist noch offen.
+- Teilgewinde sind implementiert; die Fusion-Prüfung für beide Startseiten, Innen-/Außengewinde und transformierte Komponenten steht aus. Einlauf, Auslauf und Freistich gehören nicht zu diesem Umfang.
 - Die Steigung wird manuell eingegeben; eine Tabelle genormter
   Gewindegrößen und Steigungen ist noch nicht enthalten.
 - Toleranzwerte sind Ausgangswerte und müssen für Drucker und Material

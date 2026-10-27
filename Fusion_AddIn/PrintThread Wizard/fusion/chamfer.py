@@ -34,6 +34,12 @@ def capture_chamfer_ends(cylinder, selected_edges):
         if circle is None:
             raise ValueError(tr('edge_circular'))
         position = cylinder.axis_start.vectorTo(circle.center).dotProduct(cylinder.axis)
+        center_on_axis = _translated_point(cylinder.axis_start, cylinder.axis, position)
+        if (not any(edge == cylinder.face.edges.item(i) for i in range(cylinder.face.edges.count))
+                or center_on_axis.distanceTo(circle.center) > 1e-6
+                or abs(circle.radius - cylinder.radius) > 1e-6
+                or min(abs(position), abs(position - cylinder.length)) > 1e-6):
+            raise ValueError(tr('edge_end_required'))
         result.append(ChamferEnd(circle.center.copy(), circle.radius, position <= cylinder.length / 2))
     return tuple(result)
 

@@ -196,7 +196,12 @@ def _validate_settings(settings, name):
         values += [settings.get('tolerance_cm', 0.0), settings.get('chamfer_extra_cm', 0.0)]
         if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in values):
             raise ValueError()
-        if ThreadParameters(object(), (), *values, handedness=settings.get('handedness', 'right')).validation_errors():
+        range_values = [settings.get('start_offset_cm', 0.0), settings.get('thread_length_cm', 1.0)]
+        if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in range_values):
+            raise ValueError()
+        if ThreadParameters(object(), (), *values, handedness=settings.get('handedness', 'right'),
+                            full_length=settings.get('full_length', True),
+                            start_offset=range_values[0], thread_length=range_values[1]).validation_errors():
             raise ValueError()
     except (KeyError, TypeError, ValueError, OverflowError):
         raise ValueError(tr('import_parameters', name=name)) from None
