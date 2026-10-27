@@ -113,6 +113,19 @@ werden. Alte Presets verwenden Einzelgewinde, ganze Länge und gleichmäßige
 Verteilung. Presets mit Paarmodus oder einseitiger Spielverteilung nur mit
 **0.9.3 oder neuer** verwenden: Frühere Versionen ignorieren diese Felder.
 
+### Beispiel: Gewindepaar erstellen
+
+Der Dialog zeigt den ausgewählten Außenzylinder und die Innenbohrung,
+getrennte Längeneinstellungen für beide Bauteile und die gleichmäßige
+Spielverteilung.
+
+<img src="images/27-10-2026_20-04-00.png" alt="PrintThread Wizard 0.9.3: Dialog zum Erstellen eines Gewindepaars mit getrennten Längeneinstellungen" width="1000">
+
+Das gemeinsam erzeugte Außen- und Innengewinde mit freier Geometrie,
+90° Profilwinkel und 10 mm Steigung:
+
+<img src="images/27-10-2026_20-04-15.png" alt="Erzeugtes Außen- und Innengewindepaar mit 90 Grad Profilwinkel" width="536">
+
 ## Zusätzliche Fasengröße
 
 **Fase zusätzlich vergrößern** erweitert die standardmäßig erzeugte Fase an den
@@ -127,7 +140,16 @@ Der Wert wird mit den Gewindeeinstellungen gespeichert und wiederhergestellt,
 auch beim JSON-Export und -Import. Ältere Einstellungen ohne diesen Parameter
 verwenden 0,0 mm.
 
-## Images
+## Bilder
+
+### Gewinderichtungen im Vergleich
+
+Außengewinde mit entgegengesetzten Gewinderichtungen und einem gewindefreien
+Abschnitt am Fuß:
+
+<img src="images/27-10-2026_20-06-22.png" alt="Zwei modellierte Außengewinde mit entgegengesetzten Gewinderichtungen und gewindefreiem Fuß" width="994">
+
+### Weitere Beispiele
 
 <img src="images/24-08-2026_21-26-26.jpg" alt="notwenige Skizze in Fusion360">
 

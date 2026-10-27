@@ -107,6 +107,18 @@ presets use single-thread mode, full length and balanced clearance. Use presets
 with pair mode or one-sided clearance only with **0.9.3 or later**: earlier
 versions ignore these fields.
 
+### Thread pair example
+
+The dialog shows the selected external cylinder and internal bore, independent
+length settings for both parts, and balanced clearance distribution.
+
+<img src="images/27-10-2026_20-04-00.png" alt="PrintThread Wizard 0.9.3 dialog for creating a thread pair with separate length settings" width="1000">
+
+The resulting external and internal threads, created together using free
+geometry with a 90° profile angle and 10 mm pitch:
+
+<img src="images/27-10-2026_20-04-15.png" alt="Generated external and internal thread pair with a 90-degree profile angle" width="536">
+
 ## Additional chamfer size
 
 **Additional chamfer size** increases the default chamfer radially at the
@@ -121,6 +133,15 @@ is saved and restored with thread presets, including JSON export and import.
 Older presets without this parameter use 0.0 mm.
 
 ## Images
+
+### Thread direction comparison
+
+External threads with opposite thread directions and an unthreaded section
+at the base:
+
+<img src="images/27-10-2026_20-06-22.png" alt="Two modeled external threads with opposite thread directions and unthreaded bases" width="994">
+
+### Further examples
 
 <img src="images/24-08-2026_21-26-26.jpg" alt="notwenige Skizze in Fusion360">
 
