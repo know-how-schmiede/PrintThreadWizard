@@ -1,0 +1,149 @@
+# PrintThreadWizard – Roadmap
+
+Stand: 27.10.2026. Ausgangsbasis: Entwicklungsversion 0.8.4, main-Commit `797bccbfa617edf0b63e929225d8623ecdf147df`.
+Repository: https://github.com/know-how-schmiede/PrintThreadWizard
+
+## Ziel
+
+Gedruckte Gewinde leichter konstruieren, reproduzierbar auf den eigenen Druckprozess abstimmen und später gezielt verändern können. Die Roadmap ist ein Vorschlag ohne feste Termine oder zugesagte Versionsnummern. Alle Meilensteine sind zunächst geplant; der erste Arbeitsschritt muss den inzwischen aktuellen Stand prüfen.
+
+## Reihenfolge und Umfang
+
+| Meilenstein | Ergebnis | Priorität | Relativer Aufwand | Abhängigkeit |
+| --- | --- | --- | --- | --- |
+| M0 | Belastbare Ausgangsbasis und Fehlerbehandlung | Sehr hoch | Klein–mittel | Keine |
+| M1 | Rechts-/Linksgewinde | Hoch | Klein–mittel | M0 |
+| M2 | Gewindelänge und Startversatz | Sehr hoch | Mittel | M0 |
+| M3 | Gewindepaar und einseitiger Spielausgleich | Sehr hoch | Mittel–hoch | M1, M2 |
+| M4 | Kalibrierungsassistent und Druckprofile | Sehr hoch | Mittel–hoch | M3 |
+| M5 | Größenhilfe und schlanke Vorschau | Hoch | Mittel–hoch | M2, M3 |
+| M6 | Bestehende Gewinde bearbeiten | Hoch | Hoch | M1–M4 |
+| M7 | Mehrgängige Gewinde und alternative Profile | Mittel | Hoch–sehr hoch | M6 |
+
+Aufwand bezeichnet die relative Komplexität einschließlich Integration und Prüfung, keine Arbeitszeitzusage. M1 und M2 sind weitgehend unabhängig; die Tabelle beschreibt eine gut überprüfbare Reihenfolge. Keine automatische Beauftragung paralleler Agentenarbeit.
+
+## M0 – Ausgangsbasis absichern
+
+**Ziel:** Bestehendes Verhalten verstehen, bevor neue Geometrie hinzukommt.
+
+- [ ] Aktuellen Stand und bestehende Regeln mit der Planung abgleichen.
+- [ ] Tests ausführen; vorhandene Parameter-/Preset-Prüfungen erfassen.
+- [ ] Fehlende Prüfungen für Spielverteilung, metrische Berechnung, ungültige Zahlen und Preset-Kompatibilität ergänzen.
+- [ ] Fehler- und Abbruchpfade einschließlich Änderungen am ursprünglichen Körper überprüfen und nötigenfalls korrigieren.
+- [ ] Wiederverwendbare Fusion-Prüffälle und kurzes Prüfprotokoll dokumentieren.
+
+**Abnahme:** Baseline und bekannte Grenzen sind dokumentiert; relevante automatische Prüfungen bestehen. Erfolgreiche Erzeugung sowie ein gezielt ausgelöster Fehler wurden in Fusion geprüft oder ausdrücklich als noch offen markiert.
+
+## M1 – Linksgewinde
+
+**Funktion:** Auswahl „Rechtsgewinde / Linksgewinde“, Standard rechts.
+
+- [ ] Gewinderichtung in Parameterdaten, Helix, Profilführung und Dokumentation konsistent berücksichtigen.
+- [ ] Auswahl in Presets speichern; ältere Datensätze ergeben rechts.
+- [ ] Rechte und linke Innen-/Außengewinde testen, auch in gedrehten Komponenten.
+
+**Abnahme:** Passende Linksgewindepaare lassen sich in Fusion erzeugen. Rechtsgewinde bleiben geometrisch unverändert. Richtung steht im Dialog und in der Dokumentationsskizze.
+
+## M2 – Gewindelänge und Startversatz
+
+**Funktion:** „Ganze Länge“ bleibt Standard; alternativ Startseite, axialer Versatz und Gewindelänge wählen.
+
+- [ ] Startseite eindeutig über Stirnseite/Endkante wählen oder sichtbar umkehren.
+- [ ] Achsrichtung unabhängig von interner Flächenorientierung festlegen.
+- [ ] Gewinde auf den gewählten Abschnitt begrenzen; übrige Oberfläche erhalten.
+- [ ] Negativen Versatz, Länge ≤ 0 und Überschreitung der verfügbaren Länge abfangen.
+- [ ] Fasen nur an tatsächlich geeigneten Endkanten zulassen; künstliche Abschnittsgrenzen nicht automatisch als Stirnkanten behandeln.
+- [ ] Bestehenden Helixüberlauf von der sichtbaren Gewindelänge trennen.
+
+**Abnahme:** Beispielsweise nur 15 mm Gewinde ab 2 mm Versatz auf einem längeren Zylinder. Beide Startseiten funktionieren. Innen- und Außengewinde, Fasen und Dokumentation stimmen mit dem gewählten Bereich überein.
+
+**Spätere Ergänzung:** Sanfter Profileinlauf, definierter Auslauf und Freistich. Diese gehören nicht zum ersten M2-Umfang und benötigen eigene Kollisions- und Wandstärkenprüfungen.
+
+## M3 – Gewindepaar gemeinsam erstellen
+
+**Funktion:** Ein Außen- und ein Innengewinde in einem Auftrag mit gemeinsamen Parametern erzeugen. Die Körper dürfen nebeneinander liegen; Koaxialität ist keine Voraussetzung.
+
+- [ ] Zwei geeignete Flächen auswählen; Art und Nenndurchmesser prüfen.
+- [ ] Bei ungleichen Nenndurchmessern verständlich abbrechen; automatische Größenänderung zunächst nicht vorsehen.
+- [ ] Gemeinsame Teilung, Richtung, Profilvorgabe und Spiel verwenden. Innen-/Außentiefe im metrischen Modus weiterhin nach vorhandener Berechnung getrennt ableiten.
+- [ ] Längen und Startseiten pro Bauteil festlegen.
+- [ ] Spielverteilung anbieten: gleichmäßig / nur Innengewinde / nur Außengewinde.
+- [ ] Einseitig den vollen radialen Spielwert am gewählten Bauteil anwenden; die Gegenseite bleibt ohne Spielkorrektur. Nicht versehentlich doppeltes Gesamtspiel erzeugen.
+- [ ] Paarerstellung vollständig zurücknehmen, wenn ein Teil fehlschlägt.
+
+**Abnahme:** Gesamtspiel entspricht rechnerisch der Eingabe bei allen drei Verteilungen. Ein gemeinsam erzeugtes Paar besteht die Fusion-Prüfung und mindestens einen dokumentierten Druckversuch. „Gleiche Profilvorgabe“ darf nicht mit identischen Innen-/Außentiefen verwechselt werden.
+
+## M4 – Kalibrierungsassistent und Druckprofile
+
+**Funktion:** Kleine Gewindeproben mit variierendem Spiel erzeugen und das beste Ergebnis wiederverwenden.
+
+- [ ] Nenndurchmesser, Teilung, Richtung, kurze Testlänge und Spielreihe festlegen.
+- [ ] Ersten Umfang begrenzen: ein Referenzzapfen ohne Spielkorrektur plus mehrere Prüfringe mit vollständigem Spiel auf der Innenseite. Die spätere Übertragung einer Kalibrierung auf andere Verteilungen ausdrücklich dokumentieren und prüfen.
+- [ ] Proben platzieren, sinnvoll benennen und mit Spielwert/ID zuordnen; Beschriftung darf die Passflächen nicht beeinflussen.
+- [ ] Druckprofile getrennt von Geometrie-Presets verwalten: Name, Drucker, Material, Düse, Schichthöhe, Orientierung, Spielverteilung, Spiel und Notiz.
+- [ ] Optionalen Gültigkeitsbereich für Durchmesser/Teilung erfassen; keine universelle Passung aus einem Test ableiten.
+- [ ] Druckprofil anwenden, ohne unbemerkt Profilform oder Teilung eines Gewinde-Presets zu ersetzen.
+- [ ] Profil-Import/-Export in die bestehende versionierte Datenverwaltung integrieren.
+
+**Abnahme:** Eine Serie, beispielsweise mit 0,10 / 0,15 / 0,20 / 0,25 / 0,30 mm radialem Gesamtspiel, ist eindeutig zuordenbar. Ein getestetes Profil lässt sich speichern und erneut anwenden. Dokumentierter Druckversuch belegt den Workflow; Beispielwerte sind keine garantierten Empfehlungen.
+
+## M5 – Größenhilfe und Vorschau
+
+**Funktion:** Weniger Eingabefehler und bessere Kontrolle vor dem Erzeugen.
+
+- [ ] Metrische Nenngrößen mit Regel-/Feingewindesteigungen aus nachvollziehbarer Quelle anbieten.
+- [ ] Flächendurchmesser mit der gewählten Größe vergleichen; bei Abweichungen warnen, nicht stillschweigend skalieren.
+- [ ] Auswahlhilfe klar von einer Zusicherung normgerechter Gewinde unterscheiden.
+- [ ] Zuerst leichte Vorschau für Bereich, Richtung und Profil; vollständige Sweep-Vorschau nur optional und bei vertretbarer Laufzeit.
+- [ ] Vorschau aktualisieren/verwerfen, ohne das Modell dauerhaft zu verändern.
+
+**Abnahme:** Gültige Größen-/Steigungskombinationen werden konsistent übernommen. Richtungs- und Bereichsfehler sind vor der Erstellung erkennbar. Referenzfälle mit Laufzeiten dokumentieren; keine erfundene allgemeine Zeitgrenze verwenden.
+
+## M6 – Nachträgliche Bearbeitung
+
+**Funktion:** „PrintThread-Gewinde bearbeiten“ lädt ursprüngliche Einstellungen und baut das Gewinde kontrolliert neu auf.
+
+- [ ] Zunächst Machbarkeitsnachweis erstellen: Dokumentattribute, Bezugserhaltung, Timeline-Position und geeigneter Fusion-Feature-Mechanismus untersuchen.
+- [ ] API-Verfügbarkeit und Verhalten in der eingesetzten Fusion-Version prüfen, bevor ein bestimmter Mechanismus festgelegt wird.
+- [ ] Parameter maschinenlesbar am Dokument/Feature speichern, zusätzlich zur lesbaren Dokumentationsskizze.
+- [ ] Erst neue Gewinde als bearbeitbar kennzeichnen. Alte Gewinde ohne verlässliche Metadaten nicht automatisch rekonstruieren.
+- [ ] Referenzen nach Speichern/Öffnen und Komponentenänderungen wiederfinden oder verständlich als ungültig melden.
+- [ ] Scheiternden Neuaufbau zurücknehmen; ursprüngliches Gewinde erhalten.
+- [ ] Abhängige spätere Features berücksichtigen und Grenzen dokumentieren.
+
+**Abnahme:** Spiel, Teilung und Länge lassen sich in einem Referenzmodell nach Speichern und erneutem Öffnen ändern. Nachfolgende Features, Undo/Redo und fehlerhafter Neuaufbau sind geprüft. Ein PoC allein gilt nicht als vollständige Bearbeitungsfunktion.
+
+## M7 – Erweiterte Gewinde
+
+### M7a: Mehrgängigkeit
+
+- [ ] Gangzahl als positive ganze Zahl; Standard 1.
+- [ ] Teilung P und Leitweg L in Daten, UI und Dokumentation trennen: L = n × P.
+- [ ] Gänge mit Winkelversatz 360°/n erstellen; Selbstüberschneidung und Stirnabschlüsse prüfen.
+- [ ] Alte Daten migrieren, ohne `pitch` stillschweigend umzudeuten.
+
+**Abnahme:** Zwei- und dreigängige Paare sind geometrisch korrekt; beispielsweise n=3, P=2 mm, L=6 mm. Mindestens ein gedruckter Verschluss wird getestet.
+
+### M7b: Alternative Profile
+
+- [ ] Zunächst eine klar definierte Trapezprofil-Vorgabe implementieren.
+- [ ] Profiltyp von einzelnen Profilmaßen trennen; freies bisheriges Profil erhalten.
+- [ ] Flanken-, Kopf- und Grundbreiten sowie Verrundungen validieren.
+- [ ] Sägezahn-/Rundprofile erst anschließend aufnehmen; bei asymmetrischem Profil Belastungsrichtung und Einbaurichtung sichtbar machen.
+
+**Abnahme:** Passendes Innen-/Außenprofil und Grenzen sind dokumentiert. Tragfähigkeit wird nicht aus der Profilbezeichnung abgeleitet.
+
+## Backlog nach den Kernfunktionen
+
+| Idee | Voraussetzung / Abgrenzung |
+| --- | --- |
+| Mehrfachauswahl gleichartiger Flächen | Stabile Fehlerbehandlung, Komponentenbezüge, gemeinsame und individuelle Parameter |
+| Konische Gewinde | Eigene Geometrie- und Referenzdefinition; kein kleiner Zusatz zur Zylinderunterstützung |
+| Verschluss-/Behältervorlagen | Auf Paarerstellung aufbauen; separater Assistent |
+| Einstellbare Startphase | Winkelbezug für definierte Deckelstellung; Endlage zusätzlich von Einschraubtiefe abhängig |
+| Passungsprüfung in Fusion | Geometrische Überschneidung ist kein Nachweis der Druckpassung |
+| Druckorientierungs-Hinweise | Konkrete geometrische Hinweise, keine Festigkeitsgarantie |
+
+## Fortschritt pflegen
+
+Zu jedem Meilenstein Status, zugehörigen Commit/PR, automatische Prüfungen, Fusion-Version/Plattform und gegebenenfalls Drucktest ergänzen. Zulässige Zustände: geplant, in Arbeit, implementiert/Abnahme offen, abgeschlossen, zurückgestellt. Ein Meilenstein wird erst nach seinen Abnahmekriterien abgeschlossen. Der nächste konkrete Codex-Auftrag ist M0.
