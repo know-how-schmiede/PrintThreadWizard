@@ -86,5 +86,5 @@ Orientierung, Nenndurchmesser, Teilung, Längen, Spielverteilung, Gesamtspiel
 und Passungsergebnis dokumentieren. Keine Druckpassung aus Python-Tests ableiten.
 
 Status: implementiert, Fusion- und Druckabnahme offen. Version, Manifest und
-Installer-Konfiguration auf 0.9.3. Kein Installer gebaut, kein Commit/Push/Release.
+Installer-Konfiguration auf 0.9.3. Windows-Installer mit Inno Setup 6.7.0 erfolgreich gebaut: `dist/PrintThreadWizard_Setup_0.9.3.exe`, SHA-256-Datei daneben. EXE-Dateiversion 0.9.3; 24 Tests bestanden. Installation und Fusion-Laufzeit nicht erneut geprüft. Kein Release veröffentlicht.
 Nächster Schritt: M3-Abnahme; M4 nur als eigener Auftrag.

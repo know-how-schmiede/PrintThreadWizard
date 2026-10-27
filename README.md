@@ -16,7 +16,7 @@ I would be very happy if you subscribed to the channel.
 
 Current development version: **0.9.3**
 
-0.9.3 adds **thread pairs and clearance distribution**. Create an external and an internal thread together with independent lengths and start sides. Balanced clearance remains the default; alternatively, apply the entire radial clearance to the internal or external thread only. Fusion and print acceptance of M3 are pending; see the [test record](doku/pruefprotokoll-0.9.3.md). The installer has not been built or published.
+0.9.3 adds **thread pairs and clearance distribution**. Create an external and an internal thread together with independent lengths and start sides. Balanced clearance remains the default; alternatively, apply the entire radial clearance to the internal or external thread only. Fusion and print acceptance of M3 are pending; see the [test record](doku/pruefprotokoll-0.9.3.md). The Windows installer for 0.9.3 has been built; publication is pending.
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and

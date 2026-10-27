@@ -16,7 +16,7 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 
 Aktuelle Entwicklungsversion: **0.9.3**
 
-0.9.3 ergänzt **Gewindepaare und Spielverteilung**. Ein Außen- und ein Innengewinde können gemeinsam mit getrennten Längen und Startseiten erstellt werden. Gleichmäßige Spielverteilung bleibt Standard; alternativ lässt sich das gesamte radiale Spiel nur innen oder nur außen anwenden. Fusion- und Druckabnahme von M3 sind offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.3.md). Der Installer ist noch nicht gebaut/veröffentlicht.
+0.9.3 ergänzt **Gewindepaare und Spielverteilung**. Ein Außen- und ein Innengewinde können gemeinsam mit getrennten Längen und Startseiten erstellt werden. Gleichmäßige Spielverteilung bleibt Standard; alternativ lässt sich das gesamte radiale Spiel nur innen oder nur außen anwenden. Fusion- und Druckabnahme von M3 sind offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.3.md). Der Windows-Installer 0.9.3 wurde gebaut; die Veröffentlichung steht aus.
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.

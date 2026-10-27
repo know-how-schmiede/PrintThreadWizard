@@ -9,7 +9,7 @@
 - Paarmodus, Spielverteilung und zweite Längeneinstellungen in Schema-1-Presets/JSON; alte Presets bleiben Einzelgewinde mit gleichmäßigem Spiel.
 - Dialog, Ergebnis, Preset-Details und Dokumentationsskizzen ergänzt; neue Texte in sechs Sprachen.
 - M2: Sechs Fusion-Prüffälle durch Anwender bestätigt, einschließlich beider Auswahlreihenfolgen derselben Fasen-/Startkante.
-- Version, Manifest, Installer-Konfiguration und Dokumentation auf 0.9.3. Fusion-/Druckabnahme von M3 offen; kein Installer gebaut oder veröffentlicht.
+- Version, Manifest, Installer-Konfiguration und Dokumentation auf 0.9.3. Fusion-/Druckabnahme von M3 offen; Windows-Installer mit Inno Setup 6.7.0 gebaut, SHA-256-Datei erstellt. Noch nicht veröffentlicht.
 
 ## 0.9.2 - 2026-10-27
 

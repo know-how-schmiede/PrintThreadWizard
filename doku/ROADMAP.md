@@ -67,7 +67,7 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M3 – Gewindepaar gemeinsam erstellen
 
-**Status 27.10.2026 / 0.9.3:** implementiert, Fusion- und Druckabnahme offen. Siehe [Prüfprotokoll](pruefprotokoll-0.9.3.md). Kein Commit/PR und kein Installer erstellt.
+**Status 27.10.2026 / 0.9.3:** implementiert, Fusion- und Druckabnahme offen. Siehe [Prüfprotokoll](pruefprotokoll-0.9.3.md). Windows-Installer 0.9.3 gebaut; kein Release veröffentlicht.
 
 **Funktion:** Ein Außen- und ein Innengewinde in einem Auftrag mit gemeinsamen Parametern erzeugen. Die Körper dürfen nebeneinander liegen; Koaxialität ist keine Voraussetzung.
 
