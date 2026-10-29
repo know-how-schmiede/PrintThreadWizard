@@ -99,13 +99,15 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M5 – Größenhilfe und Vorschau
 
+**Status 29.10.2026 / 0.9.5:** implementiert, vollständige Fusion-Abnahme offen. Anwender bestätigt Anzeige und Aktualisierung der Vorschau bei Formularänderungen sowie die Funktion „Metrische Größe übernehmen“ und das Entfernen der Vorschau beim Abbrechen. Auch die Paarvorschau ist durch den Anwender bestätigt und mit Screenshots dokumentiert. Begrenzte metrische Auswahl M3–M36 mit Regel-/Feingewindesteigungen aus Bossard-Tabellen, Durchmesserwarnung ohne Skalierung und optionale temporäre Linienvorschau. 44 automatische Tests bestanden. Vollständige Sweep-Vorschau nicht enthalten. Siehe [Umfang und Quelle](groessenhilfe-0.9.5.md) und [Prüfprotokoll](pruefprotokoll-0.9.5.md). Kein Installer gebaut.
+
 **Funktion:** Weniger Eingabefehler und bessere Kontrolle vor dem Erzeugen.
 
-- [ ] Metrische Nenngrößen mit Regel-/Feingewindesteigungen aus nachvollziehbarer Quelle anbieten.
-- [ ] Flächendurchmesser mit der gewählten Größe vergleichen; bei Abweichungen warnen, nicht stillschweigend skalieren.
-- [ ] Auswahlhilfe klar von einer Zusicherung normgerechter Gewinde unterscheiden.
-- [ ] Zuerst leichte Vorschau für Bereich, Richtung und Profil; vollständige Sweep-Vorschau nur optional und bei vertretbarer Laufzeit.
-- [ ] Vorschau aktualisieren/verwerfen, ohne das Modell dauerhaft zu verändern.
+- [x] Metrische Nenngrößen mit Regel-/Feingewindesteigungen aus nachvollziehbarer Quelle anbieten.
+- [x] Flächendurchmesser mit der gewählten Größe vergleichen; bei Abweichungen warnen, nicht stillschweigend skalieren.
+- [x] Auswahlhilfe klar von einer Zusicherung normgerechter Gewinde unterscheiden.
+- [x] Zuerst leichte Vorschau für Bereich, Richtung und Profil; vollständige Sweep-Vorschau bleibt eine spätere Option.
+- [x] Vorschau aktualisieren/verwerfen, ohne das Modell dauerhaft zu verändern (Fusion-Abnahme offen).
 
 **Abnahme:** Gültige Größen-/Steigungskombinationen werden konsistent übernommen. Richtungs- und Bereichsfehler sind vor der Erstellung erkennbar. Referenzfälle mit Laufzeiten dokumentieren; keine erfundene allgemeine Zeitgrenze verwenden.
 

@@ -96,7 +96,7 @@ class CalibrationTests(unittest.TestCase):
         handler.args.args[0].annotation = None
         status = types.SimpleNamespace(text='')
         series = cal.CalibrationSeries(diameter=3, pitch=.4, length=2, wall=.3)
-        ns = dict(traceback=traceback, _calibration_enabled=lambda _: True, active_command_inputs=None,
+        ns = dict(thread_preview=Mock(), traceback=traceback, _calibration_enabled=lambda _: True, active_command_inputs=None,
                   calibration_tab=types.SimpleNamespace(read_series=lambda _: series.validate()),
                   _input_by_id=lambda inputs, key: status)
         exec(compile(ast.Module(body=[handler], type_ignores=[]), '<validate>', 'exec'), ns)
@@ -206,7 +206,7 @@ class CalibrationTests(unittest.TestCase):
         handler.args.args[0].annotation = None
         creator = Mock(side_effect=RuntimeError('ring 3 failed'))
         thread_reader = Mock(side_effect=AssertionError('must not read thread face'))
-        ns = dict(traceback=traceback, _calibration_enabled=lambda _: True, create_calibration=creator,
+        ns = dict(thread_preview=Mock(), traceback=traceback, _calibration_enabled=lambda _: True, create_calibration=creator,
                   calibration_tab=types.SimpleNamespace(read_series=lambda _: cal.CalibrationSeries()),
                   _read_parameters=thread_reader, CMD_NAME='test',
                   app=types.SimpleNamespace(activeProduct='design'),

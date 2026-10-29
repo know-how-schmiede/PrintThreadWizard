@@ -14,9 +14,47 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.4**
+Current development version: **0.9.5**
 
-0.9.4 adds a dedicated **Calibration** dialog tab with sample generation and separate print profiles. Fusion and physical print acceptance are pending; see the [test record](doku/pruefprotokoll-0.9.4.md). Not published yet.
+0.9.5 adds a **size aid and light preview** to the thread creation tab. Fusion acceptance is pending; see the [test record](doku/pruefprotokoll-0.9.5.md). Not published yet; installers are built only on request.
+
+## Size aid and preview
+
+Select a metric combination under **Size aid and preview**, then press
+**Apply size**. This sets metric mode and pitch and warns when the selected
+face diameter differs by more than 0.01 mm. It never scales the face. Other
+settings remain unchanged, including clearance, direction and fillet. Small
+pitches may need a smaller fillet. The limited M3–M36 coarse/fine selection
+uses the [Bossard table](https://www.bossard.com/sg-en/knowledge-hub/resources/technical-information/metric-iso-threads/)
+as its source; it does not guarantee a standard fit. Manual input remains
+available.
+
+**Light preview** displays the chosen range in cyan, a short directional
+helix in orange and the sharp profile envelope in magenta. It supports pairs
+and partial threads. Fillets and chamfers are omitted; very short ranges omit
+the profile triangle. Temporary lines create no model features and disappear
+when disabled, cancelled, executed or switched to calibration. This is not a
+full sweep preview. The dialog reports measured API setup time.
+[Scope, source and limitations](doku/groessenhilfe-0.9.5.md).
+
+Version 0.9.5 dialog with light preview enabled, left-hand direction and free
+geometry (German UI):
+
+<img src="images/29-10-2026_12-38-01.png" alt="PrintThread Wizard 0.9.5: size aid and enabled light preview in the German thread dialog" width="641">
+
+The corresponding viewport preview shows the range and axis in cyan, a short
+helix with a direction arrow in orange, and the profile envelope in magenta:
+
+<img src="images/29-10-2026_12-38-17.png" alt="Light preview on a cylinder with range lines, direction arrow and profile envelope" width="892">
+
+Paired preview for external and internal threads with a shared left-hand
+direction and 10 mm pitch (German UI):
+
+<img src="images/29-10-2026_12-47-57.png" alt="PrintThread Wizard 0.9.5: active paired preview for external and internal threads in metric mode" width="1000">
+
+The subsequently generated thread pair:
+
+<img src="images/29-10-2026_12-51-17.png" alt="Generated external and internal thread pair following the paired preview" width="1000">
 
 ## Calibration and print profiles
 
@@ -54,6 +92,15 @@ Storage upgrades to **schema 2** on the next write. Schema-1 files remain
 readable; unknown versions are rejected and invalid imports leave storage
 unchanged. Schema-2 files require 0.9.4 or later. Back up your schema-1 file
 before downgrading.
+
+Example calibration dialog with a loaded print profile (version 0.9.4,
+German UI):
+
+<img src="images/29-10-2026_11-58-47.png" alt="PrintThread Wizard 0.9.4: calibration tab with clearance series and loaded BambuHome print profile" width="641">
+
+Generated calibration series with one reference pin and five test rings:
+
+<img src="images/29-10-2026_11-59-58.png" alt="Calibration series in Fusion: reference pin and five threaded rings arranged side by side" width="1000">
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -335,8 +382,8 @@ to the thread profile.
 - This is development software; validate generated geometry before production.
 - Only cylindrical faces are supported. Left-hand thread operation has been confirmed in Fusion; the complete test matrix remains pending.
 - Partial threads are implemented; both start sides and the cases listed above have been confirmed in Fusion. Complete testing of internal/external threads and transformed components remains pending. Lead-in, runout and relief are outside this scope.
-- Pitch is entered manually; the add-in does not yet provide a standard thread
-  size/pitch catalogue.
+- The size aid offers a limited set of metric combinations; other sizes and
+  pitches remain available through manual input.
 - Clearance values are starting points and require calibration for the actual
   printer and material.
 - The generated geometry is not intended for certified or safety-critical

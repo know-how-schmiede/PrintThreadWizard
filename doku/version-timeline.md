@@ -1,5 +1,18 @@
 # Version Timeline
 
+## 0.9.5 - 2026-10-29
+
+- Anwender bestätigt die Paarvorschau. Screenshots der Vorschau und des erzeugten Gewindepaars in README DE/EN und Größenhilfe eingebunden; Prüffall dokumentiert.
+- Anwender bestätigt: Beim Abbrechen wird die Vorschau entfernt.
+- Anwender bestätigt zusätzlich die Funktion „Metrische Größe übernehmen“; konkrete Größen-/Steigungskombinationen wurden nicht erfasst.
+- Anwender bestätigt nach der Vorschaukorrektur: Anzeige funktioniert und wird bei Formularänderungen aktualisiert. Weitere Fusion-Prüffälle und Laufzeit-Referenzmessungen bleiben offen.
+- Nach Anwenderprüfung der kurz aufblinkenden Vorschau: Grafiken erst in executePreview aufbauen statt in inputChanged; isValidResult bleibt False für die anschließende echte Ausführung. Show-through-Farbeffekt verhindert Verdecken der spielkorrigierten Linien durch den Ursprungskörper. 44 Tests bestanden; erneute Fusion-Prüfung offen.
+- M5: Größenhilfe im Gewindereiter mit begrenzter metrischer Regel-/Feingewindeauswahl M3–M36 aus nachvollziehbarer Bossard-Quelle. Explizite Anwendung setzt nur ISO-Modus und Steigung. Durchmesserabweichungen über 0,01 mm werden für beide Partner gemeldet, ohne zu skalieren. Kein Nachweis normgerechter Passung.
+- Optionale leichte Vorschau über temporäre Custom Graphics: Bereich, kurze Helix mit Richtungspfeil und scharfe Profilhülle, einschließlich Teilgewinden und Paaren. Keine vollständige Sweep-Geometrie, Fasen oder Verrundungen. Sehr kurze Bereiche lassen das Profildreieck aus. Maximal 170 Segmente je Bauteil; API-Aufbauzeit wird gemessen angezeigt.
+- Bereinigung bei Änderungen, Fehlern, Abschalten, Wechsel zur Kalibrierung, Ausführen und Dialogende. Grafiken sind nicht selektierbar, erzeugen keine Modellfeatures und berücksichtigen Instanztransformationen.
+- Keine Schemaänderung. Größenhilfe und Vorschau sind transiente UI-Einstellungen; gespeicherte Geometrieparameter bleiben maßgeblich. Texte und Tooltips in sechs Sprachen, README-Dateien und Prüfprotokoll ergänzt.
+- 43 automatische Tests bestanden; Fusion-Sichtprüfung und reale Laufzeit-Referenzfälle offen. Version, Manifest und Installer-Konfiguration 0.9.5. Gemäß Anwenderwunsch kein Installer gebaut.
+
 ## 0.9.4 - 2026-10-29
 
 - M4 im eigenen Dialogreiter Kalibrierung: unabhängige Maße, Rechts-/Linksgewinde und frei eingegebene Spielreihe. Ein Referenzzapfen ohne Spielkorrektur und bis zu zwölf Prüfringe mit vollem Spiel innen, in eigener Komponente nebeneinander platziert und per Körpername zugeordnet.

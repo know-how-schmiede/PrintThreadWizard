@@ -23,7 +23,8 @@ from ...fusion.thread_geometry import create_thread, thread_section
 from ...lib import fusionAddInUtils as futil
 from ...localization import detect_locale, set_locale, translate as tr
 from ...version import VERSION
-from . import calibration_tab
+from . import calibration_tab, size_preview
+from ...fusion.thread_preview import ThreadPreview
 from ...fusion.calibration import create_calibration
 from ...core.calibration import profile_matches
 
@@ -46,6 +47,7 @@ THREAD_DIMENSIONS_IMAGE = os.path.join(ICON_FOLDER, 'thread_dimensions.png')
 BRAND_LOGO_IMAGE = os.path.join(ICON_FOLDER, 'PrintThreadWizard_DialogLogo.png')
 
 local_handlers = []
+thread_preview = ThreadPreview()
 updating_calculated_inputs = False
 active_command_inputs = None
 available_presets = []
@@ -89,6 +91,7 @@ def start():
 
 
 def stop():
+    thread_preview.clear()
     workspace = ui.workspaces.itemById(WORKSPACE_ID)
     panel = workspace.toolbarPanels.itemById(PANEL_ID) if workspace else None
     control = panel.controls.itemById(CMD_ID) if panel else None
@@ -271,6 +274,8 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     )
     result_text.isFullWidth = True
 
+    size_preview.add_controls(create_inputs)
+
     dimensions_group = create_inputs.addGroupCommandInput(
         'dimensions_group', tr('dimensions_group')
     )
@@ -358,12 +363,23 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     _apply_calculation_mode(inputs)
 
     futil.add_handler(args.command.execute, command_execute, local_handlers=local_handlers)
+    futil.add_handler(args.command.executePreview, command_execute_preview, local_handlers=local_handlers)
     futil.add_handler(args.command.inputChanged, command_input_changed, local_handlers=local_handlers)
     futil.add_handler(args.command.validateInputs, command_validate_input, local_handlers=local_handlers)
     futil.add_handler(args.command.destroy, command_destroy, local_handlers=local_handlers)
 
 
+def command_execute_preview(args: adsk.core.CommandEventArgs):
+    # Fusion rolls back the previous preview transaction before this event.
+    # Graphics created in inputChanged can disappear in that rollback.
+    _update_assistance(args.command.commandInputs, draw_preview=True)
+    # Schematic graphics are not the command result. OK must still execute
+    # the real thread/calibration creation rather than commit this preview.
+    args.isValidResult = False
+
+
 def command_execute(args: adsk.core.CommandEventArgs):
+    thread_preview.clear()
     try:
         if _calibration_enabled(args.command.commandInputs):
             create_calibration(adsk.fusion.Design.cast(app.activeProduct),
@@ -393,6 +409,22 @@ def command_execute(args: adsk.core.CommandEventArgs):
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
+        return
+    if args.input.id == 'apply_metric_size' and args.input.value:
+        args.input.value = False
+        selected = size_preview.selected_size(lambda key: _input_by_id(active_command_inputs, key))
+        if selected is not None:
+            loading_preset = True
+            try:
+                _input_by_id(active_command_inputs, 'pitch').value = selected[1]
+                _select_dropdown_item(_input_by_id(active_command_inputs, 'calculation_mode'), ISO_MODE_NAME)
+            finally:
+                loading_preset = False
+            _apply_calculation_mode(active_command_inputs)
+            _update_result_text(active_command_inputs)
+        return
+    if args.input.id in ('metric_size', 'light_preview', 'cal_enabled'):
+        _update_assistance(active_command_inputs)
         return
     if args.input.id.startswith('profile_') or args.input.id == 'print_profile_selector':
         calibration_tab.handle_profile(args.input.id,
@@ -445,7 +477,7 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
         'flank_angle',
         'thread_depth',
         'fillet_radius',
-        'tolerance',
+        'tolerance', 'chamfer_extra',
     ):
         _apply_calculation_mode(active_command_inputs)
         _update_result_text(active_command_inputs)
@@ -470,6 +502,7 @@ def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
 
 
 def command_destroy(args: adsk.core.CommandEventArgs):
+    thread_preview.clear()
     global local_handlers, active_command_inputs, available_presets
     global table_delete_actions, table_row_presets
     local_handlers = []
@@ -602,6 +635,7 @@ def _load_selected_preset(inputs, selector_id):
 
     loading_preset = True
     try:
+        _input_by_id(inputs, 'metric_size').listItems.item(0).isSelected = True
         settings = preset['settings']
         _input_by_id(inputs, 'pair_mode').value = settings.get('pair_mode', False)
         _input_by_id(inputs, 'clearance_distribution').listItems.item(
@@ -982,6 +1016,7 @@ def _update_result_text(inputs):
     parameters = _read_parameters(inputs)
     errors = _request_errors(inputs, parameters)
     _set_result_text(inputs, errors)
+    _update_assistance(inputs)
 
 
 def _set_result_text(inputs, errors):
@@ -1091,3 +1126,20 @@ def _apply_print_profile(profile):
     distribution = ('balanced', 'internal', 'external').index(profile['clearance_distribution'])
     _input_by_id(inputs, 'clearance_distribution').listItems.item(distribution).isSelected = True
     _update_result_text(inputs)
+
+
+def _update_assistance(inputs, draw_preview=False):
+    get = lambda key: _input_by_id(inputs, key)
+    size_preview.update_size_status(get)
+    if not draw_preview:
+        return
+    parameters = _read_parameters(inputs)
+    calibration = _calibration_enabled(inputs)
+    errors = [] if calibration else _request_errors(inputs, parameters)
+    requests = [parameters]
+    if not calibration and not errors:
+        partner = _partner_parameters(inputs, parameters)
+        if partner is not None:
+            requests.append(partner)
+    size_preview.update_preview(get, thread_preview, adsk.fusion.Design.cast(app.activeProduct),
+                                requests, errors, calibration)

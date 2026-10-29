@@ -14,9 +14,49 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.4**
+Aktuelle Entwicklungsversion: **0.9.5**
 
-0.9.4 ergänzt den eigenen Dialogreiter **Kalibrierung** mit Probenreihe und getrennten Druckprofilen. Fusion- und Druckabnahme sind offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.4.md). Noch nicht veröffentlicht.
+0.9.5 ergänzt **Größenhilfe und leichte Vorschau** im Reiter Gewinde erstellen. Fusion-Abnahme offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.5.md). Noch nicht veröffentlicht; Installer nur auf Aufforderung.
+
+## Größenhilfe und Vorschau
+
+Unter **Größenhilfe und Vorschau** eine metrische Kombination auswählen und
+**Größe übernehmen** drücken. Das setzt metrischen Modus und Steigung; der
+Flächendurchmesser wird mit der Auswahl verglichen und bei mehr als 0,01 mm
+Abweichung gewarnt. Es wird nicht skaliert. Andere Einstellungen bleiben
+erhalten, insbesondere Spiel, Richtung und Verrundung. Kleine Steigungen
+können eine kleinere Verrundung erfordern. Die begrenzte Auswahl M3–M36
+enthält Regel- und Feingewinde nach der
+[Bossard-Tabelle](https://www.bossard.com/sg-en/knowledge-hub/resources/technical-information/metric-iso-threads/).
+Sie garantiert keine normgerechte Passung. Manuelle Eingaben bleiben möglich.
+
+**Leichte Vorschau** zeigt den gewählten Bereich in Cyan, eine kurze Helix
+mit Richtungspfeil in Orange und die scharfe Profilhülle in Magenta. Sie
+berücksichtigt beide Partner und Teilgewinde. Verrundungen und Fasen fehlen;
+bei sehr kurzen Bereichen entfällt die Profilhülle. Die Anzeige verwendet
+temporäre Linien ohne Modellfeatures und verschwindet beim Abschalten,
+Abbrechen, Erstellen oder Wechsel zur Kalibrierung. Keine vollständige
+Sweep-Vorschau. Der Dialog zeigt die gemessene API-Aufbauzeit an.
+[Umfang, Datenquelle und Grenzen](doku/groessenhilfe-0.9.5.md).
+
+Dialog in Version 0.9.5 mit aktivierter leichter Vorschau, Linksgewinde und
+freier Geometrie:
+
+<img src="images/29-10-2026_12-38-01.png" alt="PrintThread Wizard 0.9.5: Größenhilfe und aktivierte leichte Vorschau im Gewindedialog" width="641">
+
+Die zugehörige Vorschau zeigt Bereich und Achse in Cyan, die kurze Helix mit
+Richtungspfeil in Orange und die Profilhülle in Magenta:
+
+<img src="images/29-10-2026_12-38-17.png" alt="Leichte Vorschau auf einem Zylinder mit Bereichslinien, Richtungspfeil und Profilhülle" width="892">
+
+Paarweise Vorschau für Außen- und Innengewinde mit gemeinsamer Richtung
+Linksgewinde und 10 mm Steigung:
+
+<img src="images/29-10-2026_12-47-57.png" alt="PrintThread Wizard 0.9.5: aktive Paarvorschau für Außen- und Innengewinde im metrischen Modus" width="1000">
+
+Das anschließend erzeugte Gewindepaar:
+
+<img src="images/29-10-2026_12-51-17.png" alt="Erzeugtes Außen- und Innengewindepaar nach der Paarvorschau" width="1000">
 
 ## Kalibrierungsassistent und Druckprofile
 
@@ -59,6 +99,14 @@ Speichern geschrieben. Alte Schema-1-Dateien bleiben lesbar, unbekannte
 Versionen werden abgewiesen und fehlerhafte Importe verändern keine Daten.
 Schema-2-Dateien erfordern Version 0.9.4 oder neuer; vor einem Downgrade die
 bisherige Schema-1-Datei sichern.
+
+Beispiel des Kalibrierungsdialogs mit geladenem Druckprofil (Version 0.9.4):
+
+<img src="images/29-10-2026_11-58-47.png" alt="PrintThread Wizard 0.9.4: Kalibrierungsreiter mit Spielreihe und geladenem Druckprofil BambuHome" width="641">
+
+Erzeugte Kalibrierungsserie mit einem Referenzzapfen und fünf Prüfringen:
+
+<img src="images/29-10-2026_11-59-58.png" alt="Kalibrierungsserie in Fusion: Referenzzapfen und fünf nebeneinander angeordnete Gewinderinge" width="1000">
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -352,8 +400,8 @@ Kurzzeichen dem Gewindeprofil zu.
   produktiven Verwendung geprüft werden.
 - Derzeit werden nur Zylinderflächen unterstützt. Die Funktion der Linksgewinde wurde in Fusion bestätigt; die vollständige Prüfmatrix ist noch offen.
 - Teilgewinde sind implementiert; beide Startseiten und die oben aufgeführten Fälle wurden in Fusion bestätigt. Die vollständige Prüfung der Innen-/Außengewinde und transformierter Komponenten bleibt offen. Einlauf, Auslauf und Freistich gehören nicht zu diesem Umfang.
-- Die Steigung wird manuell eingegeben; eine Tabelle genormter
-  Gewindegrößen und Steigungen ist noch nicht enthalten.
+- Die Größenhilfe enthält eine begrenzte Auswahl metrischer Kombinationen;
+  weitere Größen und Steigungen lassen sich manuell eingeben.
 - Toleranzwerte sind Ausgangswerte und müssen für Drucker und Material
   kalibriert werden.
 - Die erzeugten Gewinde sind nicht für zertifizierte oder sicherheitskritische
