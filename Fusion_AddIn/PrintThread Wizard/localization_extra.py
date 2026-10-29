@@ -145,6 +145,8 @@ for row in _ROWS.strip().splitlines():
 
 from .localization_calibration import TRANSLATIONS as _CALIBRATION
 from .localization_size_preview import TRANSLATIONS as _SIZE_PREVIEW
+from .localization_records import TRANSLATIONS as _RECORDS
 for _lang in TRANSLATIONS:
     TRANSLATIONS[_lang].update(_CALIBRATION[_lang])
     TRANSLATIONS[_lang].update(_SIZE_PREVIEW[_lang])
+    TRANSLATIONS[_lang].update(_RECORDS[_lang])

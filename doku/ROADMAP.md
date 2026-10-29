@@ -113,11 +113,13 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M6 – Nachträgliche Bearbeitung
 
+**Status 29.10.2026 / 0.9.6:** in Arbeit. Erste Stufe implementiert: Dokument-Metadaten für neue Gewinde und eigener Reiter **Gewindedaten prüfen** mit lesender Parameter-, Referenz- und Timeline-Prüfung. 65 automatische Tests bestanden. Optionale Teständerungen an Spiel/Steigung und Teilgewindelänge/-versatz implementiert, stets mit vollständiger Rücknahme; Anwender bestätigt vorläufig die kurzfristig sichtbare Steigungsänderung. Vollständige Rücknahme und weitere Parameteränderungen bleiben separat zu prüfen. Ursprungsbezugstest einschließlich Parameterprüfung und Timeline-Wiederherstellung durch Anwender bestätigt. Temporärer Test-Neuaufbau mit unveränderten Parametern und absichtlicher vollständiger Rücknahme implementiert und vom Anwender vorläufig als erfolgreich bewertet; das ursprüngliche Gewindepaar ist anschließend sichtbar. Detailprüfungen von Timeline, Metadaten und Folgeabhängigkeiten bleiben offen. Anwender bestätigt das Finden der Gewindedaten auch bei mehreren Gewinden in derselben Konstruktion. Noch keine Bearbeitungs-/Neuaufbaufunktion und keine Kennzeichnung als sicher bearbeitbar. Der Machbarkeitsnachweis für Bezugserhaltung und kontrollierten Neuaufbau in Fusion bleibt offen. Siehe [Machbarkeitsstand](bearbeitung-machbarkeit-0.9.6.md) und [Prüfprotokoll](pruefprotokoll-0.9.6.md). Kein Installer gebaut.
+
 **Funktion:** „PrintThread-Gewinde bearbeiten“ lädt ursprüngliche Einstellungen und baut das Gewinde kontrolliert neu auf.
 
 - [ ] Zunächst Machbarkeitsnachweis erstellen: Dokumentattribute, Bezugserhaltung, Timeline-Position und geeigneter Fusion-Feature-Mechanismus untersuchen.
 - [ ] API-Verfügbarkeit und Verhalten in der eingesetzten Fusion-Version prüfen, bevor ein bestimmter Mechanismus festgelegt wird.
-- [ ] Parameter maschinenlesbar am Dokument/Feature speichern, zusätzlich zur lesbaren Dokumentationsskizze.
+- [x] Parameter maschinenlesbar am Dokument/Feature speichern, zusätzlich zur lesbaren Dokumentationsskizze (implementiert; Fusion-Persistenzprüfung offen).
 - [ ] Erst neue Gewinde als bearbeitbar kennzeichnen. Alte Gewinde ohne verlässliche Metadaten nicht automatisch rekonstruieren.
 - [ ] Referenzen nach Speichern/Öffnen und Komponentenänderungen wiederfinden oder verständlich als ungültig melden.
 - [ ] Scheiternden Neuaufbau zurücknehmen; ursprüngliches Gewinde erhalten.

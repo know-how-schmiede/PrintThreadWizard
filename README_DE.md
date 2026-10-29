@@ -14,9 +14,74 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.5**
+Aktuelle Entwicklungsversion: **0.9.6**
 
-0.9.5 ergänzt **Größenhilfe und leichte Vorschau** im Reiter Gewinde erstellen. Fusion-Abnahme offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.5.md). Noch nicht veröffentlicht; Installer nur auf Aufforderung.
+0.9.6 beginnt M6 mit **gespeicherten Gewindedaten und einer Prüfung der Modellbezüge**. Dies ist die Vorbereitung für spätere Bearbeitung, noch keine Bearbeitungsfunktion. Fusion-Abnahme offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.6.md). Noch nicht veröffentlicht; Installer nur auf Aufforderung.
+
+## Gewindedaten prüfen – Vorbereitung auf spätere Bearbeitung
+
+Neue Gewinde ab **0.9.6** speichern ihre Einstellungen zusätzlich zur lesbaren
+Dokumentationsskizze maschinenlesbar im Fusion-Dokument: Berechnungsmodus,
+Steigung, Profilwinkel und -tiefe, Verrundung, Spiel und Verteilung, Richtung,
+Längenmodus, Versatz, Länge und Zusatzfase. Auch Bezüge zu ursprünglicher
+Fläche, Zielkörper, Komponente, gegebenenfalls Instanz, Start-/Fasenkanten und
+den ersten beziehungsweise letzten Erzeugungsfeatures werden erfasst.
+Bei Paaren und Kalibrierungsserien erhält jedes Gewinde einen eigenen Datensatz.
+
+Im neuen Reiter **Gewindedaten prüfen**:
+
+1. **Liste aktualisieren** liest die Datensätze des aktuellen Dokuments ein.
+2. Ein gespeichertes Gewinde auswählen, um seine Einstellungen zu sehen.
+3. Die Bezugsliste zeigt, ob ein Bezug eindeutig, mehrdeutig oder aktuell nicht
+   auflösbar ist. Zusätzlich werden bestimmbare Timeline-Grenzen und die Anzahl
+   nachfolgender Einträge angezeigt.
+
+Die Prüfung verändert weder Modell noch Timeline. Eine Ausgangsfläche kann
+nach dem Gewindeschnitt nicht mehr auflösbar sein; dies bedeutet allein noch
+keine beschädigten Daten. Das Wiederfinden im ursprünglichen Timeline-Zustand
+muss im nächsten Machbarkeitsschritt geprüft werden. **Zum Schließen Abbrechen
+verwenden**; bei deaktiviertem Bezugstest bleibt OK der Erstellungsaktion im
+Gewinde-/Kalibrierungsreiter zugeordnet.
+
+Für den nächsten Machbarkeitsschritt gibt es **Ursprungsbezüge mit OK prüfen**:
+Gewindedatensatz auswählen, diese Option aktivieren und OK drücken. Jetzt wird
+ausschließlich der Bezugstest ausgeführt. Er rollt vor die ursprüngliche
+Gewindeerzeugung, prüft gespeicherte Flächen/Kanten und validiert die Parameter
+am damaligen Körper. Danach werden Timeline-Marker und Gruppenansicht wieder
+an ihren Ausgangszustand gesetzt und das Ergebnis angezeigt. Es wird kein
+Gewinde erstellt oder verändert. Auch bei Prüffehlern wird die Wiederherstellung
+versucht; schlägt sie fehl, wird die gesamte Befehls-Transaktion zurückgenommen.
+Ein erfolgreicher Bezugstest ist noch kein Nachweis eines sicheren Neuaufbaus.
+
+Der nächste Test ist **Neuaufbau mit OK testen und zurücknehmen**. Einen
+Datensatz auswählen, diese Option aktivieren und OK drücken. Das Add-in erzeugt
+vor den alten Gewindefeatures einen temporären Neuaufbau mit den gespeicherten
+oder ausdrücklich geänderten Testparametern. Danach wird der gesamte Befehl **absichtlich
+zurückgenommen**, auch wenn die Erzeugung erfolgreich war. Der abschließende
+Rücknahmehinweis ist deshalb erwartet. Bei Fehlern gilt ebenfalls die vollständige
+Rücknahme; die alten Features werden nicht gelöscht. Nach Schließen des Hinweises
+prüfen, dass ursprüngliches Gewinde, weitere Bauteile und Timeline unverändert
+sind. Dieser Test übernimmt noch keine Bearbeitung. Bezugstest, Test-Neuaufbau
+und Kalibrierungsserie sind gegenseitig ausschließende OK-Aktionen.
+
+Im Bereich **Parameter für Test-Neuaufbau** lädt die Gewindeauswahl zunächst
+die Originalwerte. **Geänderte Testparameter verwenden** aktivieren und Spiel
+oder Steigung anpassen. Bei gespeicherten Teilgewinden lassen sich zusätzlich
+Versatz und Länge ändern; die ursprüngliche Startkante bleibt erhalten.
+Ganze Gewinde bleiben in dieser Stufe ganze Gewinde. Im metrischen Modus wird
+die Tiefe aus der neuen Steigung berechnet, im freien Modus bleibt sie erhalten.
+Ungültige Profile oder Abschnitte werden abgewiesen. Die Änderungen gelten nur
+für den Test; weder Originaldatensatz noch Gewinde werden dauerhaft geändert.
+Beim Auswählen eines anderen Gewindes werden Teständerungen deaktiviert und
+dessen Originalwerte geladen.
+
+**Noch nicht enthalten:** Spiel, Steigung oder Länge eines bestehenden Gewindes
+ändern und das Gewinde neu aufbauen. Alte Gewinde ohne Metadaten werden nicht
+automatisch rekonstruiert und nicht nachträglich als bearbeitbar markiert.
+Die neuen Daten gehören zum Fusion-Dokument, nicht zum Preset-JSON-Export;
+dessen Schema bleibt unverändert. Bitte zum Prüfen ein neues Gewinde erstellen,
+das Dokument speichern, erneut öffnen und die Daten im neuen Reiter kontrollieren.
+[Machbarkeitsstand und nächste Prüfschritte](doku/bearbeitung-machbarkeit-0.9.6.md).
 
 ## Größenhilfe und Vorschau
 

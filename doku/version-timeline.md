@@ -1,5 +1,20 @@
 # Version Timeline
 
+## 0.9.6 - 2026-10-29
+
+- Anwender bestätigt vorläufig eine kurzfristig sichtbare Steigungsänderung beim Test-Neuaufbau. Vollständige Rücknahme von Geometrie/Timeline/Metadaten und weitere Parameteränderungen bleiben separat zu prüfen.
+- Nächste M6-Teststufe: Spiel und Steigung, bei gespeicherten Teilgewinden auch Länge und Versatz als optionale Teständerungen laden/ändern. Originaldatensatz und Startkante erhalten; metrische Tiefe bei Steigungsänderung neu berechnen. Auswahl eines anderen Datensatzes verwirft Teständerungen. Weiterhin ausschließlich Neuaufbau mit vollständiger Rücknahme, keine dauerhafte Bearbeitung. 65 Tests bestanden; Fusion-Prüfung geänderter Parameter offen.
+- Test-Neuaufbau laut Anwender vorläufig erfolgreich; Screenshot zeigt erfolgreiche Testmeldungen und anschließend das ursprüngliche Gewindepaar. Detailprüfung von Timeline, Metadaten und Folgeabhängigkeiten bleibt offen.
+- Anwender bestätigt den erfolgreichen Ursprungsbezugstest einschließlich Parameterprüfung und Timeline-Wiederherstellung. Nächste Stufe: „Neuaufbau mit OK testen und zurücknehmen“, mit unveränderten Parametern und ohne Löschen ursprünglicher Features. Erfolg und Fehler führen zur Rücknahme der ganzen Befehls-Transaktion; noch keine Bearbeitung übernehmbar. 61 Tests bestanden; Fusion-Rollback-Prüfung der neuen Aktion offen.
+- Nach Anwender-Bezugstest: nicht auflösbaren Komponententoken über die tatsächliche Eigentümerkomponente des eindeutig gefundenen Zielkörpers auflösen. Keine pauschale Root-Annahme und keine Reduktion mehrdeutiger Treffer. Doppelte Fehlermeldungen im Testergebnis entfernt. 57 Tests bestanden; erneuter Fusion-Test offen.
+- Nächste M6-Stufe: explizite Aktion „Ursprungsbezüge mit OK prüfen“. Im Execute-Ereignis vor die Erzeugung rollen, Bezüge eindeutig auflösen und Parameter am ursprünglichen Körper validieren; Marker und Gruppenansicht im finally-Pfad wiederherstellen. Keine Gewindeerzeugung oder Bearbeitung in diesem Modus. 55 Tests bestanden; Fusion-Prüfung dieser Aktion offen.
+- Anwender bestätigt das Finden der gespeicherten Gewindedaten, auch bei mehreren Gewinden in derselben Konstruktion. Persistenz nach erneutem Öffnen und Wiederherstellung ursprünglicher Bezüge bleiben separat zu prüfen.
+- Beginn M6: maschinenlesbare Gewindedaten an der Dokumentationsskizze und ID am Ergebnisfeature. Einstellungen und ursprüngliche Modellbezüge werden vor Geometrieeingriffen erfasst; erste/letzte Erzeugungsfeatures per Token referenziert. Gilt für neue Einzelgewinde, Partner und Kalibrierungsproben; keine automatische Rekonstruktion alter Gewinde.
+- Neuer Reiter **Gewindedaten prüfen**: Liste aktualisieren, gespeicherte Einstellungen anzeigen, Bezugstokens eindeutig/mehrdeutig/nicht auflösbar bewerten und Timeline-Grenzen mit nachfolgenden Einträgen lesen. Modell und Marker bleiben unverändert.
+- Dokument-Metadatenschema 1 getrennt vom unveränderten Presetschema 2. Unbekannte/ungültige Datensätze werden gemeldet. Texte in sechs Sprachen; README DE/EN, Machbarkeitsdokument und Prüfprotokoll ergänzen Funktionsumfang und Grenzen.
+- Lokale Fusion-Python-API auf Attribute, Tokens, Timeline und Custom-Feature-Schnittstellen geprüft. Kein interaktiver Nachweis eines sicheren Neuaufbaus: eigentliche nachträgliche Bearbeitung noch nicht implementiert und M6 nicht abgeschlossen.
+- 50 automatische Tests bestanden. Speichern/Öffnen, Bezugserhaltung und Transaktionsverhalten in Fusion offen. Version, Manifest und Installer-Konfiguration 0.9.6. Kein Installer gebaut.
+
 ## 0.9.5 - 2026-10-29
 
 - Anwender bestätigt die Paarvorschau. Screenshots der Vorschau und des erzeugten Gewindepaars in README DE/EN und Größenhilfe eingebunden; Prüffall dokumentiert.

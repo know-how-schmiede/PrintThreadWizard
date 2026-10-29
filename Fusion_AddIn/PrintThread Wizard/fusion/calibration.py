@@ -50,7 +50,8 @@ def _create_specimens(component, occurrence, series):
         result = create_thread(ThreadParameters(
             face, (), ISO_FLANK_ANGLE, radial_thread_depth(series.pitch, external),
             series.pitch, 0.0, tolerance=gap, handedness=series.handedness,
-            clearance_distribution='internal'), creation_occurrence=occurrence)
+            clearance_distribution='internal'), creation_occurrence=occurrence,
+            calculation_mode='iso_metric')
         for i in range(result.bodies.count):
             result_body = result.bodies.item(i)
             result_body.name = label

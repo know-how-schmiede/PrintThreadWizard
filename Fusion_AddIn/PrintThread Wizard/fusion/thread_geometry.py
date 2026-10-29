@@ -7,6 +7,7 @@ import adsk.core
 import adsk.fusion
 
 from ..core.thread_parameters import ThreadParameters
+from .thread_records import capture_record, attach_record
 from .chamfer import capture_chamfer_ends, create_revolved_chamfers
 from .face_analysis import (
     CylinderGeometry,
@@ -42,12 +43,14 @@ def thread_section(cylinder, parameters, chamfer_ends=None):
                    length=high - low)
 
 
-def create_thread(parameters: ThreadParameters, creation_occurrence=None):
+def create_thread(parameters: ThreadParameters, creation_occurrence=None, calculation_mode='free',
+                  group_timeline=True):
     errors = parameters.validation_errors()
     if errors:
         raise ValueError('\n'.join(errors))
 
     cylinder = analyze_cylinder(parameters.face)
+    record = capture_record(parameters, calculation_mode, creation_occurrence)
     chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
     trim_reference = thread_section(cylinder, parameters, chamfer_ends)
     timeline = cylinder.component.parentDesign.timeline
@@ -112,7 +115,9 @@ def create_thread(parameters: ThreadParameters, creation_occurrence=None):
             parameters.chamfer_extra,
         )
         _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch)
-        _group_timeline_entries(timeline, timeline_start)
+        attach_record(record, parameter_sketch, chamfer_feature or result_feature)
+        if group_timeline:
+            _group_timeline_entries(timeline, timeline_start)
         return chamfer_feature or result_feature
     except Exception:
         _delete_if_valid(profile_sketch)

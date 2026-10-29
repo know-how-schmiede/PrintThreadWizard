@@ -24,6 +24,9 @@ from ...lib import fusionAddInUtils as futil
 from ...localization import detect_locale, set_locale, translate as tr
 from ...version import VERSION
 from . import calibration_tab, size_preview
+from .records_tab import RecordInspector
+from ...fusion.thread_reference_probe import probe_original_references
+from ...fusion.thread_rebuild_trial import run_rebuild_trial
 from ...fusion.thread_preview import ThreadPreview
 from ...fusion.calibration import create_calibration
 from ...core.calibration import profile_matches
@@ -48,6 +51,7 @@ BRAND_LOGO_IMAGE = os.path.join(ICON_FOLDER, 'PrintThreadWizard_DialogLogo.png')
 
 local_handlers = []
 thread_preview = ThreadPreview()
+record_inspector = RecordInspector()
 updating_calculated_inputs = False
 active_command_inputs = None
 available_presets = []
@@ -122,6 +126,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     management_tab = inputs.addTabCommandInput('management_tab', tr('manage_tab'))
     management_inputs = management_tab.children
     calibration_tab.add_tab(inputs)
+    record_inspector.add_tab(inputs, adsk.fusion.Design.cast(app.activeProduct))
     info_tab = inputs.addTabCommandInput('info_tab', tr('info_tab'))
     info_inputs = info_tab.children
 
@@ -372,7 +377,10 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 def command_execute_preview(args: adsk.core.CommandEventArgs):
     # Fusion rolls back the previous preview transaction before this event.
     # Graphics created in inputChanged can disappear in that rollback.
-    _update_assistance(args.command.commandInputs, draw_preview=True)
+    if _record_probe_enabled(args.command.commandInputs):
+        thread_preview.clear()
+    else:
+        _update_assistance(args.command.commandInputs, draw_preview=True)
     # Schematic graphics are not the command result. OK must still execute
     # the real thread/calibration creation rather than commit this preview.
     args.isValidResult = False
@@ -381,6 +389,24 @@ def command_execute_preview(args: adsk.core.CommandEventArgs):
 def command_execute(args: adsk.core.CommandEventArgs):
     thread_preview.clear()
     try:
+        if _record_probe_enabled(args.command.commandInputs):
+            record = record_inspector.selected_record(lambda key: _input_by_id(args.command.commandInputs, key))
+            if _record_rebuild_trial_enabled(args.command.commandInputs):
+                run_rebuild_trial(adsk.fusion.Design.cast(app.activeProduct), record,
+                                  _validation_errors, create_thread,
+                                  changes=record_inspector.trial_changes(lambda key: _input_by_id(args.command.commandInputs, key)))
+                # A successful trial must NEVER commit its inserted geometry.
+                args.executeFailed = True
+                args.executeFailedMessage = tr('trial_rolled_back')
+                futil.log(tr('trial_rolled_back'))
+                return
+            result = probe_original_references(adsk.fusion.Design.cast(app.activeProduct), record, _validation_errors)
+            lines = [tr('probe_success' if result['ready'] else 'probe_incomplete')]
+            for key, number, state in result['references']:
+                lines.append(f'{tr("record_ref_" + key)} {number + 1 if key == "chamfer_edges" else ""}: {state}')
+            lines.extend(error for error in result['errors'] if error not in lines)
+            ui.messageBox('\n'.join(lines))
+            return
         if _calibration_enabled(args.command.commandInputs):
             create_calibration(adsk.fusion.Design.cast(app.activeProduct),
                                calibration_tab.read_series(lambda key: _input_by_id(args.command.commandInputs, key)))
@@ -394,9 +420,10 @@ def command_execute(args: adsk.core.CommandEventArgs):
         # Both creations belong to this command transaction. Any exception
         # reaches executeFailed below and rolls back the complete pair.
         partner = _partner_parameters(args.command.commandInputs, parameters)
-        create_thread(parameters)
+        mode = 'iso_metric' if _is_iso_mode(args.command.commandInputs) else 'free'
+        create_thread(parameters, calculation_mode=mode)
         if partner is not None:
-            create_thread(partner)
+            create_thread(partner, calculation_mode=mode)
         futil.log(f"{CMD_NAME}: {tr('thread_created')}")
     except Exception as error:
         # Abort the entire Fusion command transaction, including target-body edits.
@@ -409,6 +436,25 @@ def command_execute(args: adsk.core.CommandEventArgs):
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
+        return
+    if args.input.id in ('record_probe', 'record_rebuild_trial'):
+        if args.input.value:
+            other = 'record_probe' if args.input.id == 'record_rebuild_trial' else 'record_rebuild_trial'
+            _input_by_id(active_command_inputs, other).value = False
+            _input_by_id(active_command_inputs, 'cal_enabled').value = False
+        return
+    if args.input.id == 'cal_enabled' and args.input.value:
+        _input_by_id(active_command_inputs, 'record_probe').value = False
+        _input_by_id(active_command_inputs, 'record_rebuild_trial').value = False
+    if args.input.id in ('record_selector', 'records_refresh'):
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        get = lambda key: _input_by_id(active_command_inputs, key)
+        if args.input.id == 'records_refresh':
+            if args.input.value:
+                args.input.value = False
+                record_inspector.refresh(design, get)
+        else:
+            record_inspector.show(design, get)
         return
     if args.input.id == 'apply_metric_size' and args.input.value:
         args.input.value = False
@@ -484,6 +530,16 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
 
 
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
+    if _record_probe_enabled(active_command_inputs):
+        try:
+            record_inspector.selected_record(lambda key: _input_by_id(active_command_inputs, key))
+            if _record_rebuild_trial_enabled(active_command_inputs):
+                record_inspector.trial_changes(lambda key: _input_by_id(active_command_inputs, key))
+            args.areInputsValid = True
+        except ValueError as error:
+            _input_by_id(active_command_inputs, 'record_details').text = str(error)
+            args.areInputsValid = False
+        return
     if _calibration_enabled(active_command_inputs):
         try:
             series = calibration_tab.read_series(lambda key: _input_by_id(active_command_inputs, key))
@@ -1143,3 +1199,12 @@ def _update_assistance(inputs, draw_preview=False):
             requests.append(partner)
     size_preview.update_preview(get, thread_preview, adsk.fusion.Design.cast(app.activeProduct),
                                 requests, errors, calibration)
+
+
+def _record_probe_enabled(inputs):
+    return (_input_by_id(inputs, 'record_probe').value
+            or _record_rebuild_trial_enabled(inputs))
+
+
+def _record_rebuild_trial_enabled(inputs):
+    return _input_by_id(inputs, 'record_rebuild_trial').value

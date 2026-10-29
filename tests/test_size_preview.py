@@ -19,7 +19,7 @@ class SizePreviewTests(unittest.TestCase):
         preview = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'command_execute_preview')
         preview.args.args[0].annotation = None
         status = Mock()
-        ns = dict(_input_by_id=Mock(), size_preview=types.SimpleNamespace(update_size_status=status))
+        ns = dict(_record_probe_enabled=lambda _: False, _input_by_id=Mock(), size_preview=types.SimpleNamespace(update_size_status=status))
         exec(compile(ast.Module(body=[update], type_ignores=[]), '<input-update>', 'exec'), ns)
         # Only UI text may be updated before the executePreview transaction.
         # No model/graphics globals exist in this namespace.

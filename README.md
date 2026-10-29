@@ -14,9 +14,69 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.5**
+Current development version: **0.9.6**
 
-0.9.5 adds a **size aid and light preview** to the thread creation tab. Fusion acceptance is pending; see the [test record](doku/pruefprotokoll-0.9.5.md). Not published yet; installers are built only on request.
+0.9.6 starts M6 with **saved thread data and model reference inspection**. This prepares future editing; it is not an editing feature yet. Fusion acceptance is pending; see the [test record](doku/pruefprotokoll-0.9.6.md). Not published yet; installers are built only on request.
+
+## Inspect thread data – preparation for future editing
+
+New threads created with **0.9.6** store machine-readable settings in the Fusion
+document alongside the readable parameter sketch: calculation mode, pitch,
+profile angle/depth, fillet, clearance/distribution, direction, length mode,
+offset, length and extra chamfer. References to the original face, target body,
+component, occurrence if applicable, start/chamfer edges and first/result
+features are recorded too. Each thread in a pair or calibration series gets
+its own record.
+
+In the new **Inspect thread data** tab:
+
+1. **Refresh list** reads records from the current document.
+2. Select a recorded thread to see its settings.
+3. Inspect whether each reference resolves uniquely, ambiguously or not at the
+   current timeline state. Resolvable timeline boundaries and the number of
+   subsequent entries are displayed too.
+
+Inspection changes neither the model nor the timeline. An original face may
+no longer resolve after threading; that alone does not mean corrupted data.
+Recovering references in the original timeline state needs further feasibility
+testing. **Use Cancel to close**; with the reference test disabled, OK still
+executes creation from the thread or calibration tab.
+
+The next feasibility step is available as **Check original references with OK**:
+select a thread record, enable that option and press OK. Only the reference
+test runs. It rolls the timeline before the original thread creation, resolves
+saved faces/edges and validates the settings against the original body. It then
+restores the timeline marker and group layout and displays the result. No thread
+is created or edited. Restoration is also attempted after test errors; if it
+fails, the entire command transaction is rolled back. A successful reference
+test does not yet demonstrate a safe rebuild.
+
+The next test is **Test rebuild with OK and roll back**. Select a record, enable
+this option and press OK. The add-in inserts a temporary rebuild before the old
+thread features using saved or explicitly modified trial settings. The entire command is then
+**deliberately rolled back**, even after successful generation. The final
+rollback notice is expected. Errors also trigger full rollback; original
+features are not deleted. After closing the notice, check that the original
+thread, other parts and timeline are unchanged. This test does not commit an
+edit. The reference test, rebuild trial and calibration series are mutually
+exclusive OK actions.
+
+The **Rebuild trial parameters** section initially loads the selected thread's
+original values. Enable **Use modified trial parameters** to change clearance
+or pitch. Recorded partial threads also support changes to offset and length
+while retaining their original start edge. Full-length threads remain full
+length at this stage. Metric mode recalculates depth from pitch; free mode
+retains the saved depth. Invalid profiles or ranges are rejected. Changes apply
+only to the trial, leaving both the original record and final thread unchanged.
+Selecting another thread disables changes and loads that thread's original
+values.
+
+**Not available yet:** changing an existing thread's clearance, pitch or length
+and rebuilding it. Old threads without metadata are not reconstructed or marked
+editable. These records belong to the Fusion document, not the preset JSON
+export; the preset schema is unchanged. To check persistence, create a new
+thread, save and reopen the document, then inspect its data in the new tab.
+[Feasibility status and next checks](doku/bearbeitung-machbarkeit-0.9.6.md).
 
 ## Size aid and preview
 
