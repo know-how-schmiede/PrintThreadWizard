@@ -1,5 +1,16 @@
 # Version Timeline
 
+## 0.9.4 - 2026-10-29
+
+- M4 im eigenen Dialogreiter Kalibrierung: unabhängige Maße, Rechts-/Linksgewinde und frei eingegebene Spielreihe. Ein Referenzzapfen ohne Spielkorrektur und bis zu zwölf Prüfringe mit vollem Spiel innen, in eigener Komponente nebeneinander platziert und per Körpername zugeordnet.
+- Fusion-Traceback ausgewertet: verbleibender getObjectPath-Fehler bei `Path.create` im Sweep. Auch dort die Helixkante im Kontext der Kalibrierungsinstanz übergeben. 36 automatische Tests bestanden; Fusion-Abnahme offen. Installer ab jetzt nur auf ausdrückliche Aufforderung erstellen.
+- Nach weiterem Anwenderlauf: Baugruppenkontext für die Helixkante der Kalibrierungs-Profilebene explizit übergeben, um den gemeldeten getObjectPath-Fehler zu adressieren. Eigene Komponente bei Fehler entfernen und vollständigen Traceback protokollieren. 35 automatische Tests bestanden; erneute Fusion-Prüfung offen.
+- Nach Anwenderprüfung: native Pflichtauswahl der Zielfläche entfernt, damit sie OK im Kalibrierungsmodus nicht blockiert. Modellgewinde verlangen die Fläche weiterhin über die fachliche Validierung. Tooltips für alle editierbaren Kalibrierungs-/Druckprofilfelder in sechs Sprachen ergänzt; nun 33 automatische Tests bestanden. Formularlayout durch Anwender bestätigt; erneute Fusion-Prüfung der Korrektur offen.
+- Erste Probengeometrie verwendet metrisches 60°-Profil ohne Verrundung/Fasen. Keine Flächenauswahl nötig; ausdrücklicher Serienmodus bestimmt die Aktion beim Bestätigen. Fehler werden an den bestehenden vollständigen Fusion-Transaktionsabbruch weitergereicht.
+- Getrennte Druckprofile mit Prozessdaten, optionalen Größen-/Steigungsgrenzen und Spielverteilung. Anwendung überträgt ausschließlich Spiel und Verteilung, einschließlich exakter Werte außerhalb der bisherigen festen Auswahlliste.
+- Schema 2 für gemeinsamen Preset-/Profiltransfer; Schema 1 weiterhin lesbar, unbekannte Versionen abgewiesen, Import vor Speicherung vollständig validiert. Downgrade erfordert eine gesicherte Schema-1-Datei.
+- Texte in DE/EN/ES/FR/IT/PL, README-Dateien, Roadmap, Prüfanleitung, Manifest und Installer-Konfiguration aktualisiert. 30 automatische Tests bestanden. Windows-Installer mit Inno Setup 6.7.0 gebaut, SHA-256-Datei erstellt. Fusion- und Druckabnahme offen; kein Release veröffentlicht.
+
 ## 0.9.3 - 2026-10-27
 
 - M3 implementiert: Außen-/Innengewindepaar auf getrennten Körpern mit gemeinsamen Profilparametern; Längen, Startseiten und Fasen pro Bauteil.

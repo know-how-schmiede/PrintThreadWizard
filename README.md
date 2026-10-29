@@ -14,9 +14,46 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.3**
+Current development version: **0.9.4**
 
-0.9.3 adds **thread pairs and clearance distribution**. Create an external and an internal thread together with independent lengths and start sides. Balanced clearance remains the default; alternatively, apply the entire radial clearance to the internal or external thread only. Fusion and print acceptance of M3 are pending; see the [test record](doku/pruefprotokoll-0.9.3.md). The Windows installer for 0.9.3 has been built; publication is pending.
+0.9.4 adds a dedicated **Calibration** dialog tab with sample generation and separate print profiles. Fusion and physical print acceptance are pending; see the [test record](doku/pruefprotokoll-0.9.4.md). Not published yet.
+
+## Calibration and print profiles
+
+Open **Calibration** and set nominal diameter, pitch, sample length, ring wall
+thickness and direction. This first implementation uses the metric 60° profile
+without root fillets or chamfers. These dimensions are independent of the
+thread creation tab; no face selection is needed. Length must be at least two
+pitches. Enter total radial clearances in millimetres separated by semicolons,
+e.g. `0.10; 0.15; 0.20; 0.25; 0.30`. Decimal commas are also accepted.
+
+Enable **Generate samples with OK**, then confirm. While enabled, OK creates
+only the calibration series: a new component containing one reference pin
+**REF** without clearance correction and up to twelve rings **R01…** with all
+clearance applied inside. Samples are placed side by side. Body names contain
+IDs and clearance values; identify the rings in your slicer and mark them
+after printing. No raised labels alter the mating surfaces.
+
+Save the best measured result as a **print profile** with name, printer,
+material, nozzle diameter, layer height, orientation, clearance, distribution
+and note. Optional diameter/pitch bounds constrain application; `0` in the
+dialog means unbounded. Load, save as a new profile, or delete a selected
+profile. **Apply to thread** transfers only clearance and distribution to the
+faces selected in the thread creation tab. It preserves profile geometry,
+direction and pitch and rejects values outside the profile scope.
+
+Example clearances are not guaranteed recommendations. Calibration initially
+applies to the tested conditions and **internal-only** distribution. Changing
+distribution preserves the mathematical total gap but changes printed contours
+and requires another fit check. Other diameters, pitches, free profiles and
+printing orientations also require validation.
+
+Print profiles are separate from geometry presets in the same local JSON file.
+Manage settings exports/imports both types; the result count includes both.
+Storage upgrades to **schema 2** on the next write. Schema-1 files remain
+readable; unknown versions are rejected and invalid imports leave storage
+unchanged. Schema-2 files require 0.9.4 or later. Back up your schema-1 file
+before downgrading.
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and
@@ -167,7 +204,7 @@ Detailed instructions covering paths, updates and troubleshooting (German):
 
 ### Windows installer
 
-1. Download `PrintThreadWizard_Setup_0.9.3.exe` from the GitHub Releases page.
+1. Download `PrintThreadWizard_Setup_0.9.4.exe` from the GitHub Releases page.
 2. Run the installer. It copies the add-in to the current Windows user's
    Fusion add-ins directory; administrator privileges are not required.
    Compare the suggested destination with **Preferences > API** in Fusion:

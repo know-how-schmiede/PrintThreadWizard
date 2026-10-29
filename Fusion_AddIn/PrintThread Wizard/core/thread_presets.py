@@ -8,7 +8,7 @@ from pathlib import Path
 from uuid import uuid4
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 FILE_NAME = 'thread-presets.json'
 DEFAULT_TOLERANCE_CM = 0.015
 
@@ -98,11 +98,12 @@ def export_thread_presets(path: str) -> int:
         'exported_at': datetime.now(timezone.utc).isoformat(),
         'presets': data['presets'],
         'preferences': data.get('preferences', {}),
+        'print_profiles': data.get('print_profiles', []),
     }
     Path(path).write_text(
         json.dumps(export_data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
     )
-    return len(export_data['presets'])
+    return len(export_data['presets']) + len(export_data['print_profiles'])
 
 
 def import_thread_presets(path: str) -> int:
@@ -110,7 +111,8 @@ def import_thread_presets(path: str) -> int:
         imported = json.loads(Path(path).read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(tr('import_unreadable', error=error)) from error
-    if not isinstance(imported, dict) or imported.get('schema_version') != SCHEMA_VERSION:
+    if (not isinstance(imported, dict) or type(imported.get('schema_version')) is not int
+            or imported.get('schema_version') not in (1, SCHEMA_VERSION)):
         raise ValueError(tr('import_version'))
     presets = imported.get('presets')
     if not isinstance(presets, list):
@@ -136,6 +138,7 @@ def import_thread_presets(path: str) -> int:
         )
         normalized.append(entry)
 
+    profiles = _validate_print_profiles(imported.get('print_profiles', []))
     _validate_preferences(imported.get('preferences', {}))
 
     storage_path = preset_file_path()
@@ -144,13 +147,17 @@ def import_thread_presets(path: str) -> int:
     for preset in normalized:
         merged[preset['id']] = preset
     data['presets'] = list(merged.values())
+    merged_profiles = {p['id']: p for p in data.get('print_profiles', [])}
+    merged_profiles.update({p['id']: p for p in profiles})
+    data['print_profiles'] = list(merged_profiles.values())
     if isinstance(imported.get('preferences'), dict):
         data['preferences'] = imported['preferences']
     _write_storage(storage_path, data)
-    return len(normalized)
+    return len(normalized) + len(profiles)
 
 
 def _write_storage(path: Path, data: dict) -> None:
+    data = dict(data, schema_version=SCHEMA_VERSION)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = path.with_suffix('.tmp')
     temporary_path.write_text(
@@ -167,8 +174,11 @@ def _read_storage(path: Path) -> dict:
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(tr('storage_unreadable', error=error)) from error
 
-    if not isinstance(data, dict) or data.get('schema_version') != SCHEMA_VERSION or not isinstance(data.get('presets'), list):
+    if (not isinstance(data, dict) or type(data.get('schema_version')) is not int
+            or data.get('schema_version') not in (1, SCHEMA_VERSION)
+            or not isinstance(data.get('presets'), list)):
         raise ValueError(tr('storage_format'))
+    data['print_profiles'] = _validate_print_profiles(data.get('print_profiles', []))
     _validate_preferences(data.get('preferences', {}))
     for preset in data['presets']:
         if not isinstance(preset, dict) or not isinstance(preset.get('name'), str):
@@ -215,3 +225,41 @@ def _validate_settings(settings, name):
             or partner_values[0] < 0 or partner_values[1] <= 0):
         raise ValueError(tr('import_parameters', name=name))
     return dict(settings)
+
+
+def _validate_print_profiles(profiles):
+    from .calibration import validate_print_profile
+    if not isinstance(profiles, list):
+        raise ValueError(tr('profile_invalid'))
+    result = []
+    for profile in profiles:
+        entry = validate_print_profile(profile)
+        if not isinstance(entry.get('id'), str) or not entry['id']:
+            raise ValueError(tr('profile_invalid'))
+        result.append(entry)
+    if len({p['id'] for p in result}) != len(result):
+        raise ValueError(tr('profile_invalid'))
+    return result
+
+
+def load_print_profiles():
+    return sorted(_read_storage(preset_file_path()).get('print_profiles', []),
+                  key=lambda profile: profile['name'].casefold())
+
+
+def save_print_profile(profile):
+    from .calibration import validate_print_profile
+    entry = validate_print_profile(profile)
+    entry['id'] = str(uuid4())
+    path = preset_file_path()
+    data = _read_storage(path)
+    data.setdefault('print_profiles', []).append(entry)
+    _write_storage(path, data)
+    return entry
+
+
+def delete_print_profile(profile_id):
+    path = preset_file_path()
+    data = _read_storage(path)
+    data['print_profiles'] = [p for p in data.get('print_profiles', []) if p['id'] != profile_id]
+    _write_storage(path, data)

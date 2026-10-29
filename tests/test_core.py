@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import tempfile
 import types
+import traceback
 import unittest
 from unittest.mock import Mock, patch
 from test_localization import parameters, presets, ADDIN
@@ -197,7 +198,7 @@ class CoreTests(unittest.TestCase):
                 original = storage.read_bytes()
                 # Schema 1 missing tolerance and chamfer extra still loads unchanged.
                 self.assertEqual(presets.load_thread_presets()[0]['settings'], self.settings)
-                for payload in ([], dict(schema_version=2, presets=[]),
+                for payload in ([], dict(schema_version=presets.SCHEMA_VERSION + 1, presets=[]),
                     dict(schema_version=1, presets=[saved, dict(name='bad', settings={})]),
                     dict(schema_version=1, presets=[], preferences=dict(default_tolerance_cm=float('nan')))):
                     source.write_text(json.dumps(payload), encoding='utf-8')
@@ -215,7 +216,7 @@ class CoreTests(unittest.TestCase):
         tree = ast.parse((ADDIN / 'commands/commandDialog/entry.py').read_text(encoding='utf-8'))
         handler = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'command_execute')
         handler.args.args[0].annotation = None
-        ns = dict(_apply_calculation_mode=lambda _:None, _read_parameters=lambda _:self.params,
+        ns = dict(traceback=traceback, _calibration_enabled=lambda _: False, _apply_calculation_mode=lambda _:None, _read_parameters=lambda _:self.params,
                   _request_errors=lambda *args:[], _partner_parameters=lambda *args:None,
                   CMD_NAME='test', tr=lambda key:key,
                   futil=types.SimpleNamespace(log=lambda *a, **k:None),
@@ -257,7 +258,7 @@ class CoreTests(unittest.TestCase):
         handler.args.args[0].annotation = None
         partner = replace(self.params, face=object())
         create = Mock(side_effect=[object(), RuntimeError('second failed')])
-        ns = dict(_apply_calculation_mode=lambda _: None, _read_parameters=lambda _: self.params,
+        ns = dict(traceback=traceback, _calibration_enabled=lambda _: False, _apply_calculation_mode=lambda _: None, _read_parameters=lambda _: self.params,
                   _request_errors=lambda *a: [], _partner_parameters=lambda *a: partner,
                   create_thread=create, CMD_NAME='test', tr=lambda key: key,
                   futil=types.SimpleNamespace(log=lambda *a, **k: None),

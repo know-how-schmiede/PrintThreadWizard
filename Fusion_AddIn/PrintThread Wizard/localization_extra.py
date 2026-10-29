@@ -141,3 +141,8 @@ for row in _ROWS.strip().splitlines():
         raise ValueError(f'Invalid translation row: {key}')
     for locale, value in zip(LOCALES, values):
         TRANSLATIONS[locale][key] = value
+
+
+from .localization_calibration import TRANSLATIONS as _CALIBRATION
+for _lang in TRANSLATIONS:
+    TRANSLATIONS[_lang].update(_CALIBRATION[_lang])

@@ -83,15 +83,17 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M4 – Kalibrierungsassistent und Druckprofile
 
+**Status 29.10.2026 / 0.9.4:** implementiert im eigenen Dialogreiter **Kalibrierung**, Fusion- und Druckabnahme offen. 30 automatische Tests bestanden. Erste Probengeometrie: metrisches 60°-Profil ohne Verrundung/Fasen. Zuordnung über Komponente und Körpernamen; keine erhabenen Beschriftungen. Druckprofile getrennt von Geometrie-Presets, gemeinsamer Schema-2-Transfer mit Schema-1-Migration. Siehe [Prüfprotokoll](pruefprotokoll-0.9.4.md).
+
 **Funktion:** Kleine Gewindeproben mit variierendem Spiel erzeugen und das beste Ergebnis wiederverwenden.
 
-- [ ] Nenndurchmesser, Teilung, Richtung, kurze Testlänge und Spielreihe festlegen.
-- [ ] Ersten Umfang begrenzen: ein Referenzzapfen ohne Spielkorrektur plus mehrere Prüfringe mit vollständigem Spiel auf der Innenseite. Die spätere Übertragung einer Kalibrierung auf andere Verteilungen ausdrücklich dokumentieren und prüfen.
-- [ ] Proben platzieren, sinnvoll benennen und mit Spielwert/ID zuordnen; Beschriftung darf die Passflächen nicht beeinflussen.
-- [ ] Druckprofile getrennt von Geometrie-Presets verwalten: Name, Drucker, Material, Düse, Schichthöhe, Orientierung, Spielverteilung, Spiel und Notiz.
-- [ ] Optionalen Gültigkeitsbereich für Durchmesser/Teilung erfassen; keine universelle Passung aus einem Test ableiten.
-- [ ] Druckprofil anwenden, ohne unbemerkt Profilform oder Teilung eines Gewinde-Presets zu ersetzen.
-- [ ] Profil-Import/-Export in die bestehende versionierte Datenverwaltung integrieren.
+- [x] Nenndurchmesser, Teilung, Richtung, kurze Testlänge und Spielreihe festlegen.
+- [x] Ersten Umfang begrenzen: ein Referenzzapfen ohne Spielkorrektur plus mehrere Prüfringe mit vollständigem Spiel auf der Innenseite. Übertragung auf andere Verteilungen dokumentiert; praktische Prüfung offen.
+- [x] Proben platzieren, sinnvoll benennen und mit Spielwert/ID zuordnen; Beschriftung darf die Passflächen nicht beeinflussen.
+- [x] Druckprofile getrennt von Geometrie-Presets verwalten: Name, Drucker, Material, Düse, Schichthöhe, Orientierung, Spielverteilung, Spiel und Notiz.
+- [x] Optionalen Gültigkeitsbereich für Durchmesser/Teilung erfassen; keine universelle Passung aus einem Test ableiten.
+- [x] Druckprofil anwenden, ohne unbemerkt Profilform oder Teilung eines Gewinde-Presets zu ersetzen.
+- [x] Profil-Import/-Export in die bestehende versionierte Datenverwaltung integrieren.
 
 **Abnahme:** Eine Serie, beispielsweise mit 0,10 / 0,15 / 0,20 / 0,25 / 0,30 mm radialem Gesamtspiel, ist eindeutig zuordenbar. Ein getestetes Profil lässt sich speichern und erneut anwenden. Dokumentierter Druckversuch belegt den Workflow; Beispielwerte sind keine garantierten Empfehlungen.
 

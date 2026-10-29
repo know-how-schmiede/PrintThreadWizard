@@ -42,7 +42,7 @@ def thread_section(cylinder, parameters, chamfer_ends=None):
                    length=high - low)
 
 
-def create_thread(parameters: ThreadParameters):
+def create_thread(parameters: ThreadParameters, creation_occurrence=None):
     errors = parameters.validation_errors()
     if errors:
         raise ValueError('\n'.join(errors))
@@ -82,11 +82,12 @@ def create_thread(parameters: ThreadParameters):
         helix_feature, helix_edge, guide_face = _create_persistent_helix(
             cylinder, parameters
         )
-        profile_plane = _create_profile_plane(cylinder.component, helix_edge)
+        profile_plane = _create_profile_plane(cylinder.component, helix_edge, creation_occurrence)
         profile = _create_cut_profile(profile_plane, cylinder, parameters)
         profile_sketch = profile.parentSketch
         sweep = _create_thread_sweep(cylinder, profile, helix_edge, guide_face,
-                                     bounded_external=not parameters.full_length)
+                                     bounded_external=not parameters.full_length,
+                                     creation_occurrence=creation_occurrence)
         result_feature = (
             sweep
             if cylinder.is_external and parameters.full_length
@@ -323,8 +324,15 @@ def _create_persistent_helix(cylinder: CylinderGeometry, parameters: ThreadParam
     return base_feature, helix_edge, guide_face
 
 
-def _create_profile_plane(component, helix_edge):
-    plane_input = component.constructionPlanes.createInput()
+def _create_profile_plane(component, helix_edge, creation_occurrence=None):
+    # A native B-Rep edge has no assembly path outside the root component.
+    # Supply the occurrence explicitly for the calibration component rather
+    # than relying on whichever component happens to be active in the UI.
+    if creation_occurrence is None:
+        plane_input = component.constructionPlanes.createInput()
+    else:
+        plane_input = component.constructionPlanes.createInput(creation_occurrence)
+        helix_edge = helix_edge.createForAssemblyContext(creation_occurrence)
     if not plane_input.setByDistanceOnPath(
         helix_edge, adsk.core.ValueInput.createByReal(0.0)
     ):
@@ -422,9 +430,15 @@ def _profile_base_direction(cylinder: CylinderGeometry, pitch: float):
     return base_direction
 
 
-def _create_thread_sweep(cylinder, profile, helix_edge, guide_face, bounded_external=False):
+def _create_thread_sweep(cylinder, profile, helix_edge, guide_face, bounded_external=False,
+                         creation_occurrence=None):
+    # Path.create resolves an assembly object path before the feature's owning
+    # component is known. A native edge of the calibration subcomponent cannot
+    # be resolved there; supply its occurrence proxy, as for the profile plane.
+    path_edge = (helix_edge.createForAssemblyContext(creation_occurrence)
+                 if creation_occurrence is not None else helix_edge)
     path = adsk.fusion.Path.create(
-        helix_edge, adsk.fusion.ChainedCurveOptions.noChainedCurves
+        path_edge, adsk.fusion.ChainedCurveOptions.noChainedCurves
     )
     if path is None:
         raise RuntimeError(tr('path_failed'))

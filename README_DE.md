@@ -14,9 +14,51 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.3**
+Aktuelle Entwicklungsversion: **0.9.4**
 
-0.9.3 ergänzt **Gewindepaare und Spielverteilung**. Ein Außen- und ein Innengewinde können gemeinsam mit getrennten Längen und Startseiten erstellt werden. Gleichmäßige Spielverteilung bleibt Standard; alternativ lässt sich das gesamte radiale Spiel nur innen oder nur außen anwenden. Fusion- und Druckabnahme von M3 sind offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.3.md). Der Windows-Installer 0.9.3 wurde gebaut; die Veröffentlichung steht aus.
+0.9.4 ergänzt den eigenen Dialogreiter **Kalibrierung** mit Probenreihe und getrennten Druckprofilen. Fusion- und Druckabnahme sind offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.4.md). Noch nicht veröffentlicht.
+
+## Kalibrierungsassistent und Druckprofile
+
+Im Reiter **Kalibrierung** Nenndurchmesser, Steigung, kurze Testlänge,
+Ring-Wandstärke und Richtung einstellen. Die erste Umsetzung verwendet das
+metrische 60°-Profil ohne Grundverrundung und Fasen. Die Maße sind unabhängig
+vom Reiter zur Gewindeerstellung; eine Flächenauswahl ist nicht erforderlich.
+Die Länge muss mindestens zwei Steigungen betragen.
+
+**Radiales Gesamtspiel** als Liste in Millimetern eingeben, getrennt durch
+Semikolon, etwa `0,10; 0,15; 0,20; 0,25; 0,30`. Punkt und Dezimalkomma sind
+zulässig. **Probenreihe mit OK erzeugen** aktivieren und bestätigen. Solange
+dies aktiviert ist, erzeugt OK ausschließlich die Kalibrierungsserie.
+Es entsteht eine neue Komponente mit einem Referenzzapfen **REF** ohne
+Spielkorrektur und bis zu zwölf Ringen **R01…** mit dem vollständigen Spiel
+auf der Innenseite. Die Körper liegen nebeneinander und tragen ID und Spiel
+im Namen. Es gibt keine erhabene Beschriftung auf den Passflächen: Die Ringe
+im Slicer zuordnen und nach dem Druck entsprechend kennzeichnen.
+
+Das beste gedruckte Ergebnis als **Druckprofil** speichern: Name, Drucker,
+Material, Düsendurchmesser, Schichthöhe, Orientierung, Spiel, Verteilung und
+Notiz. Optionale Durchmesser-/Steigungsgrenzen begrenzen die Anwendung;
+`0` im Dialog bedeutet eine offene Grenze. Ein ausgewähltes Profil lässt sich
+laden, als neues Profil speichern oder löschen. **Auf Gewinde anwenden**
+übernimmt ausschließlich Spiel und Verteilung für die im Gewinde-Reiter
+ausgewählten Flächen. Profilform, Richtung und Steigung bleiben erhalten;
+Werte außerhalb der Profilgrenzen werden abgewiesen.
+
+Die Beispielreihe ist keine garantierte Materialempfehlung. Die Kalibrierung
+gilt zunächst für die getesteten Bedingungen und die Verteilung **nur innen**.
+Ein Wechsel zu gleichmäßiger Verteilung oder nur außen erhält rechnerisch
+das Gesamtspiel, muss aber wegen der geänderten Druckkonturen erneut geprüft
+werden. Auch andere Durchmesser, Steigungen, freie Profilformen und
+Druckorientierungen können ein anderes Ergebnis liefern.
+
+Druckprofile werden getrennt von Geometrie-Presets in derselben lokalen
+JSON-Datei verwaltet. Export/Import unter **Einstellungen verwalten** umfasst
+beide Arten; die Erfolgszahl zählt beide. **Datenschema 2** wird beim nächsten
+Speichern geschrieben. Alte Schema-1-Dateien bleiben lesbar, unbekannte
+Versionen werden abgewiesen und fehlerhafte Importe verändern keine Daten.
+Schema-2-Dateien erfordern Version 0.9.4 oder neuer; vor einem Downgrade die
+bisherige Schema-1-Datei sichern.
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.
@@ -172,7 +214,7 @@ Ausführliche Anleitung einschließlich Pfadauswahl, Updates und Fehlerbehebung:
 
 ### Windows mit Installer
 
-1. `PrintThreadWizard_Setup_0.9.3.exe` aus den GitHub-Releases herunterladen.
+1. `PrintThreadWizard_Setup_0.9.4.exe` aus den GitHub-Releases herunterladen.
 2. Den Installer ausführen. Er kopiert das Add-in in den Add-ins-Ordner des
    aktuellen Windows-Benutzers; Administratorrechte sind nicht erforderlich.
    Den vorgeschlagenen Zielordner mit **Voreinstellungen > API** in Fusion

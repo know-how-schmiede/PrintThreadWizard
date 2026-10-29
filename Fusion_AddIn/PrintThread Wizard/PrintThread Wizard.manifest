@@ -11,7 +11,7 @@
 		"1040":	"PrintThread Wizard crea filettature stampabili in 3D sulle facce cilindriche selezionate.",
 		"1045":	"PrintThread Wizard tworzy gwinty do druku 3D na wybranych powierzchniach cylindrycznych."
 	},
-	"version":	"0.9.3",
+	"version":	"0.9.4",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true,

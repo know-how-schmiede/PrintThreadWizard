@@ -1,4 +1,5 @@
 import os
+import traceback
 from dataclasses import replace
 
 import adsk.core
@@ -22,6 +23,9 @@ from ...fusion.thread_geometry import create_thread, thread_section
 from ...lib import fusionAddInUtils as futil
 from ...localization import detect_locale, set_locale, translate as tr
 from ...version import VERSION
+from . import calibration_tab
+from ...fusion.calibration import create_calibration
+from ...core.calibration import profile_matches
 
 
 app = adsk.core.Application.get()
@@ -114,6 +118,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     create_inputs = create_tab.children
     management_tab = inputs.addTabCommandInput('management_tab', tr('manage_tab'))
     management_inputs = management_tab.children
+    calibration_tab.add_tab(inputs)
     info_tab = inputs.addTabCommandInput('info_tab', tr('info_tab'))
     info_inputs = info_tab.children
 
@@ -164,7 +169,9 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         'target_face', tr('target_face'), tr('select_face')
     )
     face_input.addSelectionFilter('Faces')
-    face_input.setSelectionLimits(1, 1)
+    # Both command modes share this dialog. Keep native selections optional;
+    # _request_errors requires a face only when creating a model thread.
+    face_input.setSelectionLimits(0, 1)
 
     edge_input = create_inputs.addSelectionInput(
         'chamfer_edges', tr('chamfer_edges'), tr('select_edges')
@@ -358,6 +365,10 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
 def command_execute(args: adsk.core.CommandEventArgs):
     try:
+        if _calibration_enabled(args.command.commandInputs):
+            create_calibration(adsk.fusion.Design.cast(app.activeProduct),
+                               calibration_tab.read_series(lambda key: _input_by_id(args.command.commandInputs, key)))
+            return
         _apply_calculation_mode(args.command.commandInputs)
         parameters = _read_parameters(args.command.commandInputs)
         errors = _request_errors(args.command.commandInputs, parameters)
@@ -375,13 +386,17 @@ def command_execute(args: adsk.core.CommandEventArgs):
         # Abort the entire Fusion command transaction, including target-body edits.
         args.executeFailed = True
         args.executeFailedMessage = str(error)
-        futil.log(f'{CMD_NAME}: {error}; {error.__cause__ or error}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
+        futil.log(f'{CMD_NAME}: {error}; {error.__cause__ or error}\n{traceback.format_exc()}', adsk.core.LogLevels.ErrorLogLevel, force_console=True)
         ui.messageBox(f'PrintThread Wizard:\n{error}')
 
 
 def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
+        return
+    if args.input.id.startswith('profile_') or args.input.id == 'print_profile_selector':
+        calibration_tab.handle_profile(args.input.id,
+            lambda key: _input_by_id(active_command_inputs, key), _apply_print_profile)
         return
     if args.input.id in ('pair_mode', 'partner_full_length'):
         _update_pair_visibility(active_command_inputs)
@@ -437,6 +452,16 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
 
 
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
+    if _calibration_enabled(active_command_inputs):
+        try:
+            series = calibration_tab.read_series(lambda key: _input_by_id(active_command_inputs, key))
+            _input_by_id(active_command_inputs, 'cal_status').text = '\n'.join(
+                label for label, gap, x in series.specimens())
+            args.areInputsValid = True
+        except ValueError as error:
+            _input_by_id(active_command_inputs, 'cal_status').text = str(error)
+            args.areInputsValid = False
+        return
     _apply_calculation_mode(active_command_inputs)
     parameters = _read_parameters(active_command_inputs)
     errors = _request_errors(active_command_inputs, parameters)
@@ -744,6 +769,7 @@ def _import_presets(inputs):
             return
         count = import_thread_presets(dialog.filename)
         _refresh_preset_selectors(inputs)
+        calibration_tab.refresh_profiles(_input_by_id(inputs, 'print_profile_selector'))
         default_name = _tolerance_name(load_default_tolerance())
         _select_dropdown_item(_input_by_id(inputs, 'default_tolerance'), default_name)
         status.text = tr('import_ok', count=count)
@@ -1032,3 +1058,36 @@ def _set_result_text(inputs, errors):
             f'\n{tr("thread_depth")}: {length(partner.thread_depth)}'
             f'\n{tr("major_diameter")}: {length(2 * (other.radius + partner.tolerance_radius_offset(other.is_external)))}'
         )
+
+
+def _calibration_enabled(inputs):
+    return _input_by_id(inputs, 'cal_enabled').value
+
+
+def _apply_print_profile(profile):
+    global TOLERANCE_OPTIONS
+    inputs = active_command_inputs
+    params = _read_parameters(inputs)
+    if params.face is None:
+        raise ValueError(tr('face_required'))
+    cylinder = analyze_cylinder(params.face)
+    if not profile_matches(profile, 2 * cylinder.radius, params.pitch):
+        raise ValueError(tr('profile_range'))
+    partner = _partner_parameters(inputs, params)
+    if partner is not None:
+        if partner.face is None:
+            raise ValueError(tr('face_required'))
+        if not profile_matches(profile, 2 * analyze_cylinder(partner.face).radius, partner.pitch):
+            raise ValueError(tr('profile_range'))
+    value = profile['tolerance_cm']
+    name = next((name for name, gap in TOLERANCE_OPTIONS if abs(gap - value) < 1e-10), None)
+    dropdown = _input_by_id(inputs, 'tolerance')
+    if name is None:
+        name = f'{value * 10:.8g} mm'
+        TOLERANCE_OPTIONS += ((name, value),)
+    if not any(dropdown.listItems.item(i).name == name for i in range(dropdown.listItems.count)):
+        dropdown.listItems.add(name, False)
+    _select_dropdown_item(dropdown, name)
+    distribution = ('balanced', 'internal', 'external').index(profile['clearance_distribution'])
+    _input_by_id(inputs, 'clearance_distribution').listItems.item(distribution).isSelected = True
+    _update_result_text(inputs)
