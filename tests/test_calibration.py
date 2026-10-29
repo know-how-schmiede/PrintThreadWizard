@@ -103,7 +103,7 @@ class CalibrationTests(unittest.TestCase):
         args = types.SimpleNamespace(areInputsValid=False)
         ns['command_validate_input'](args)
         self.assertTrue(args.areInputsValid)
-        self.assertIn('R05', status.text)
+        self.assertIn('P05-I', status.text)
         ns['calibration_tab'].read_series = lambda _: replace(series, wall=.01).validate()
         ns['command_validate_input'](args)
         self.assertFalse(args.areInputsValid)
@@ -136,20 +136,24 @@ class CalibrationTests(unittest.TestCase):
                     clearance_distribution='internal', **changes)
 
     def test_series_positions_ids_and_total_radial_gap(self):
-        series = cal.CalibrationSeries().validate()
-        samples = series.specimens()
-        self.assertEqual(len(samples), 6)
-        self.assertEqual(samples[0], ('REF', 0, 0))
-        self.assertEqual([gap * 10 for _, gap, _ in samples[1:]], [.1, .15, .2, .25, .3])
-        self.assertEqual(len({name for name, _, _ in samples}), 6)
-        for previous, current in zip(samples, samples[1:]):
-            self.assertGreater(current[2] - previous[2], series.diameter + 2 * series.wall)
         parameters = importlib.import_module('printthread_test.core.thread_parameters')
-        for _, gap, _ in samples[1:]:
-            p = parameters.ThreadParameters(object(), (), 1, .1, .3, 0,
-                                            tolerance=gap, clearance_distribution='internal')
-            self.assertEqual(p.tolerance_radius_offset(True), 0)
-            self.assertEqual(p.tolerance_radius_offset(False), gap)
+        for distribution in ('balanced', 'internal', 'external'):
+            series = cal.CalibrationSeries(clearance_distribution=distribution).validate()
+            samples = series.specimens()
+            self.assertEqual(len(samples), 10)
+            self.assertEqual(len({sample.label for sample in samples}), 10)
+            for i in range(0, 10, 2):
+                outside, inside = samples[i:i+2]
+                self.assertTrue(outside.is_external)
+                self.assertFalse(inside.is_external)
+                self.assertEqual(outside.pair_id, inside.pair_id)
+                self.assertEqual(outside.clearance, inside.clearance)
+                self.assertEqual(outside.x, inside.x)
+                self.assertGreater(inside.y - outside.y, series.diameter + 2 * series.wall)
+                p = parameters.ThreadParameters(object(), (), 1, .1, .3, 0,
+                                                tolerance=inside.clearance, clearance_distribution=distribution)
+                self.assertAlmostEqual(p.tolerance_radius_offset(False) - p.tolerance_radius_offset(True), inside.clearance)
+            self.assertEqual([sample.clearance * 10 for sample in samples[::2]], [.1, .15, .2, .25, .3])
 
     def test_invalid_series(self):
         series = cal.CalibrationSeries()

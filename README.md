@@ -14,9 +14,9 @@ More Fusion 360 video tutorials are available on the
 or via the [direct channel link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 I would be very happy if you subscribed to the channel.
 
-Current development version: **0.9.6**
+Current development version: **0.9.7**
 
-0.9.6 adds **saved thread data and editing of individual threads or linked thread pairs at the timeline end**. Direction, pitch and clearance can be changed. Handedness switching, the compact dialog and shared pair editing have been confirmed by the user; Undo/Redo and save/reopen remain pending. See the [test record](doku/pruefprotokoll-0.9.6.md). Not published yet; installers are built only on request.
+0.9.7 adds **a calibration pair per clearance and recessed clearance markings on both end faces**. Distribution is selectable, balanced by default. Fusion and print acceptance are pending; see the [test record](doku/pruefprotokoll-0.9.7.md). No installer built.
 
 ## Inspect and edit thread data
 
@@ -108,49 +108,55 @@ The subsequently generated thread pair:
 
 ## Calibration and print profiles
 
-Open **Calibration** and set nominal diameter, pitch, sample length, ring wall
-thickness and direction. This first implementation uses the metric 60° profile
-without root fillets or chamfers. These dimensions are independent of the
-thread creation tab; no face selection is needed. Length must be at least two
-pitches. Enter total radial clearances in millimetres separated by semicolons,
-e.g. `0.10; 0.15; 0.20; 0.25; 0.30`. Decimal commas are also accepted.
+From **0.9.7**, **each clearance gets its own external/internal thread pair**.
+For example `0.10; 0.15; 0.20; 0.25; 0.30` mm creates five pins and five rings.
+Bodies are arranged in two rows and named e.g. `P01-A 0.10 mm` / `P01-I 0.10 mm`
+(A = external, I = internal). There is no additional shared reference pin.
 
-Enable **Generate samples with OK**, then confirm. While enabled, OK creates
-only the calibration series: a new component containing one reference pin
-**REF** without clearance correction and up to twelve rings **R01…** with all
-clearance applied inside. Samples are placed side by side. Body names contain
-IDs and clearance values; identify the rings in your slicer and mark them
-after printing. No raised labels alter the mating surfaces.
+In **Calibration**, set diameter, pitch, length, ring wall thickness, direction
+and **clearance distribution**. Length must be at least two pitches. Samples use
+the metric 60° profile without fillets or chamfers. These dimensions remain
+independent of the thread tab; no model face selection is needed.
 
-Save the best measured result as a **print profile** with name, printer,
-material, nozzle diameter, layer height, orientation, clearance, distribution
-and note. Optional diameter/pitch bounds constrain application; `0` in the
-dialog means unbounded. Load, save as a new profile, or delete a selected
-profile. **Apply to thread** transfers only clearance and distribution to the
-faces selected in the thread creation tab. It preserves profile geometry,
-direction and pitch and rejects values outside the profile scope.
+| Distribution at 0.20 mm total radial gap | External radius | Internal radius |
+| --- | --- | --- |
+| Balanced (default) | −0.10 mm | +0.10 mm |
+| Internal only | unchanged | +0.20 mm |
+| External only | −0.20 mm | unchanged |
 
-Example clearances are not guaranteed recommendations. Calibration initially
-applies to the tested conditions and **internal-only** distribution. Changing
-distribution preserves the mathematical total gap but changes printed contours
-and requires another fit check. Other diameters, pitches, free profiles and
-printing orientations also require validation.
+The entered clearance is the **total for the pair**, never applied twice.
+Enable **Generate samples with OK** and confirm. The whole series is created
+in its own component; a generation or marking error rolls back the whole job.
 
-Print profiles are separate from geometry presets in the same local JSON file.
-Manage settings exports/imports both types; the result count includes both.
-Storage upgrades to **schema 2** on the next write. Schema-1 files remain
-readable; unknown versions are rejected and invalid imports leave storage
-unchanged. Schema-2 files require 0.9.4 or later. Back up your schema-1 file
-before downgrading.
+**Engrave clearance on end faces** is enabled by default. Both members carry the
+same value, e.g. `0.15`, in **mm total radial gap**. Markings are recessed, inside
+the pin's core radius and on the ring's outer end-face annulus, clear of thread
+surfaces. Defaults: **1.2 mm text height**, **0.3 mm engraving depth**, both
+adjustable. Planned text boxes and actual text bounds are checked. If space is
+insufficient, reduce text or increase wall/diameter; alternatively disable
+engraving and identify samples by body names in the slicer. Marks are never
+silently omitted or moved onto mating thread surfaces. Recreate marked samples
+through the assistant when necessary: engraving adds features and is not rebuilt
+by restricted thread editing.
 
-Example calibration dialog with a loaded print profile (version 0.9.4,
-German UI):
+Save the best printed result as a **print profile** with printer, material,
+nozzle, layer height, orientation, clearance, **the same distribution**, note
+and optional diameter/pitch scope. `0` in the form means an open bound. Changing
+series distribution also preselects it in the profile form; existing saved
+profiles remain unchanged until a new profile is saved. Applying a profile
+transfers only clearance and distribution, retaining geometry and pitch.
 
-<img src="images/29-10-2026_11-58-47.png" alt="PrintThread Wizard 0.9.4: calibration tab with clearance series and loaded BambuHome print profile" width="641">
+Example values are not guaranteed fit recommendations. Recheck other printing
+conditions, profiles, diameters and pitches. Profile/preset JSON remains schema 2;
+schema-1 files remain readable.
 
-Generated calibration series with one reference pin and five test rings:
+The following images show **historical calibration from 0.9.4**, with one
+reference pin and five rings. Version 0.9.7 instead creates five complete pairs;
+the new markings are not shown in these older images.
 
-<img src="images/29-10-2026_11-59-58.png" alt="Calibration series in Fusion: reference pin and five threaded rings arranged side by side" width="1000">
+<img src="images/29-10-2026_11-58-47.png" alt="Historical 0.9.4 calibration dialog with a loaded print profile" width="641">
+
+<img src="images/29-10-2026_11-59-58.png" alt="Historical 0.9.4 reference pin and five rings; replaced by complete pairs in 0.9.7" width="1000">
 
 > **Development notice:** This add-in was developed with assistance from OpenAI
 > Codex and remains under active development. Features, the user interface, and

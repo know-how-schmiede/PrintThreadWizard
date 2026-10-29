@@ -455,6 +455,14 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
         return
+    if args.input.id == 'cal_distribution':
+        _input_by_id(active_command_inputs, 'profile_distribution').listItems.item(
+            args.input.selectedItem.index).isSelected = True
+        return
+    if args.input.id == 'cal_engrave':
+        for key in ('cal_text_height', 'cal_mark_depth'):
+            _input_by_id(active_command_inputs, key).isEnabled = args.input.value
+        return
     if args.input.id == 'record_action':
         if args.input.selectedItem.index > 0:
             _input_by_id(active_command_inputs, 'cal_enabled').value = False
@@ -568,7 +576,7 @@ def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
         try:
             series = calibration_tab.read_series(lambda key: _input_by_id(active_command_inputs, key))
             _input_by_id(active_command_inputs, 'cal_status').text = '\n'.join(
-                label for label, gap, x in series.specimens())
+                specimen.label for specimen in series.specimens())
             args.areInputsValid = True
         except ValueError as error:
             _input_by_id(active_command_inputs, 'cal_status').text = str(error)

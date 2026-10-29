@@ -1,6 +1,6 @@
 """Calibration tab and print profile controls, separate from the main dialog."""
 import adsk.core
-from ...core.calibration import CalibrationSeries
+from ...core.calibration import CalibrationSeries, parse_clearances
 from ...core.thread_presets import load_print_profiles, save_print_profile, delete_print_profile
 from ...localization import translate as tr
 
@@ -17,7 +17,14 @@ def add_tab(inputs):
                                           adsk.core.DropDownStyles.TextListDropDownStyle)
     direction.listItems.add(tr('right_hand'), True)
     direction.listItems.add(tr('left_hand'), False)
+    distribution = tab.addDropDownCommandInput('cal_distribution', tr('clearance_distribution'),
+                                               adsk.core.DropDownStyles.TextListDropDownStyle)
+    for key in ('balanced', 'internal', 'external'):
+        distribution.listItems.add(tr('distribution_' + key), key == 'balanced')
     tab.addStringValueInput('cal_gaps', tr('cal_gaps'), '0.10; 0.15; 0.20; 0.25; 0.30')
+    tab.addBoolValueInput('cal_engrave', tr('cal_engrave'), True, '', True)
+    tab.addValueInput('cal_text_height', tr('cal_text_height'), 'mm', adsk.core.ValueInput.createByString('1.2 mm'))
+    tab.addValueInput('cal_mark_depth', tr('cal_mark_depth'), 'mm', adsk.core.ValueInput.createByString('0.3 mm'))
     tab.addTextBoxCommandInput('cal_status', '', '', 3, True)
     group = tab.addGroupCommandInput('print_profiles', tr('print_profiles')).children
     group.addTextBoxCommandInput('profile_help', '', tr('profile_help'), 4, True)
@@ -37,7 +44,7 @@ def add_tab(inputs):
     distribution = group.addDropDownCommandInput('profile_distribution', tr('clearance_distribution'),
                                                 adsk.core.DropDownStyles.TextListDropDownStyle)
     for key in ('balanced', 'internal', 'external'):
-        distribution.listItems.add(tr('distribution_' + key), key == 'internal')
+        distribution.listItems.add(tr('distribution_' + key), key == 'balanced')
     for key, label in (('save', 'save_current'), ('apply', 'profile_apply'), ('delete', 'delete')):
         group.addBoolValueInput('profile_' + key, tr(label), False, '', False)
     group.addTextBoxCommandInput('profile_status', '', '', 4, True)
@@ -51,6 +58,8 @@ def _add_tooltips(inputs):
         'cal_pitch': 'tip_cal_pitch', 'cal_length': 'tip_cal_length',
         'cal_wall': 'tip_cal_wall', 'cal_direction': 'direction_help',
         'cal_gaps': 'tip_cal_gaps', 'print_profile_selector': 'tip_profile_selector',
+        'cal_distribution': 'distribution_help', 'cal_engrave': 'cal_mark_tip',
+        'cal_text_height': 'cal_mark_tip', 'cal_mark_depth': 'cal_mark_tip',
         'profile_name': 'tip_profile_name', 'profile_printer': 'tip_profile_process',
         'profile_material': 'tip_profile_process', 'profile_orientation': 'tip_profile_orientation',
         'profile_note': 'tip_profile_note', 'profile_nozzle': 'tip_profile_process',
@@ -78,12 +87,17 @@ def refresh_profiles(selector, selected_id=None):
 
 def read_series(get):
     try:
-        gaps = tuple(float(v.strip().replace(',', '.')) / 10
-                     for v in get('cal_gaps').value.split(';'))
+        gaps = parse_clearances(get('cal_gaps').value)
         return CalibrationSeries(*(get('cal_' + key).value for key in ('diameter', 'pitch', 'length')),
                                  clearances=gaps, wall=get('cal_wall').value,
-                                 handedness=('right', 'left')[get('cal_direction').selectedItem.index]).validate()
-    except (ValueError, TypeError, OverflowError):
+                                 handedness=('right', 'left')[get('cal_direction').selectedItem.index],
+                                 clearance_distribution=('balanced', 'internal', 'external')[get('cal_distribution').selectedItem.index],
+                                 engrave=get('cal_engrave').value,
+                                 text_height=get('cal_text_height').value,
+                                 mark_depth=get('cal_mark_depth').value).validate()
+    except ValueError:
+        raise
+    except (TypeError, OverflowError):
         raise ValueError(tr('cal_invalid')) from None
 
 

@@ -83,6 +83,8 @@ Aufwand bezeichnet die relative Komplexität einschließlich Integration und Pr�
 
 ## M4 – Kalibrierungsassistent und Druckprofile
 
+**Erweiterung 29.10.2026 / 0.9.7:** ein eigenes Außen-/Innengewindepaar pro Spielwert, wählbare Verteilung (Standard gleichmäßig) und optionale vertiefte Stirnflächenmarkierung auf beiden Partnern. 89 automatische Tests bestanden. Fusion- und Druckabnahme offen; siehe [Prüfprotokoll 0.9.7](pruefprotokoll-0.9.7.md). Die folgende 0.9.4-Beschreibung dokumentiert den früheren Umfang.
+
 **Status 29.10.2026 / 0.9.4:** implementiert im eigenen Dialogreiter **Kalibrierung**, Fusion- und Druckabnahme offen. 30 automatische Tests bestanden. Erste Probengeometrie: metrisches 60°-Profil ohne Verrundung/Fasen. Zuordnung über Komponente und Körpernamen; keine erhabenen Beschriftungen. Druckprofile getrennt von Geometrie-Presets, gemeinsamer Schema-2-Transfer mit Schema-1-Migration. Siehe [Prüfprotokoll](pruefprotokoll-0.9.4.md).
 
 **Funktion:** Kleine Gewindeproben mit variierendem Spiel erzeugen und das beste Ergebnis wiederverwenden.

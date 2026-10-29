@@ -1,5 +1,13 @@
 # Version Timeline
 
+## 0.9.7 - 2026-10-29
+
+- Kalibrierung je Spielwert als vollständiges Außen-/Innengewindepaar statt gemeinsamem Referenzzapfen. Fünf Werte ergeben zehn Körper in zwei Reihen, mit Paar-/Körpernamen und gemeinsamen Paar-Metadaten.
+- Spielverteilung im Kalibrierungsreiter wählbar; gleichmäßig als Standard, alternativ nur innen oder nur außen. Gesamtspiel bleibt unverändert definiert und wird nicht doppelt angewendet. Profilformular übernimmt eine geänderte Serienverteilung als Vorauswahl.
+- Optionale vertiefte Stirnflächenmarkierungen auf beiden Partnern, standardmäßig aktiv. Schriftgröße und Tiefe einstellbar, Vorgaben 1,2/0,3 mm. Markierungen außerhalb der Passflächen; Materialbereich, Tiefe und tatsächliche Textgrenzen prüfen. Schriftfehler nehmen die gesamte Serie zurück.
+- Neue Texte/Tooltips in sechs Sprachen, README DE/EN und Prüfprotokoll ergänzen Verhalten und Grenzen. Alte Kalibrierungsbilder als historisch markiert. Keine Preset-/Profilschemaänderung.
+- 89 Tests bestanden. Fusion-Prägung, Druckpassung und Lesbarkeit noch nicht geprüft. Version, Manifest und Installer-Konfiguration 0.9.7. Kein Installer gebaut.
+
 ## 0.9.6 - 2026-10-29
 
 - Anwender bestätigt die gemeinsame Paarbearbeitung. Konkrete Parameterkombinationen, Undo/Redo und Speichern/Wiederöffnen bleiben separat zu prüfen.

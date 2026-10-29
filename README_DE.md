@@ -14,9 +14,9 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 über den [direkten Kanal-Link](https://www.youtube.com/channel/UCuEKsFW7ojVm20DLiC_2V2g).
 Über ein Abonnement des Kanals würde ich mich sehr freuen.
 
-Aktuelle Entwicklungsversion: **0.9.6**
+Aktuelle Entwicklungsversion: **0.9.7**
 
-0.9.6 ergänzt **gespeicherte Gewindedaten und die Bearbeitung einzelner Gewinde oder verknüpfter Gewindepaare am Timeline-Ende**. Richtung, Steigung und Spiel sind änderbar. Richtungswechsel, kompakter Dialog und gemeinsame Paarbearbeitung wurden vom Anwender bestätigt; Undo/Redo und Speichern/Wiederöffnen bleiben offen. Siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.6.md). Noch nicht veröffentlicht; Installer nur auf Aufforderung.
+0.9.7 ergänzt **ein Kalibrierungspaar je Spielwert und vertiefte Toleranzmarkierungen auf beiden Stirnflächen**. Die Spielverteilung ist wählbar; gleichmäßig bleibt Standard. Fusion- und Druckabnahme offen, siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.7.md). Kein Installer gebaut.
 
 ## Gewindedaten prüfen und bearbeiten
 
@@ -114,53 +114,60 @@ Das anschließend erzeugte Gewindepaar:
 
 ## Kalibrierungsassistent und Druckprofile
 
-Im Reiter **Kalibrierung** Nenndurchmesser, Steigung, kurze Testlänge,
-Ring-Wandstärke und Richtung einstellen. Die erste Umsetzung verwendet das
-metrische 60°-Profil ohne Grundverrundung und Fasen. Die Maße sind unabhängig
-vom Reiter zur Gewindeerstellung; eine Flächenauswahl ist nicht erforderlich.
-Die Länge muss mindestens zwei Steigungen betragen.
+Ab **0.9.7** entsteht für **jeden Spielwert ein eigenes Außen-/Innengewindepaar**.
+Beispiel `0,10; 0,15; 0,20; 0,25; 0,30` mm ergibt fünf Zapfen und fünf Prüfringe.
+Die Körper werden in zwei Reihen nebeneinander angeordnet und heißen etwa
+`P01-A 0.10 mm` / `P01-I 0.10 mm` (A = außen, I = innen). Es gibt keinen
+zusätzlichen gemeinsamen Referenzzapfen mehr.
 
-**Radiales Gesamtspiel** als Liste in Millimetern eingeben, getrennt durch
-Semikolon, etwa `0,10; 0,15; 0,20; 0,25; 0,30`. Punkt und Dezimalkomma sind
-zulässig. **Probenreihe mit OK erzeugen** aktivieren und bestätigen. Solange
-dies aktiviert ist, erzeugt OK ausschließlich die Kalibrierungsserie.
-Es entsteht eine neue Komponente mit einem Referenzzapfen **REF** ohne
-Spielkorrektur und bis zu zwölf Ringen **R01…** mit dem vollständigen Spiel
-auf der Innenseite. Die Körper liegen nebeneinander und tragen ID und Spiel
-im Namen. Es gibt keine erhabene Beschriftung auf den Passflächen: Die Ringe
-im Slicer zuordnen und nach dem Druck entsprechend kennzeichnen.
+Im Reiter **Kalibrierung** Durchmesser, Steigung, Länge, Ring-Wandstärke,
+Richtung und **Spielverteilung** einstellen. Die Testlänge muss mindestens zwei
+Steigungen betragen. Proben verwenden das metrische 60°-Profil ohne Verrundung
+und Fasen. Ihre Maße sind unabhängig vom Gewindereiter; keine Flächenauswahl nötig.
 
-Das beste gedruckte Ergebnis als **Druckprofil** speichern: Name, Drucker,
-Material, Düsendurchmesser, Schichthöhe, Orientierung, Spiel, Verteilung und
-Notiz. Optionale Durchmesser-/Steigungsgrenzen begrenzen die Anwendung;
-`0` im Dialog bedeutet eine offene Grenze. Ein ausgewähltes Profil lässt sich
-laden, als neues Profil speichern oder löschen. **Auf Gewinde anwenden**
-übernimmt ausschließlich Spiel und Verteilung für die im Gewinde-Reiter
-ausgewählten Flächen. Profilform, Richtung und Steigung bleiben erhalten;
-Werte außerhalb der Profilgrenzen werden abgewiesen.
+| Verteilung bei 0,20 mm radialem Gesamtspiel | Außenradius | Innenradius |
+| --- | --- | --- |
+| Gleichmäßig (Standard) | −0,10 mm | +0,10 mm |
+| Nur Innengewinde | unverändert | +0,20 mm |
+| Nur Außengewinde | −0,20 mm | unverändert |
 
-Die Beispielreihe ist keine garantierte Materialempfehlung. Die Kalibrierung
-gilt zunächst für die getesteten Bedingungen und die Verteilung **nur innen**.
-Ein Wechsel zu gleichmäßiger Verteilung oder nur außen erhält rechnerisch
-das Gesamtspiel, muss aber wegen der geänderten Druckkonturen erneut geprüft
-werden. Auch andere Durchmesser, Steigungen, freie Profilformen und
-Druckorientierungen können ein anderes Ergebnis liefern.
+Der eingegebene Wert gilt **für das Paar insgesamt**, wird also nicht doppelt
+angewendet. Zum Drucken **Probenreihe mit OK erzeugen** aktivieren und bestätigen.
+Die gesamte Serie wird in einer eigenen Komponente angelegt; bei Erzeugungs-
+oder Beschriftungsfehlern wird der gesamte Auftrag zurückgenommen.
 
-Druckprofile werden getrennt von Geometrie-Presets in derselben lokalen
-JSON-Datei verwaltet. Export/Import unter **Einstellungen verwalten** umfasst
-beide Arten; die Erfolgszahl zählt beide. **Datenschema 2** wird beim nächsten
-Speichern geschrieben. Alte Schema-1-Dateien bleiben lesbar, unbekannte
-Versionen werden abgewiesen und fehlerhafte Importe verändern keine Daten.
-Schema-2-Dateien erfordern Version 0.9.4 oder neuer; vor einem Downgrade die
-bisherige Schema-1-Datei sichern.
+**Toleranz auf Stirnflächen einprägen** ist standardmäßig aktiv. Auf beiden
+Partnern steht derselbe Wert, z. B. `0.15`, in **mm radialem Gesamtspiel**.
+Die Markierung ist vertieft: beim Zapfen innerhalb des Kernradius, beim Ring
+auf der äußeren Stirnringfläche. Gewinde- und Passflächen bleiben frei.
+Standard: **1,2 mm Schrifthöhe**, **0,3 mm Prägetiefe**. Beides ist einstellbar.
+Geplante Textfläche und tatsächliche Schriftgrenzen werden geprüft. Bei
+Platzmangel Schrift verkleinern oder Wand/Durchmesser vergrößern; alternativ
+Beschriftung abschalten und die Körpernamen im Slicer zuordnen. Markierungen
+werden nicht stillschweigend ausgelassen oder in die Gewindefläche verschoben.
+Beschriftete Kalibrierungsproben bei Bedarf über den Assistenten neu erzeugen;
+die Gravuren sind zusätzliche Features und werden nicht durch die begrenzte
+Gewindebearbeitung neu aufgebaut.
 
-Beispiel des Kalibrierungsdialogs mit geladenem Druckprofil (Version 0.9.4):
+Das beste gedruckte Ergebnis als **Druckprofil** mit Drucker, Material, Düse,
+Schichthöhe, Orientierung, Spiel, **derselben Spielverteilung**, Notiz und
+optionalem Durchmesser-/Steigungsbereich speichern. `0` bedeutet im Formular
+eine offene Bereichsgrenze. Die Spielverteilung der Serie wird beim Ändern
+auch im Profilformular vorgewählt. Vorhandene Profile bleiben unverändert,
+bis ein neues Profil gespeichert wird. Anwenden übernimmt nur Spiel und
+Verteilung im Gewindereiter; Geometrieform und Steigung bleiben erhalten.
 
-<img src="images/29-10-2026_11-58-47.png" alt="PrintThread Wizard 0.9.4: Kalibrierungsreiter mit Spielreihe und geladenem Druckprofil BambuHome" width="641">
+Beispielwerte sind keine garantierte Passungsempfehlung. Andere Druckbedingungen,
+Profilformen, Durchmesser oder Steigungen müssen erneut geprüft werden.
+Profil-/Preset-JSON bleibt Schema 2; Schema-1-Dateien bleiben lesbar.
 
-Erzeugte Kalibrierungsserie mit einem Referenzzapfen und fünf Prüfringen:
+Die folgenden Bilder zeigen **die frühere Kalibrierung aus 0.9.4**, mit einem
+Referenzzapfen und fünf Ringen. In 0.9.7 entstehen stattdessen fünf vollständige
+Paare; die neuen Markierungen sind in diesen historischen Bildern nicht enthalten.
 
-<img src="images/29-10-2026_11-59-58.png" alt="Kalibrierungsserie in Fusion: Referenzzapfen und fünf nebeneinander angeordnete Gewinderinge" width="1000">
+<img src="images/29-10-2026_11-58-47.png" alt="Historischer Kalibrierungsdialog 0.9.4 mit geladenem Druckprofil" width="641">
+
+<img src="images/29-10-2026_11-59-58.png" alt="Historische Serie 0.9.4 mit einem Referenzzapfen und fünf Ringen; ab 0.9.7 durch vollständige Paare ersetzt" width="1000">
 
 > **Entwicklungshinweis:** Dieses Add-in wurde mit Unterstützung von OpenAI
 > Codex entwickelt und befindet sich weiterhin in aktiver Entwicklung.

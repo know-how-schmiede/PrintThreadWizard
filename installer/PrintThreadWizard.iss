@@ -1,6 +1,6 @@
 #define MyAppName "PrintThread Wizard"
 #define MyAppFileName "PrintThreadWizard"
-#define MyAppVersion "0.9.6"
+#define MyAppVersion "0.9.7"
 #define MyAppPublisher "Rene Triebenstein / Know-How-Schmiede"
 #define MyAppSourceDir "..\Fusion_AddIn\PrintThread Wizard"
 
