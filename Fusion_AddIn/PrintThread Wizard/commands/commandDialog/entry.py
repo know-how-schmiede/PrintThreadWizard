@@ -27,6 +27,8 @@ from . import calibration_tab, size_preview
 from .records_tab import RecordInspector
 from ...fusion.thread_reference_probe import probe_original_references
 from ...fusion.thread_rebuild_trial import run_rebuild_trial
+from ...fusion.thread_pair_edit import replace_linked_pair
+from ...core.thread_records import pair_record_contexts
 from ...fusion.thread_preview import ThreadPreview
 from ...fusion.calibration import create_calibration
 from ...core.calibration import profile_matches
@@ -390,7 +392,22 @@ def command_execute(args: adsk.core.CommandEventArgs):
     thread_preview.clear()
     try:
         if _record_probe_enabled(args.command.commandInputs):
+            if _record_view_only(args.command.commandInputs):
+                return
             record = record_inspector.selected_record(lambda key: _input_by_id(args.command.commandInputs, key))
+            if _record_pair_edit_enabled(args.command.commandInputs):
+                replace_linked_pair(adsk.fusion.Design.cast(app.activeProduct), record,
+                    record_inspector.trial_changes(lambda key: _input_by_id(args.command.commandInputs, key)),
+                    _validation_errors, create_thread, analyze_cylinder, validate_pair)
+                ui.messageBox(tr('pair_edit_done'))
+                return
+            if _record_apply_edit_enabled(args.command.commandInputs):
+                run_rebuild_trial(adsk.fusion.Design.cast(app.activeProduct), record,
+                    _validation_errors, create_thread,
+                    changes=record_inspector.trial_changes(lambda key: _input_by_id(args.command.commandInputs, key)),
+                    replace_original=True)
+                ui.messageBox(tr('edit_done'))
+                return
             if _record_rebuild_trial_enabled(args.command.commandInputs):
                 run_rebuild_trial(adsk.fusion.Design.cast(app.activeProduct), record,
                                   _validation_errors, create_thread,
@@ -420,10 +437,11 @@ def command_execute(args: adsk.core.CommandEventArgs):
         # Both creations belong to this command transaction. Any exception
         # reaches executeFailed below and rolls back the complete pair.
         partner = _partner_parameters(args.command.commandInputs, parameters)
+        contexts = pair_record_contexts() if partner is not None else (None, None)
         mode = 'iso_metric' if _is_iso_mode(args.command.commandInputs) else 'free'
-        create_thread(parameters, calculation_mode=mode)
+        create_thread(parameters, calculation_mode=mode, record_context=contexts[0])
         if partner is not None:
-            create_thread(partner, calculation_mode=mode)
+            create_thread(partner, calculation_mode=mode, record_context=contexts[1])
         futil.log(f"{CMD_NAME}: {tr('thread_created')}")
     except Exception as error:
         # Abort the entire Fusion command transaction, including target-body edits.
@@ -437,15 +455,13 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
     global loading_preset
     if loading_preset:
         return
-    if args.input.id in ('record_probe', 'record_rebuild_trial'):
-        if args.input.value:
-            other = 'record_probe' if args.input.id == 'record_rebuild_trial' else 'record_rebuild_trial'
-            _input_by_id(active_command_inputs, other).value = False
+    if args.input.id == 'record_action':
+        if args.input.selectedItem.index > 0:
             _input_by_id(active_command_inputs, 'cal_enabled').value = False
+        record_inspector.update_action_help(lambda key: _input_by_id(active_command_inputs, key))
         return
     if args.input.id == 'cal_enabled' and args.input.value:
-        _input_by_id(active_command_inputs, 'record_probe').value = False
-        _input_by_id(active_command_inputs, 'record_rebuild_trial').value = False
+        _input_by_id(active_command_inputs, 'record_action').listItems.item(0).isSelected = True
     if args.input.id in ('record_selector', 'records_refresh'):
         design = adsk.fusion.Design.cast(app.activeProduct)
         get = lambda key: _input_by_id(active_command_inputs, key)
@@ -531,13 +547,21 @@ def command_input_changed(args: adsk.core.InputChangedEventArgs):
 
 def command_validate_input(args: adsk.core.ValidateInputsEventArgs):
     if _record_probe_enabled(active_command_inputs):
+        if _record_view_only(active_command_inputs):
+            args.areInputsValid = True
+            return
         try:
-            record_inspector.selected_record(lambda key: _input_by_id(active_command_inputs, key))
-            if _record_rebuild_trial_enabled(active_command_inputs):
+            record = record_inspector.selected_record(lambda key: _input_by_id(active_command_inputs, key))
+            if _record_pair_edit_enabled(active_command_inputs) and not record.get('pair_id'):
+                raise ValueError(tr('pair_edit_missing'))
+            if (_record_apply_edit_enabled(active_command_inputs) or _record_pair_edit_enabled(active_command_inputs)) and not record['references'].get('owned_features'):
+                raise ValueError(tr('edit_ownership_missing'))
+            if _record_rebuild_trial_enabled(active_command_inputs) or _record_apply_edit_enabled(active_command_inputs) or _record_pair_edit_enabled(active_command_inputs):
                 record_inspector.trial_changes(lambda key: _input_by_id(active_command_inputs, key))
             args.areInputsValid = True
         except ValueError as error:
             _input_by_id(active_command_inputs, 'record_details').text = str(error)
+            _input_by_id(active_command_inputs, 'edit_availability').text = str(error)
             args.areInputsValid = False
         return
     if _calibration_enabled(active_command_inputs):
@@ -1202,9 +1226,20 @@ def _update_assistance(inputs, draw_preview=False):
 
 
 def _record_probe_enabled(inputs):
-    return (_input_by_id(inputs, 'record_probe').value
-            or _record_rebuild_trial_enabled(inputs))
+    return _input_by_id(inputs, 'records_tab').isActive
 
 
 def _record_rebuild_trial_enabled(inputs):
-    return _input_by_id(inputs, 'record_rebuild_trial').value
+    return _input_by_id(inputs, 'record_action').selectedItem.index == 2
+
+
+def _record_apply_edit_enabled(inputs):
+    return _input_by_id(inputs, 'record_action').selectedItem.index == 3
+
+
+def _record_view_only(inputs):
+    return _input_by_id(inputs, 'record_action').selectedItem.index == 0
+
+
+def _record_pair_edit_enabled(inputs):
+    return _input_by_id(inputs, 'record_action').selectedItem.index == 4

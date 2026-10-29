@@ -16,72 +16,61 @@ Weitere Videotutorials rund um Fusion 360 gibt es auf dem YouTube-Kanal
 
 Aktuelle Entwicklungsversion: **0.9.6**
 
-0.9.6 beginnt M6 mit **gespeicherten Gewindedaten und einer Prüfung der Modellbezüge**. Dies ist die Vorbereitung für spätere Bearbeitung, noch keine Bearbeitungsfunktion. Fusion-Abnahme offen; siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.6.md). Noch nicht veröffentlicht; Installer nur auf Aufforderung.
+0.9.6 ergänzt **gespeicherte Gewindedaten und die Bearbeitung einzelner Gewinde oder verknüpfter Gewindepaare am Timeline-Ende**. Richtung, Steigung und Spiel sind änderbar. Richtungswechsel, kompakter Dialog und gemeinsame Paarbearbeitung wurden vom Anwender bestätigt; Undo/Redo und Speichern/Wiederöffnen bleiben offen. Siehe [Prüfprotokoll](doku/pruefprotokoll-0.9.6.md). Noch nicht veröffentlicht; Installer nur auf Aufforderung.
 
-## Gewindedaten prüfen – Vorbereitung auf spätere Bearbeitung
+## Gewindedaten prüfen und bearbeiten
 
-Neue Gewinde ab **0.9.6** speichern ihre Einstellungen zusätzlich zur lesbaren
-Dokumentationsskizze maschinenlesbar im Fusion-Dokument: Berechnungsmodus,
-Steigung, Profilwinkel und -tiefe, Verrundung, Spiel und Verteilung, Richtung,
-Längenmodus, Versatz, Länge und Zusatzfase. Auch Bezüge zu ursprünglicher
-Fläche, Zielkörper, Komponente, gegebenenfalls Instanz, Start-/Fasenkanten und
-den ersten beziehungsweise letzten Erzeugungsfeatures werden erfasst.
-Bei Paaren und Kalibrierungsserien erhält jedes Gewinde einen eigenen Datensatz.
+Neue Gewinde ab 0.9.6 speichern Parameter und Modellbezüge im Fusion-Dokument.
+Im Reiter **Gewindedaten prüfen** ein Gewinde auswählen; dessen Werte werden
+in **Parameter für Test und Bearbeitung** geladen. Dort lassen sich jetzt auch
+**Rechtsgewinde und Linksgewinde ineinander ändern**, neben Steigung und Spiel.
+Bei gespeicherten Teilgewinden sind zusätzlich Länge und Versatz änderbar;
+die vorhandene Startkante bleibt erhalten. Ganze Gewinde bleiben ganze Gewinde.
+Metrische Tiefe wird bei Steigungsänderung neu berechnet, freie Tiefe bleibt erhalten.
 
-Im neuen Reiter **Gewindedaten prüfen**:
+Der aufgeräumte Dialog enthält ein einziges Menü **Aktion**:
 
-1. **Liste aktualisieren** liest die Datensätze des aktuellen Dokuments ein.
-2. Ein gespeichertes Gewinde auswählen, um seine Einstellungen zu sehen.
-3. Die Bezugsliste zeigt, ob ein Bezug eindeutig, mehrdeutig oder aktuell nicht
-   auflösbar ist. Zusätzlich werden bestimmbare Timeline-Grenzen und die Anzahl
-   nachfolgender Einträge angezeigt.
+- **Nur anzeigen:** OK schließt ohne Modelländerung, solange dieser Reiter aktiv ist.
+- **Ursprungsbezüge prüfen:** Bezüge vor der alten Erzeugung prüfen, Timeline danach wiederherstellen.
+- **Neuaufbau testen (Rücknahme):** Mit den eingestellten Werten temporär neu aufbauen und den gesamten Befehl absichtlich zurücknehmen. Der Rücknahmehinweis ist erwartet.
+- **Bearbeitung übernehmen:** Das ausgewählte Gewinde dauerhaft mit den eingestellten Werten neu aufbauen; bei Fehlern wird die Rücknahme der ganzen Transaktion angefordert.
+- **Gewindepaar gemeinsam bearbeiten:** Richtung, Steigung und Spiel auf beide eindeutig verknüpften Partner anwenden. Individuelle Längen und Startseiten bleiben erhalten; ein Fehler nimmt beide Ersetzungen zurück.
 
-Die Prüfung verändert weder Modell noch Timeline. Eine Ausgangsfläche kann
-nach dem Gewindeschnitt nicht mehr auflösbar sein; dies bedeutet allein noch
-keine beschädigten Daten. Das Wiederfinden im ursprünglichen Timeline-Zustand
-muss im nächsten Machbarkeitsschritt geprüft werden. **Zum Schließen Abbrechen
-verwenden**; bei deaktiviertem Bezugstest bleibt OK der Erstellungsaktion im
-Gewinde-/Kalibrierungsreiter zugeordnet.
+Die frühere Auswahl über drei Kontrollkästchen und die zusätzliche Aktivierung
+von Testparametern entfallen. Hinweise erscheinen passend zur Aktion; technische
+Details stehen unter **Gespeicherte Werte und Modellbezüge**, zunächst eingeklappt.
+Die Auswahl eines anderen Gewindes lädt dessen Originalwerte und setzt die Aktion
+auf **Nur anzeigen** zurück. Die Aktion gilt ausschließlich im aktiven Gewindedaten-Reiter.
 
-Für den nächsten Machbarkeitsschritt gibt es **Ursprungsbezüge mit OK prüfen**:
-Gewindedatensatz auswählen, diese Option aktivieren und OK drücken. Jetzt wird
-ausschließlich der Bezugstest ausgeführt. Er rollt vor die ursprüngliche
-Gewindeerzeugung, prüft gespeicherte Flächen/Kanten und validiert die Parameter
-am damaligen Körper. Danach werden Timeline-Marker und Gruppenansicht wieder
-an ihren Ausgangszustand gesetzt und das Ergebnis angezeigt. Es wird kein
-Gewinde erstellt oder verändert. Auch bei Prüffehlern wird die Wiederherstellung
-versucht; schlägt sie fehl, wird die gesamte Befehls-Transaktion zurückgenommen.
-Ein erfolgreicher Bezugstest ist noch kein Nachweis eines sicheren Neuaufbaus.
+Beispiel in Version 0.9.6: **Gewindepaar gemeinsam bearbeiten** ist ausgewählt.
+Das gespeicherte Linksgewinde wird im Formular auf **Rechtsgewinde** eingestellt;
+die Eingaben zeigen 10 mm Steigung und 0,15 mm radiales Gesamtspiel. Die
+technischen Details sind eingeklappt, Länge und Startversatz für die Paaraktion
+deaktiviert:
 
-Der nächste Test ist **Neuaufbau mit OK testen und zurücknehmen**. Einen
-Datensatz auswählen, diese Option aktivieren und OK drücken. Das Add-in erzeugt
-vor den alten Gewindefeatures einen temporären Neuaufbau mit den gespeicherten
-oder ausdrücklich geänderten Testparametern. Danach wird der gesamte Befehl **absichtlich
-zurückgenommen**, auch wenn die Erzeugung erfolgreich war. Der abschließende
-Rücknahmehinweis ist deshalb erwartet. Bei Fehlern gilt ebenfalls die vollständige
-Rücknahme; die alten Features werden nicht gelöscht. Nach Schließen des Hinweises
-prüfen, dass ursprüngliches Gewinde, weitere Bauteile und Timeline unverändert
-sind. Dieser Test übernimmt noch keine Bearbeitung. Bezugstest, Test-Neuaufbau
-und Kalibrierungsserie sind gegenseitig ausschließende OK-Aktionen.
+<img src="images/29-10-2026_15-34-02.png" alt="PrintThread Wizard 0.9.6: aufgeräumter Bearbeitungsdialog mit gemeinsamer Paaraktion und Wechsel von Links- zu Rechtsgewinde" width="1000">
 
-Im Bereich **Parameter für Test-Neuaufbau** lädt die Gewindeauswahl zunächst
-die Originalwerte. **Geänderte Testparameter verwenden** aktivieren und Spiel
-oder Steigung anpassen. Bei gespeicherten Teilgewinden lassen sich zusätzlich
-Versatz und Länge ändern; die ursprüngliche Startkante bleibt erhalten.
-Ganze Gewinde bleiben in dieser Stufe ganze Gewinde. Im metrischen Modus wird
-die Tiefe aus der neuen Steigung berechnet, im freien Modus bleibt sie erhalten.
-Ungültige Profile oder Abschnitte werden abgewiesen. Die Änderungen gelten nur
-für den Test; weder Originaldatensatz noch Gewinde werden dauerhaft geändert.
-Beim Auswählen eines anderen Gewindes werden Teständerungen deaktiviert und
-dessen Originalwerte geladen.
+**Grenzen der dauerhaften Bearbeitung:** nur das letzte Gewinde am Timeline-Ende,
+ohne nachfolgende oder eingefügte fremde Features. Vollständiger Feature-Nachweis
+erfordert ein neu mit der entsprechend aktualisierten Fassung erstelltes Gewinde.
+Ältere Datensätze bleiben prüfbar; Gewinde ohne Metadaten werden nicht rekonstruiert.
+Bei der Einzelaktion ändert sich nur das ausgewählte Gewinde. Beim Richtungswechsel
+müssen beide Partner zusammenpassen; alternativ die gemeinsame Paaraktion verwenden.
+Für diese Aktion muss ein **neues Gewindepaar mit dieser aktualisierten Fassung**
+gemeinsam erstellt werden. Nur dann enthält es eine eindeutige gegenseitige
+Zuordnung. Ältere Paare werden nicht automatisch verknüpft. Beide Partner müssen
+zusammen den vollständig zugeordneten Bereich am Timeline-Ende bilden; spätere
+oder eingeschobene fremde Features werden abgewiesen. Längen und Versatz sind
+bei der gemeinsamen Aktion nicht editierbar und bleiben je Partner erhalten.
+Gewinde-IDs und Paarzuordnung bleiben bei weiteren Bearbeitungen erhalten.
+Undo/Redo und Speichern/Wiederöffnen müssen in Fusion geprüft werden.
 
-**Noch nicht enthalten:** Spiel, Steigung oder Länge eines bestehenden Gewindes
-ändern und das Gewinde neu aufbauen. Alte Gewinde ohne Metadaten werden nicht
-automatisch rekonstruiert und nicht nachträglich als bearbeitbar markiert.
-Die neuen Daten gehören zum Fusion-Dokument, nicht zum Preset-JSON-Export;
-dessen Schema bleibt unverändert. Bitte zum Prüfen ein neues Gewinde erstellen,
-das Dokument speichern, erneut öffnen und die Daten im neuen Reiter kontrollieren.
-[Machbarkeitsstand und nächste Prüfschritte](doku/bearbeitung-machbarkeit-0.9.6.md).
+Für die Persistenzprüfung: neues Paar erzeugen, gemeinsam ändern, speichern und
+erneut öffnen. Anschließend beide Datensätze kontrollieren und eine weitere
+Paarbearbeitung sowie Undo/Redo prüfen. Diese Fusion-Prüfungen stehen noch aus.
+
+Die Metadaten gehören zum Dokument, nicht zum Preset-JSON-Export; dessen Schema
+bleibt unverändert. [Machbarkeitsstand und Prüfungen](doku/bearbeitung-machbarkeit-0.9.6.md).
 
 ## Größenhilfe und Vorschau
 
@@ -179,6 +168,8 @@ Erzeugte Kalibrierungsserie mit einem Referenzzapfen und fünf Prüfringen:
 
 ## Aktueller Funktionsumfang
 
+- Gespeicherte Gewindedaten mit Modellbezügen, kompaktem Aktionsmenü und Rechts-/Linkswechsel
+- Begrenzte dauerhafte Einzel- und Paarbearbeitung am Timeline-Ende; stabile Gewinde-IDs und eindeutige Paarzuordnung
 - Automatische Übernahme der Fusion-Oberflächensprache für Deutsch, Englisch,
   Spanisch, Französisch, Italienisch und Polnisch; Englisch dient als Fallback
 - Lokalisierte Validierungs- und Fehlermeldungen, Dateidialoge, Timeline-Namen

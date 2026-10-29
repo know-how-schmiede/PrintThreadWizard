@@ -84,7 +84,7 @@ class CoreTests(unittest.TestCase):
         function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'thread_section')
         cylinder_type = make_dataclass('Section', ['axis_start', 'axis_end', 'axis', 'length'])
         cylinder = cylinder_type(0, 4, 'axis', 4)
-        ns = dict(replace=replace, math=math, tr=lambda key:key,
+        ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), replace=replace, math=math, tr=lambda key:key,
                   _translated_point=lambda point, axis, amount:point + amount,
                   _trim_reference_from_selected_circles=lambda cylinder, ends:cylinder,
                   capture_chamfer_ends=lambda cylinder, edges:[types.SimpleNamespace(is_start=edges[0] == 'first')])
@@ -113,7 +113,7 @@ class CoreTests(unittest.TestCase):
             sweeps = Mock()
             cylinder = types.SimpleNamespace(is_external=external, body=object(),
                          component=types.SimpleNamespace(features=types.SimpleNamespace(sweepFeatures=sweeps)))
-            ns = dict(tr=lambda key:key, adsk=types.SimpleNamespace(fusion=types.SimpleNamespace(
+            ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), tr=lambda key:key, adsk=types.SimpleNamespace(fusion=types.SimpleNamespace(
                 Path=types.SimpleNamespace(create=lambda *a:object()),
                 ChainedCurveOptions=types.SimpleNamespace(noChainedCurves=0), FeatureOperations=ops)))
             exec(compile(ast.Module(body=[function], type_ignores=[]), '<sweep>', 'exec'), ns)
@@ -155,7 +155,7 @@ class CoreTests(unittest.TestCase):
                 cylinder = types.SimpleNamespace(axis=axis, axis_start=object(), radial=object(), radius=1, length=2)
                 manager = Mock()
                 manager.createHelixWire.side_effect = RuntimeError('ASM_HELIX_NR_TURNS_TOO_SMALL')
-                ns = dict(tr=loc.translator(locale), _translated_point=lambda *a:object(),
+                ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), tr=loc.translator(locale), _translated_point=lambda *a:object(),
                           adsk=types.SimpleNamespace(fusion=types.SimpleNamespace(
                               TemporaryBRepManager=types.SimpleNamespace(get=lambda:manager))))
                 exec(compile(ast.Module(body=[handler], type_ignores=[]), '<helix>', 'exec'), ns)
@@ -216,7 +216,7 @@ class CoreTests(unittest.TestCase):
         tree = ast.parse((ADDIN / 'commands/commandDialog/entry.py').read_text(encoding='utf-8'))
         handler = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'command_execute')
         handler.args.args[0].annotation = None
-        ns = dict(_record_probe_enabled=lambda _: False, _is_iso_mode=lambda _: False, thread_preview=Mock(), traceback=traceback, _calibration_enabled=lambda _: False, _apply_calculation_mode=lambda _:None, _read_parameters=lambda _:self.params,
+        ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), _record_probe_enabled=lambda _: False, _is_iso_mode=lambda _: False, thread_preview=Mock(), traceback=traceback, _calibration_enabled=lambda _: False, _apply_calculation_mode=lambda _:None, _read_parameters=lambda _:self.params,
                   _request_errors=lambda *args:[], _partner_parameters=lambda *args:None,
                   CMD_NAME='test', tr=lambda key:key,
                   futil=types.SimpleNamespace(log=lambda *a, **k:None),
@@ -258,7 +258,7 @@ class CoreTests(unittest.TestCase):
         handler.args.args[0].annotation = None
         partner = replace(self.params, face=object())
         create = Mock(side_effect=[object(), RuntimeError('second failed')])
-        ns = dict(_record_probe_enabled=lambda _: False, _is_iso_mode=lambda _: False, thread_preview=Mock(), traceback=traceback, _calibration_enabled=lambda _: False, _apply_calculation_mode=lambda _: None, _read_parameters=lambda _: self.params,
+        ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), _record_probe_enabled=lambda _: False, _is_iso_mode=lambda _: False, thread_preview=Mock(), traceback=traceback, _calibration_enabled=lambda _: False, _apply_calculation_mode=lambda _: None, _read_parameters=lambda _: self.params,
                   _request_errors=lambda *a: [], _partner_parameters=lambda *a: partner,
                   create_thread=create, CMD_NAME='test', tr=lambda key: key,
                   futil=types.SimpleNamespace(log=lambda *a, **k: None),
@@ -315,7 +315,7 @@ class CoreTests(unittest.TestCase):
                       partner_full_length=types.SimpleNamespace(value=False),
                       partner_start_offset=types.SimpleNamespace(value=.2),
                       partner_thread_length=types.SimpleNamespace(value=1.5))
-        ns = dict(replace=replace, _input_by_id=lambda _, key: fields[key],
+        ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), replace=replace, _input_by_id=lambda _, key: fields[key],
                   _is_iso_mode=lambda _: True, radial_thread_depth=iso.radial_thread_depth,
                   analyze_cylinder=lambda _: types.SimpleNamespace(is_external=False))
         exec(compile(ast.Module(body=[function], type_ignores=[]), '<partner>', 'exec'), ns)

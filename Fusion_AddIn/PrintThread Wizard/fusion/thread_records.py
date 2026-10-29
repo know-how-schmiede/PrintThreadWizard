@@ -4,7 +4,7 @@ from ..version import VERSION
 from ..localization import translate as tr
 
 
-def capture_record(parameters, calculation_mode, creation_occurrence=None):
+def capture_record(parameters, calculation_mode, creation_occurrence=None, context=None):
     face = parameters.face
     occurrence = creation_occurrence or face.assemblyContext
     native = face.nativeObject or face
@@ -13,7 +13,14 @@ def capture_record(parameters, calculation_mode, creation_occurrence=None):
                       component=token(native.body.parentComponent), occurrence=token(occurrence),
                       start_edge=token(parameters.start_edge),
                       chamfer_edges=[token(edge) for edge in parameters.chamfer_edges])
-    return make_record(parameters, references, calculation_mode, VERSION)
+    record = make_record(parameters, references, calculation_mode, VERSION)
+    if context:
+        from ..core.thread_records import validate_record
+        if set(context) - {'id', 'pair_id', 'partner_id'}:
+            raise ValueError(tr('record_invalid'))
+        record.update(context)
+        validate_record(record, require_result=False)
+    return record
 
 
 def attach_record(record, parameter_sketch, result_feature):

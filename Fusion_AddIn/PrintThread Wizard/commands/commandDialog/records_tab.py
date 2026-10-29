@@ -1,4 +1,4 @@
-"""First M6 stage: inspect saved settings and references without rebuilding."""
+"""Compact record selection, parameter editing and explicit action menu."""
 import math
 import adsk.core
 from ...core.thread_edits import validate_trial_changes
@@ -12,23 +12,32 @@ class RecordInspector:
 
     def add_tab(self, inputs, design):
         fields = inputs.addTabCommandInput('records_tab', tr('records_tab')).children
-        fields.addTextBoxCommandInput('records_help', '', tr('records_help'), 5, True)
-        fields.addDropDownCommandInput('record_selector', tr('record_selector'),
+        fields.addTextBoxCommandInput('records_help', '', tr('records_intro'), 2, True)
+        fields.addDropDownCommandInput('record_selector', tr('record_short'),
                                       adsk.core.DropDownStyles.TextListDropDownStyle)
         fields.addBoolValueInput('records_refresh', tr('records_refresh'), False, '', False).tooltip = tr('records_refresh_tip')
-        fields.addBoolValueInput('record_probe', tr('probe_action'), True, '', False).tooltip = tr('probe_tip')
-        fields.addTextBoxCommandInput('probe_help', '', tr('probe_tip'), 4, True)
-        fields.addBoolValueInput('record_rebuild_trial', tr('trial_action'), True, '', False).tooltip = tr('trial_tip')
-        fields.addTextBoxCommandInput('trial_help', '', tr('trial_tip'), 5, True)
-        edits = fields.addGroupCommandInput('trial_changes', tr('trial_changes')).children
-        edits.addBoolValueInput('trial_modify', tr('trial_modify'), True, '', False).tooltip = tr('trial_modify_tip')
+        action = fields.addDropDownCommandInput('record_action', tr('action'),
+                                               adsk.core.DropDownStyles.TextListDropDownStyle)
+        for index, key in enumerate(('records_view', 'records_probe', 'records_trial', 'records_apply', 'records_pair_apply')):
+            action.listItems.add(tr(key), index == 0)
+        fields.addTextBoxCommandInput('record_action_help', '', tr('records_view_tip'), 3, True)
+        fields.addTextBoxCommandInput('edit_availability', '', tr('probe_select'), 3, True)
+        group = fields.addGroupCommandInput('trial_changes', tr('trial_changes'))
+        group.isExpanded = True
+        edits = group.children
+        direction = edits.addDropDownCommandInput('trial_handedness', tr('thread_direction'),
+                                                 adsk.core.DropDownStyles.TextListDropDownStyle)
+        direction.listItems.add(tr('right_hand'), True)
+        direction.listItems.add(tr('left_hand'), False)
+        direction.tooltip = tr('direction_help')
         for key, label, default in (('pitch', 'pitch', '2 mm'), ('tolerance', 'cal_gap', '0.15 mm'),
                                     ('start_offset', 'start_offset', '0 mm'), ('thread_length', 'thread_length', '10 mm')):
             edits.addValueInput('trial_' + key, tr(label), 'mm',
-                               adsk.core.ValueInput.createByString(default)).tooltip = tr('trial_modify_tip')
-        edits.addTextBoxCommandInput('trial_changes_help', '', tr('trial_modify_tip'), 4, True)
-        fields.addTextBoxCommandInput('record_details', '', '', 16, True)
-        self.refresh(design, fields.itemById)
+                               adsk.core.ValueInput.createByString(default)).tooltip = tr('record_parameters_tip')
+        details = fields.addGroupCommandInput('record_details_group', tr('record_details_group'))
+        details.isExpanded = False
+        details.children.addTextBoxCommandInput('record_details', '', '', 12, True)
+        self.refresh(design, lambda key: fields.itemById(key) or edits.itemById(key) or details.children.itemById(key))
 
     def selected_record(self, get):
         selected = get('record_selector').selectedItem
@@ -39,39 +48,50 @@ class RecordInspector:
 
     def trial_changes(self, get):
         record = self.selected_record(get)
-        if not get('trial_modify').value:
-            return None
-        keys = ('pitch', 'tolerance') if record['parameters']['full_length'] else (
+        paired = get('record_action').selectedItem.index == 4
+        keys = ('pitch', 'tolerance') if record['parameters']['full_length'] or paired else (
                'pitch', 'tolerance', 'start_offset', 'thread_length')
-        return validate_trial_changes({key: get('trial_' + key).value for key in keys},
-                                      record['parameters']['full_length'])
+        changes = {key: get('trial_' + key).value for key in keys}
+        changes['handedness'] = ('right', 'left')[get('trial_handedness').selectedItem.index]
+        return validate_trial_changes(changes, record['parameters']['full_length'])
 
     def refresh(self, design, get):
+        get('record_action').listItems.item(0).isSelected = True
+        self.update_action_help(get)
+        get('edit_availability').text = tr('probe_select')
         self.entries = list_records(design)
         items = get('record_selector').listItems
         items.clear()
         items.add(tr('choose_setting'), True)
         for index, entry in enumerate(self.entries):
             record = entry['record']
-            label = f'{index + 1}: {entry["name"]}'
+            label = f'{index + 1}: {entry["name"][:40]}'
             if record:
-                label += f' ({record["id"][:8]})'
+                p = record['parameters']
+                direction = tr('left_hand' if p['handedness'] == 'left' else 'right_hand')
+                label = f'{index + 1}: {direction}, P{p["pitch"] * 10:g} mm ({record["id"][:8]})'
             items.add(label, False)
         get('record_details').text = tr('records_count', count=len(self.entries))
 
     def show(self, design, get):
+        get('record_action').listItems.item(0).isSelected = True
+        self.update_action_help(get)
+        get('edit_availability').text = tr('probe_select')
         selected = get('record_selector').selectedItem
         index = selected.index - 1 if selected is not None else -1
         if not 0 <= index < len(self.entries):
             get('record_details').text = tr('records_count', count=len(self.entries))
             return
         entry = self.entries[index]
+        get('record_selector').tooltip = entry['name']
         if entry['error']:
             get('record_details').text = entry['error']
             return
         record = entry['record']
+        owned = bool(record['references'].get('owned_features'))
+        get('edit_availability').text = tr('edit_ready' if owned else 'edit_ownership_missing')
         p = record['parameters']
-        get('trial_modify').value = False
+        get('trial_handedness').listItems.item(1 if p['handedness'] == 'left' else 0).isSelected = True
         for key in ('pitch', 'tolerance', 'start_offset', 'thread_length'):
             field = get('trial_' + key)
             field.value = p[key]
@@ -98,3 +118,15 @@ class RecordInspector:
         lines.append(tr('record_timeline', **timeline) if timeline else tr('record_timeline_missing'))
         lines.append(tr('record_source_note'))
         get('record_details').text = '\n'.join(lines)
+
+
+    def update_action_help(self, get):
+        selected = get('record_action').selectedItem
+        index = selected.index if selected is not None else 0
+        get('record_action_help').text = tr(('records_view_tip', 'probe_tip', 'trial_tip', 'edit_tip', 'pair_edit_tip')[index])
+        selected = get('record_selector').selectedItem
+        row = selected.index - 1 if selected is not None else -1
+        partial = (0 <= row < len(self.entries) and self.entries[row]['record'] is not None
+                   and not self.entries[row]['record']['parameters']['full_length'])
+        for key in ('start_offset', 'thread_length'):
+            get('trial_' + key).isEnabled = partial and index != 4

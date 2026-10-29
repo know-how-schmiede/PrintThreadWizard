@@ -2,8 +2,9 @@
 
 Stand: 29.10.2026. Erster M6-Schritt implementiert: Daten erfassen und
 Bezüge prüfen. Der Machbarkeitsnachweis für einen sicheren Neuaufbau ist
-noch nicht abgeschlossen. Es gibt bewusst keinen Befehl, der vorhandene
-Gewinde überschreibt oder alte Timeline-Features entfernt.
+noch nicht vollständig abgeschlossen. Eine begrenzte dauerhafte Bearbeitung
+des letzten, vollständig zugeordneten Gewindes ist implementiert; ihre
+Fusion-Abnahme bleibt offen.
 
 ## Untersuchte API und Mechanismen
 
@@ -87,7 +88,78 @@ ohne den Datensatz zu verändern. Im metrischen Modus wird die Tiefe mit der
 tatsächlichen Innen-/Außenart des Ursprungskörpers neu berechnet. Der geänderte
 Abschnitt wird am wiederhergestellten Originalkörper geprüft. Es bleibt bei
 einem ausschließlich temporären Test mit obligatorischer Rücknahme. Die
-dauerhafte Übernahme einer Bearbeitung ist noch nicht implementiert.
+dauerhafte Übernahme einer Bearbeitung ist nun in einer begrenzten Form
+implementiert, wie nachfolgend beschrieben.
+
+## Begrenzte dauerhafte Übernahme
+
+Die Parameteränderungen umfassen inzwischen auch die Gewinderichtung. Diese
+wird wie die übrigen Parameter validiert, an den bestehenden Generator
+übergeben und in neuen Metadaten gespeichert. Der kompakte Dialog verwendet
+ein einziges Aktionsmenü. Die dauerhafte Bearbeitung bleibt trotz dieser
+Oberflächenänderung denselben Ownership- und Timeline-Prüfungen unterworfen.
+
+Neue Erzeugungen mit dieser aktualisierten Fassung erhalten zusätzlich eine
+vollständige Feature-Tokenliste und ein Ownership-ID-Attribut an jedem Feature.
+Das Dokument-Metadatenschema bleibt 1; das optionale Feld ist validiert.
+Vorhandene Datensätze ohne diese Liste bleiben lesbar und testbar, werden
+aber nicht automatisch zur Bearbeitung freigegeben.
+
+Die Aktion **Bearbeitung mit OK dauerhaft übernehmen** ist ausschließlich für
+das letzte Gewinde vorgesehen. Der Marker muss vor dem Start am Timeline-Ende
+stehen. Nach Aufklappen der ursprünglichen Gruppen müssen alle aufgelösten,
+per ID zugeordneten Features lückenlos genau den Bereich vom ersten
+Erzeugungsfeature bis zum Timeline-Ende abdecken. Ergebnisfeature und letzte
+Position müssen übereinstimmen. Spätere oder eingeschobene fremde Features
+führen vor der Entfernung zum Abbruch.
+
+Erst nach erfolgreicher Bezugs- und Parametervalidierung wird dieser geprüfte
+Bereich mit `deleteAllAfterMarker` entfernt. Danach werden ursprüngliche
+Fläche/Kanten erneut aufgelöst und validiert, bevor der Generator läuft.
+Bei Erfolg entstehen neue Parameterdaten und Ownership-Attribute. Bei jedem
+Fehler setzt der Execute-Handler executeFailed, damit Fusion auch die
+Entfernung der alten Features zurücknimmt. Es wird keine Bearbeitung mit
+späteren abhängigen Features angeboten; ein Custom Feature ist für diese
+begrenzte erste Umsetzung nicht erforderlich.
+
+Der tatsächliche Commit, der Fehlerpfad nach Entfernung, Undo/Redo und die
+erneute Bearbeitung nach Speichern/Öffnen müssen in Fusion geprüft werden.
+
+## Stabile Identität und gemeinsame Paarbearbeitung
+
+Aktueller Dialog mit gemeinsamer Paaraktion und eingeklappter Bezugsprüfung:
+
+<img src="../images/29-10-2026_15-34-02.png" alt="Version 0.9.6: Paarbearbeitung mit Richtung, Steigung und radialem Gesamtspiel" width="1000">
+
+Die Auswahl bezeichnet ein gespeichertes Linksgewinde; im Parameterbereich
+ist Rechtsgewinde als Ziel eingestellt. Das Bild zeigt den Dialog vor dem
+Bestätigen und ist kein eigener Nachweis für Undo/Redo oder Dateipersistenz.
+
+Dauerhafte Bearbeitung übernimmt jetzt die vorhandene Gewinde-ID in den neuen
+Datensatz und alle Ownership-Attribute. Neue Paare erhalten zusätzlich eine
+gemeinsame Paar-ID und gegenseitige Partner-IDs. Diese optionalen Metadaten
+werden validiert; Dokument-Metadatenschema 1 und Presetschema 2 bleiben erhalten.
+Ältere Datensätze bleiben lesbar, erhalten aber keine abgeleitete Paarzuordnung.
+Einzelbearbeitung eines verknüpften Partners erhält dessen ID und damit den
+gegenseitigen Link, auch wenn die Parameter danach vorübergehend nicht passen.
+
+Die neue Aktion **Gewindepaar gemeinsam bearbeiten** verlangt eine eindeutige,
+gegenseitige Zuordnung. Beide Ownership-Listen müssen zusammen lückenlos den
+finalen Timeline-Bereich abdecken, ohne fremde oder spätere Features. Nach dem
+Rollen vor den früheren Partner werden beide Ursprungskörper/-bezüge und die
+gemeinsamen Parameter geprüft. Erst dann wird der geprüfte Bereich entfernt.
+Danach werden beide Partner in ihrer ursprünglichen Reihenfolge neu erzeugt,
+mit ihren stabilen IDs und Paarlinks. Richtung, Steigung und Spiel stammen aus
+der gemeinsamen Eingabe; individuelle Längen, Startkanten und Fasen bleiben je
+Partner erhalten. Die bisherige Spielverteilung muss bei beiden übereinstimmen.
+Metrische Innen-/Außentiefe wird pro Partner abgeleitet.
+
+Alle Arbeiten laufen in einem Execute-Befehl. Ein Fehler nach der ersten
+Ersetzung erreicht executeFailed und fordert die Rücknahme beider Ersetzungen
+einschließlich ihrer Metadaten an. Automatische Grenztests decken diesen Pfad ab;
+echtes Fusion-Rollback, Dateipersistenz und Undo/Redo müssen separat geprüft
+werden. Ein Nachweis zur Bearbeitung beliebiger später abhängiger Features
+ergibt sich daraus nicht.
 
 1. Neues Gewinde erzeugen, speichern, schließen und öffnen. Parameter und
    Ergebnisbezüge müssen erhalten sein.

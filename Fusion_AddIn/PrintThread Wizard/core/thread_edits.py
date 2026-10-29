@@ -1,4 +1,4 @@
-"""Parameter changes for rollback-only M6 trials."""
+"""Validated parameter changes shared by M6 trials and restricted editing."""
 from dataclasses import replace
 import math
 from .iso_metric import ISO_FLANK_ANGLE, radial_thread_depth
@@ -6,9 +6,13 @@ from ..localization import translate as tr
 
 
 def validate_trial_changes(changes, full_length):
-    if not isinstance(changes, dict) or set(changes) - {'pitch', 'tolerance', 'start_offset', 'thread_length'}:
+    if not isinstance(changes, dict) or set(changes) - {'pitch', 'tolerance', 'start_offset', 'thread_length', 'handedness'}:
         raise ValueError(tr('trial_changes_invalid'))
     for key, value in changes.items():
+        if key == 'handedness':
+            if value not in ('right', 'left'):
+                raise ValueError(tr('direction_invalid'))
+            continue
         if (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
                 or value < 0 or (key in ('pitch', 'thread_length') and value == 0)):
             raise ValueError(tr('trial_changes_invalid'))

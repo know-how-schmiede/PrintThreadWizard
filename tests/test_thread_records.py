@@ -97,8 +97,8 @@ class ThreadRecordTests(unittest.TestCase):
         handler = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'command_execute')
         handler.args.args[0].annotation = None
         trial = Mock()
-        ns = dict(thread_preview=Mock(), _record_probe_enabled=lambda _: True,
-                  _record_rebuild_trial_enabled=lambda _: True,
+        ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), _record_view_only=lambda _:False, thread_preview=Mock(), _record_probe_enabled=lambda _: True,
+                  _record_apply_edit_enabled=lambda _: False, _record_rebuild_trial_enabled=lambda _: True,
                   record_inspector=types.SimpleNamespace(selected_record=lambda _: self.record(), trial_changes=lambda _: None),
                   run_rebuild_trial=trial, _validation_errors=Mock(), create_thread=Mock(),
                   app=types.SimpleNamespace(activeProduct='design'), futil=Mock(),
@@ -215,7 +215,7 @@ class ThreadRecordTests(unittest.TestCase):
         handler.args.args[0].annotation = None
         create = Mock()
         probe = Mock(return_value=dict(ready=True, references=[], errors=[]))
-        ns = dict(_record_rebuild_trial_enabled=lambda _: False, thread_preview=Mock(), _record_probe_enabled=lambda _: True,
+        ns = dict(_record_pair_edit_enabled=lambda _:False, pair_record_contexts=lambda: (None, None), _record_view_only=lambda _: False, _record_apply_edit_enabled=lambda _: False, _record_rebuild_trial_enabled=lambda _: False, thread_preview=Mock(), _record_probe_enabled=lambda _: True,
                   record_inspector=types.SimpleNamespace(selected_record=lambda _: self.record(), trial_changes=lambda _: None),
                   probe_original_references=probe, _validation_errors=Mock(), create_thread=create,
                   app=types.SimpleNamespace(activeProduct='design'), ui=Mock(),

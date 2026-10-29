@@ -5,7 +5,7 @@ Keine nachträgliche Bearbeitungsfunktion freigegeben.
 
 ## Automatisch
 
-65 Tests bestanden mit lokal installiertem Fusion-Python. 44 bisherige Tests
+83 Tests bestanden mit lokal installiertem Fusion-Python. 44 bisherige Tests
 plus sechs neue Prüfungen: exakter Metadaten-Rundlauf ohne Live-Objekte,
 unbekannte Schemata und ungültige Werte, Erfassen vor Topologieänderungen,
 Zuordnung von Skizzen-/Ergebnisattributen, mehrdeutige oder nicht auflösbare
@@ -59,6 +59,29 @@ erfolgreiche Wiederherstellung ursprünglicher Flächen.
 
 ## Fusion-Matrix
 
+Aktueller [Screenshot des kompakten Paarbearbeitungsdialogs](../images/29-10-2026_15-34-02.png)
+in README DE/EN und Machbarkeitsdokument eingebunden. Er zeigt die gemeinsame
+Aktion und die Eingabe eines Rechtsgewindes bei ausgewähltem gespeichertem
+Linksgewinde. Die gemeinsame Paarbearbeitung wurde zusätzlich vom Anwender
+bestätigt; der Screenshot allein belegt keine abgeschlossene Übernahme.
+
+Anwender bestätigt Richtungswechsel und aufgeräumten Dialog mit „ok funktioniert“.
+Weitere Stufe: stabile Gewinde-IDs bei dauerhafter Bearbeitung, gegenseitige
+Paarzuordnung bei neuer gemeinsamer Erzeugung und atomare Bearbeitung des finalen
+Paares. Sieben neue Tests prüfen serialisierte Paarlinks, gemeinsame Parameter
+mit getrennten metrischen Tiefen, unveränderte IDs/Längen, Fehler beim zweiten
+Partner, Abweisung fremder Timeline-Einträge, fehlende/fehlerhafte Paarlinks,
+Paar-/Parameterfehler vor Entfernung und die vollständige Rücknahme-Anforderung
+im Execute-Handler. Dies sind keine nativen Fusion-Persistenztests.
+
+Aktuelle Dialogfassung: ein Aktionsmenü statt drei Kontrollkästchen, direkt
+geladene Parameter ohne zusätzlichen Änderungsschalter, kurze Auswahleinträge
+und eingeklappte Daten-/Bezugsdetails. Rechts-/Linkswechsel ist in Test und
+dauerhafter Bearbeitung enthalten. Vier weitere Tests prüfen beide Richtungen
+und ungültige Richtungswerte, eindeutige Aktionszuordnung mit Reiterbindung,
+reines Schließen ohne Geometrieaktion und das Lesen geänderter Parameter aus
+dem kompakten Dialog. Auswahlwechsel lädt Originalwerte und setzt „Nur anzeigen“.
+
 Lokal installierte Produktversion laut EXE: 2706.1.14, Windows.
 Anwender bestätigt: Gewindedaten werden gefunden, auch bei mehreren in
 derselben Konstruktion erstellten Gewinden. Speichern/Schließen/Wiederöffnen
@@ -68,6 +91,13 @@ separat bestätigt.
 | Fall | Erwartung | Status |
 | --- | --- | --- |
 | Mehrere Gewinde in derselben Konstruktion | Gespeicherte Gewindedaten werden gefunden | Durch Anwender bestätigt |
+| Richtung rechts nach links / links nach rechts | Gewählte Richtung in Test und dauerhafter Bearbeitung verwenden; neue Metadaten korrekt | Offen |
+| Richtungswechsel und kompakter Dialog | Funktion nach letzter Dialogkorrektur nutzbar | Durch Anwender bestätigt; einzelne Varianten nicht separat erfasst |
+| Neues verknüpftes Paar gemeinsam bearbeiten | Gemeinsame Bearbeitung beider Partner ausführen | Durch Anwender bestätigt; konkrete Parameter und Längen-/Startseitenvarianten nicht separat erfasst |
+| Paar speichern, schließen, erneut öffnen, weiter bearbeiten | IDs, Paarlink und Parameter bleiben erhalten | Offen |
+| Fehler am zweiten Partner / Undo / Redo der Paarbearbeitung | Beide alten oder beide neuen Gewinde einschließlich Metadaten, nie ein halbes Ergebnis | Offen |
+| Kompaktes Aktionsmenü und Parameterwechsel | Eine eindeutige Aktion, Werte direkt ändern, Details aufklappbar | Offen |
+| Nur anzeigen und OK | Ohne Geometrieänderung schließen, auch ohne ausgewählten Datensatz | Offen |
 | Ursprungsbezüge mit OK prüfen | Ursprungsfläche vor der Erzeugung auflösen, Parameter validieren, Timeline wiederherstellen | Durch Anwender bestätigt; zusätzliche Kanten-/Instanzfälle offen |
 | Neuaufbau mit OK testen und zurücknehmen | Temporären Neuaufbau erzeugen; Befehl auch nach Erfolg vollständig zurücknehmen; altes Gewinde erhalten | Vorläufig durch Anwender bestätigt; sichtbares Gewindepaar erhalten, Detailprüfung offen |
 | Test-Neuaufbau mit geänderter Steigung | Neue Steigung im temporären Aufbau sichtbar | Vorläufig durch Anwender bestätigt; konkrete Werte/Modus nicht erfasst |
@@ -93,9 +123,45 @@ separat bestätigt.
 
 Ein temporärer Test-Neuaufbau mit gespeicherten oder geänderten Testparametern ist implementiert.
 Er übernimmt keine Bearbeitung: Nach jedem Versuch wird die gesamte
-Befehls-Transaktion zurückgenommen. Ein dauerhaft übernehmbarer Neuaufbau und
-sein Fehler-/Undo-Verhalten sind **noch nicht implementiert**.
+Befehls-Transaktion zurückgenommen.
+
+Eine begrenzte dauerhafte Übernahme ist jetzt implementiert: nur vollständige
+zugeordnete Featurefolge des letzten Gewindes, ohne spätere oder eingeschobene
+fremde Features. Neue Erzeugungen erhalten Ownership-Tokens und ID-Attribute
+je Feature. Vor dem Entfernen wird der komplette verbleibende Timeline-Bereich
+dagegen geprüft. Alte Datensätze ohne diesen Nachweis bleiben nur prüfbar.
+Sechs weitere Tests prüfen den erlaubten Bereich, Abweisung späterer/fremder
+Features, fehlende/falsche Ownership, Fehler vor/nach Entfernung, die
+Commit-/Rollback-Anforderung des Execute-Handlers und die Begrenzung neuer
+Timeline-Gruppen auf den tatsächlichen Erzeugungsbereich. Die Tests belegen
+keine native Fusion-Rücknahme gelöschter Features; Fusion-Abnahme steht aus.
+
+Offene Fusion-Prüfung: neues Gewinde mit aktualisierter Fassung erstellen,
+Spiel/Steigung dauerhaft ändern, Undo/Redo prüfen, speichern und erneut öffnen.
+Ältere Datensätze sowie Gewinde mit späteren Features müssen vor jeder
+Entfernung abgewiesen werden. Ein Erzeugungsfehler nach Entfernen der alten
+Features muss das alte Gewinde einschließlich Metadaten wiederherstellen.
 Dafür sind die Nachweise im
 [Machbarkeitsdokument](bearbeitung-machbarkeit-0.9.6.md) erforderlich.
 
 Version, Manifest und Installer-Konfiguration: 0.9.6. Kein Installer gebaut.
+
+Weitere Dialogkorrektur nach gesperrter Aktionsauswahl: Die dauerhafte Aktion
+bleibt anwählbar. Fehlender Feature-Nachweis wird stattdessen bereits in der
+OK-Validierung direkt im Statusbereich angezeigt; OK bleibt in diesem Fall
+gesperrt. Ein gültiger Datensatz benötigt keine erneute Zylinderflächenauswahl.
+Eine weitere Regression prüft beide Validierungspfade.
+
+Anwender bestätigt nach dieser Dialogkorrektur: „ok funktioniert“.
+Aktionsauswahl und OK-Freigabe damit bestätigt. Dauerhaft erhaltene
+Parameteränderung, Undo/Redo und Speichern/Wiederöffnen sind durch diese
+kurze Rückmeldung noch nicht separat bestätigt.
+
+Anwenderlauf der dauerhaften Bearbeitung: erwartete Ablehnung wegen fehlender
+Feature-Liste. Lokaler Fusion-Traceback zeigt den Abbruch direkt bei
+`if not tokens` in `verify_owned_suffix`, vor jeder Entfernung. Installierte
+Quelldateien enthalten bereits die neue Erfassung; der ausgewählte Datensatz
+enthält sie noch nicht. Dialog verbessert: dauerhafte Aktion bei solchen
+Datensätzen deaktiviert, Grund direkt angezeigt; Auswahlwechsel/Aktualisieren
+setzt die dauerhafte Aktion zurück. Add-in neu laden und ein neues Gewinde
+erstellen, um die dauerhafte Bearbeitung zu testen.

@@ -16,67 +16,57 @@ I would be very happy if you subscribed to the channel.
 
 Current development version: **0.9.6**
 
-0.9.6 starts M6 with **saved thread data and model reference inspection**. This prepares future editing; it is not an editing feature yet. Fusion acceptance is pending; see the [test record](doku/pruefprotokoll-0.9.6.md). Not published yet; installers are built only on request.
+0.9.6 adds **saved thread data and editing of individual threads or linked thread pairs at the timeline end**. Direction, pitch and clearance can be changed. Handedness switching, the compact dialog and shared pair editing have been confirmed by the user; Undo/Redo and save/reopen remain pending. See the [test record](doku/pruefprotokoll-0.9.6.md). Not published yet; installers are built only on request.
 
-## Inspect thread data – preparation for future editing
+## Inspect and edit thread data
 
-New threads created with **0.9.6** store machine-readable settings in the Fusion
-document alongside the readable parameter sketch: calculation mode, pitch,
-profile angle/depth, fillet, clearance/distribution, direction, length mode,
-offset, length and extra chamfer. References to the original face, target body,
-component, occurrence if applicable, start/chamfer edges and first/result
-features are recorded too. Each thread in a pair or calibration series gets
-its own record.
+New threads from 0.9.6 store parameters and model references in the Fusion document.
+Select a thread in **Inspect thread data** to load its **Trial and edit parameters**.
+You can now switch **right-hand and left-hand threads** as well as change pitch and
+clearance. Recorded partial threads also allow length and offset changes, retaining
+the original start edge. Full-length threads remain full length. Metric depth is
+recalculated when pitch changes; free depth is retained.
 
-In the new **Inspect thread data** tab:
+The tidied dialog has one **Action** menu:
 
-1. **Refresh list** reads records from the current document.
-2. Select a recorded thread to see its settings.
-3. Inspect whether each reference resolves uniquely, ambiguously or not at the
-   current timeline state. Resolvable timeline boundaries and the number of
-   subsequent entries are displayed too.
+- **View only:** OK closes without model changes while this tab is active.
+- **Check original references:** inspect references before original creation, then restore the timeline.
+- **Test rebuild (roll back):** temporarily rebuild with the entered values and deliberately roll back the entire command. The rollback notice is expected.
+- **Apply edit:** permanently rebuild the selected thread with the entered values; errors request rollback of the entire transaction.
+- **Edit thread pair together:** apply direction, pitch and clearance to both explicitly linked members. Individual lengths and start sides are retained; errors roll back both replacements.
 
-Inspection changes neither the model nor the timeline. An original face may
-no longer resolve after threading; that alone does not mean corrupted data.
-Recovering references in the original timeline state needs further feasibility
-testing. **Use Cancel to close**; with the reference test disabled, OK still
-executes creation from the thread or calibration tab.
+The three action checkboxes and the extra switch for modified parameters are
+removed. Help follows the selected action; technical details are initially collapsed
+under **Saved values and model references**. Selecting another thread loads its
+original values and resets the action to **View only**. These actions apply only
+while the thread-data tab is active.
 
-The next feasibility step is available as **Check original references with OK**:
-select a thread record, enable that option and press OK. Only the reference
-test runs. It rolls the timeline before the original thread creation, resolves
-saved faces/edges and validates the settings against the original body. It then
-restores the timeline marker and group layout and displays the result. No thread
-is created or edited. Restoration is also attempted after test errors; if it
-fails, the entire command transaction is rolled back. A successful reference
-test does not yet demonstrate a safe rebuild.
+Version 0.9.6 example (German UI): **Edit thread pair together** is selected.
+The recorded left-hand thread is set to **right-hand** in the form, with a
+10 mm pitch and 0.15 mm total radial clearance. Technical details are collapsed;
+length and offset are disabled for the pair action:
 
-The next test is **Test rebuild with OK and roll back**. Select a record, enable
-this option and press OK. The add-in inserts a temporary rebuild before the old
-thread features using saved or explicitly modified trial settings. The entire command is then
-**deliberately rolled back**, even after successful generation. The final
-rollback notice is expected. Errors also trigger full rollback; original
-features are not deleted. After closing the notice, check that the original
-thread, other parts and timeline are unchanged. This test does not commit an
-edit. The reference test, rebuild trial and calibration series are mutually
-exclusive OK actions.
+<img src="images/29-10-2026_15-34-02.png" alt="PrintThread Wizard 0.9.6: compact editing dialog with shared pair action and a left-hand to right-hand change" width="1000">
 
-The **Rebuild trial parameters** section initially loads the selected thread's
-original values. Enable **Use modified trial parameters** to change clearance
-or pitch. Recorded partial threads also support changes to offset and length
-while retaining their original start edge. Full-length threads remain full
-length at this stage. Metric mode recalculates depth from pitch; free mode
-retains the saved depth. Invalid profiles or ranges are rejected. Changes apply
-only to the trial, leaving both the original record and final thread unchanged.
-Selecting another thread disables changes and loads that thread's original
-values.
+**Permanent editing limits:** only the final thread at the timeline end, without
+later or inserted foreign features. Complete feature ownership data requires a
+thread newly created with the corresponding updated build. Older records remain
+inspectable; threads without metadata are not reconstructed. The single-thread
+action changes only the selected member. Both partners need matching handedness;
+use the pair action to change both together. That action requires a **new pair
+created together with this updated build**, which records reciprocal links.
+Older pairs are not linked automatically. Both members must form the complete
+owned timeline suffix without later or inserted foreign features. Individual
+lengths and offsets are retained and are not editable in the pair action.
+Thread IDs and pair links survive further edits. Undo/Redo and save/reopen need
+Fusion testing.
 
-**Not available yet:** changing an existing thread's clearance, pitch or length
-and rebuilding it. Old threads without metadata are not reconstructed or marked
-editable. These records belong to the Fusion document, not the preset JSON
-export; the preset schema is unchanged. To check persistence, create a new
-thread, save and reopen the document, then inspect its data in the new tab.
-[Feasibility status and next checks](doku/bearbeitung-machbarkeit-0.9.6.md).
+For persistence testing, create a new pair, edit it together, save and reopen.
+Then inspect both records, perform another pair edit and test Undo/Redo. These
+native Fusion checks are still pending.
+
+Metadata belongs to the document, not the preset JSON export; its schema is unchanged.
+[Feasibility status and checks](doku/bearbeitung-machbarkeit-0.9.6.md).
 
 ## Size aid and preview
 
@@ -168,6 +158,8 @@ Generated calibration series with one reference pin and five test rings:
 
 ## Current features
 
+- Saved thread data and model references, compact action menu and handedness changes
+- Restricted permanent single-thread and pair editing at the timeline end, with stable thread IDs and explicit pair links
 - Automatic use of the Fusion UI language for German, English, Spanish,
   French, Italian, and Polish, with English as the fallback
 - Localized validation and error messages, file dialogs, timeline feature names,

@@ -23,6 +23,16 @@ def make_record(parameters, references, calculation_mode, version):
     return validate_record(record, require_result=False)
 
 
+def pair_record_contexts():
+    first, second, pair = str(uuid4()), str(uuid4()), str(uuid4())
+    return (dict(id=first, partner_id=second, pair_id=pair),
+            dict(id=second, partner_id=first, pair_id=pair))
+
+
+def record_context(record):
+    return {key: record[key] for key in ('id', 'partner_id', 'pair_id') if key in record}
+
+
 def validate_record(record, require_result=True):
     try:
         if (not isinstance(record, dict) or type(record.get('schema_version')) is not int
@@ -31,6 +41,11 @@ def validate_record(record, require_result=True):
                 or not isinstance(record['created_with'], str)
                 or record['calculation_mode'] not in ('free', 'iso_metric')):
             raise ValueError()
+        if any(key in record for key in ('pair_id', 'partner_id')):
+            if any(not isinstance(record.get(key), str) or not record[key] for key in ('pair_id', 'partner_id')):
+                raise ValueError()
+            if record['partner_id'] == record['id']:
+                raise ValueError()
         values = record['parameters']
         allowed = set(parameter_values(ThreadParameters(None, (), 1, .1, .3, 0)))
         if not isinstance(values, dict) or set(values) != allowed:
@@ -43,6 +58,10 @@ def validate_record(record, require_result=True):
             raise ValueError()
         refs = record['references']
         if not isinstance(refs, dict):
+            raise ValueError()
+        owned = refs.get('owned_features')
+        if owned is not None and (not isinstance(owned, list) or not owned
+                                  or any(not isinstance(token, str) or not token for token in owned)):
             raise ValueError()
         required = ('face', 'body', 'component') + (('first_feature', 'result_feature') if require_result else ())
         if any(not isinstance(refs.get(key), str) or not refs[key] for key in required):

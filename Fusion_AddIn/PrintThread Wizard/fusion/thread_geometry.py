@@ -44,17 +44,17 @@ def thread_section(cylinder, parameters, chamfer_ends=None):
 
 
 def create_thread(parameters: ThreadParameters, creation_occurrence=None, calculation_mode='free',
-                  group_timeline=True):
+                  group_timeline=True, record_context=None):
     errors = parameters.validation_errors()
     if errors:
         raise ValueError('\n'.join(errors))
 
     cylinder = analyze_cylinder(parameters.face)
-    record = capture_record(parameters, calculation_mode, creation_occurrence)
+    record = capture_record(parameters, calculation_mode, creation_occurrence, record_context)
     chamfer_ends = capture_chamfer_ends(cylinder, parameters.chamfer_edges)
     trim_reference = thread_section(cylinder, parameters, chamfer_ends)
     timeline = cylinder.component.parentDesign.timeline
-    timeline_start = timeline.count
+    timeline_start = timeline.markerPosition
     parameter_sketch = _create_parameter_note_sketch(cylinder, parameters)
     tolerance_feature = None
     try:
@@ -115,6 +115,15 @@ def create_thread(parameters: ThreadParameters, creation_occurrence=None, calcul
             parameters.chamfer_extra,
         )
         _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch)
+        if group_timeline:
+            owned = []
+            for index in range(timeline_start, timeline.markerPosition):
+                entity = timeline.item(index).entity
+                if entity is None:
+                    raise RuntimeError(tr('edit_ownership_missing'))
+                owned.append(entity.entityToken)
+                entity.attributes.add('PrintThreadWizard', 'thread_owner', record['id'])
+            record['references']['owned_features'] = owned
         attach_record(record, parameter_sketch, chamfer_feature or result_feature)
         if group_timeline:
             _group_timeline_entries(timeline, timeline_start)
@@ -558,7 +567,7 @@ def _name_and_hide_helpers(helix_feature, profile_plane, profile_sketch):
 
 
 def _group_timeline_entries(timeline, start_index):
-    end_index = timeline.count - 1
+    end_index = timeline.markerPosition - 1
     if end_index < start_index:
         return
     group = timeline.timelineGroups.add(start_index, end_index)
